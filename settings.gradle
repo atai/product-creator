@@ -1,0 +1,5 @@
+rootProject.name = 'ProductCreator'
+
+include('product-creator-backend', 'product-creator-frontend')
+project(':product-creator-backend').projectDir = file('backend')
+project(':product-creator-frontend').projectDir = file('frontend')
