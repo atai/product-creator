@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/ProductCreator.iml" filepath="$PROJECT_DIR$/.idea/ProductCreator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/ProductCreator.product-creator-backend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/ProductCreator.product-creator-backend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/frontend/ProductCreator.product-creator-frontend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/frontend/ProductCreator.product-creator-frontend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/backend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/frontend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/frontend.main.iml" />
     </modules>
   </component>
 </project>
