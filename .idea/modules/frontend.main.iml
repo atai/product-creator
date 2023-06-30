@@ -1,8 +1,195 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module version="4">
+<module external.linked.project.id="frontend:main" external.linked.project.path="$MODULE_DIR$/../../frontend" external.root.project.path="$MODULE_DIR$/../../frontend" external.system.id="GRADLE" external.system.module.group="com.ecooz.productcreator" external.system.module.type="sourceSet" external.system.module.version="0.0.1-SNAPSHOT" type="JAVA_MODULE" version="4">
   <component name="AdditionalModuleElements">
     <content url="file://$MODULE_DIR$/../../frontend/build/generated/sources/annotationProcessor/java/main">
       <sourceFolder url="file://$MODULE_DIR$/../../frontend/build/generated/sources/annotationProcessor/java/main" isTestSource="false" generated="true" />
     </content>
+  </component>
+  <component name="NewModuleRootManager">
+    <output url="file://$MODULE_DIR$/../../frontend/build/classes/java/main" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../frontend/build/generated/sources/annotationProcessor/java/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../frontend/build/generated/sources/annotationProcessor/java/main" isTestSource="false" generated="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../frontend/build/vaadin-generated">
+      <sourceFolder url="file://$MODULE_DIR$/../../frontend/build/vaadin-generated" type="java-resource" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../frontend/src/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../frontend/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../frontend/src/main/resources" type="java-resource" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="PROVIDED" name="Gradle: org.projectlombok:lombok:1.18.22" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-webflux:2.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-spring-boot-starter:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-json:2.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter:2.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-reactor-netty:2.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-webflux:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-web:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-web:2.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-spring:12.4.2" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-core:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.fasterxml.jackson.module:jackson-module-parameter-names:2.13.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.13.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-databind:2.13.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-autoconfigure:2.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot:2.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-logging:2.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: jakarta.annotation:jakarta.annotation-api:1.3.5" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-core:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: org.yaml:snakeyaml:1.29" level="project" />
+    <orderEntry type="library" name="Gradle: io.projectreactor.netty:reactor-netty-http:1.0.14" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-beans:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: io.projectreactor:reactor-core:3.4.13" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-webmvc:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-tomcat:2.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-websocket:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:flow-server:2.7.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:flow-push:2.7.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:flow-client:2.7.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-messages-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:flow-lit-template:2.7.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:flow-html-components:2.7.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:flow-data:2.7.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:flow-dnd:2.7.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-lumo-theme:2.7.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-material-theme:2.7.7" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-accordion-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-avatar-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-app-layout-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-button-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-checkbox-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-combo-box-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-custom-field-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-date-time-picker-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-date-picker-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-details-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-time-picker-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-select-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-dialog-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-form-layout-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-grid-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-icons-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-iron-list-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-list-box-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-login-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-ordered-layout-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-progress-bar-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-radio-button-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-split-layout-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-tabs-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-text-field-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-upload-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-notification-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-menu-bar-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin:vaadin-context-menu-flow:14.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-annotations:2.13.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-core:2.13.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-context:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: ch.qos.logback:logback-classic:1.2.9" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.logging.log4j:log4j-to-slf4j:2.17.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.slf4j:jul-to-slf4j:1.7.32" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-jcl:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: io.projectreactor.netty:reactor-netty-core:1.0.14" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-codec-http2:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-codec-http:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-resolver-dns-native-macos:osx-x86_64:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-resolver-dns:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-transport-native-epoll:linux-x86_64:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: org.reactivestreams:reactive-streams:1.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-aop:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: org.springframework:spring-expression:5.3.14" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.tomcat.embed:tomcat-embed-websocket:9.0.56" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.tomcat.embed:tomcat-embed-core:9.0.56" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.tomcat.embed:tomcat-embed-el:9.0.56" level="project" />
+    <orderEntry type="library" name="Gradle: com.helger:ph-css:6.1.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.helger:ph-commons:9.1.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.slf4j:slf4j-api:1.7.32" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin.external.gwt:gwt-elemental:2.8.2.vaadin2" level="project" />
+    <orderEntry type="library" name="Gradle: commons-fileupload:commons-fileupload:1.3.3" level="project" />
+    <orderEntry type="library" name="Gradle: commons-io:commons-io:2.11.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.jsoup:jsoup:1.14.3" level="project" />
+    <orderEntry type="library" name="Gradle: net.bytebuddy:byte-buddy:1.11.22" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin.external:gentyref:1.2.0.vaadin1" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.commons:commons-compress:1.21" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.httpcomponents:httpclient:4.5.13" level="project" />
+    <orderEntry type="library" name="Gradle: com.vaadin.external.atmosphere:atmosphere-runtime:2.4.30.slf4jvaadin1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-element-mixin:2.4.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymer:polymer:2.7.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.webcomponents:shadycss:1.8.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.webcomponents:webcomponentsjs:1.2.6" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-usage-statistics:2.1.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-development-mode-detector:2.0.4" level="project" />
+    <orderEntry type="library" name="Gradle: javax.validation:validation-api:2.0.1.Final" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.npm:vaadin__vaadin-mobile-drag-drop:1.0.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.npm:mobile-drag-drop:2.3.0-rc.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-lumo-styles:1.6.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-icon:2.1.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-iconset-svg:2.2.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-meta:2.1.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-flex-layout:2.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-material-styles:1.3.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-accordion:1.2.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-themable-mixin:1.6.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-avatar:1.0.4" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-list-box:1.4.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-item:2.3.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-overlay:3.5.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-list-mixin:2.5.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-a11y-announcer:2.1.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-resizable-behavior:2.1.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-control-state-mixin:2.2.4" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-app-layout:2.2.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-button:2.4.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-checkbox:2.5.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-combo-box:5.4.11" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-text-field:2.9.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-list:2.0.20" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-overlay-behavior:2.3.4" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-scroll-target-behavior:2.1.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-a11y-keys-behavior:2.1.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-fit-behavior:2.2.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-custom-field:1.3.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-date-time-picker:1.4.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-time-picker:2.4.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-date-picker:4.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.polymerelements:iron-media-query:2.1.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-details:1.2.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-select:2.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-dialog:2.6.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-form-layout:2.3.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-grid:5.9.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.commons:commons-lang3:3.12.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-icons:4.3.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-login:1.2.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-ordered-layout:1.4.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-progress-bar:1.3.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-radio-button:1.5.4" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-split-layout:4.3.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-tabs:3.2.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-upload:4.4.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-notification:1.6.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-menu-bar:1.3.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars.bowergithub.vaadin:vaadin-context-menu:4.6.0" level="project" />
+    <orderEntry type="library" name="Gradle: ch.qos.logback:logback-core:1.2.9" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.logging.log4j:log4j-api:2.17.0" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-handler-proxy:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-handler:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-codec:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-transport:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-buffer:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-common:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-resolver-dns-classes-macos:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-codec-dns:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-resolver:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-transport-classes-epoll:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-transport-native-unix-common:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.httpcomponents:httpcore:4.4.15" level="project" />
+    <orderEntry type="library" name="Gradle: commons-codec:commons-codec:1.15" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-codec-socks:4.1.72.Final" level="project" />
+    <orderEntry type="library" name="Gradle: io.netty:netty-tcnative-classes:2.0.46.Final" level="project" />
   </component>
 </module>

@@ -30,6 +30,17 @@ build
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
+/.idea/modules/backend.iml
+/.idea/modules/backend.test.iml
+/.idea/compiler.xml
+/.idea/modules/frontend.iml
+/.idea/modules/frontend.test.iml
+/.idea/misc.xml
+/.idea/ProductCreator.iml
+/.idea/modules/backend/ProductCreator.product-creator-backend.iml
+/.idea/modules/backend/ProductCreator.product-creator-backend.test.iml
+/.idea/modules/frontend/ProductCreator.product-creator-frontend.iml
+/.idea/modules/frontend/ProductCreator.product-creator-frontend.test.iml
 
 # Gradle
 .idea/**/gradle.xml
@@ -108,3 +119,10 @@ gradle-app.setting
 
 # Project specific
 lib
+
+# Local resources
+/frontend/local_temp/keystore.p12
+
+# VAADIN
+/frontend/target/frontend/generated-flow-imports.js
+/frontend/package-lock.json

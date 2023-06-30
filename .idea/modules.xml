@@ -2,10 +2,19 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/ProductCreator.iml" filepath="$PROJECT_DIR$/.idea/ProductCreator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/ProductCreator.product-creator-backend.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/ProductCreator.product-creator-backend.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/ProductCreator.product-creator-backend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/ProductCreator.product-creator-backend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend/ProductCreator.product-creator-backend.test.iml" filepath="$PROJECT_DIR$/.idea/modules/backend/ProductCreator.product-creator-backend.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/frontend/ProductCreator.product-creator-frontend.iml" filepath="$PROJECT_DIR$/.idea/modules/frontend/ProductCreator.product-creator-frontend.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/frontend/ProductCreator.product-creator-frontend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/frontend/ProductCreator.product-creator-frontend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/frontend/ProductCreator.product-creator-frontend.test.iml" filepath="$PROJECT_DIR$/.idea/modules/frontend/ProductCreator.product-creator-frontend.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend.iml" filepath="$PROJECT_DIR$/.idea/modules/backend.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/backend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend.test.iml" filepath="$PROJECT_DIR$/.idea/modules/backend.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/frontend.iml" filepath="$PROJECT_DIR$/.idea/modules/frontend.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/frontend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/frontend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/frontend.test.iml" filepath="$PROJECT_DIR$/.idea/modules/frontend.test.iml" />
     </modules>
   </component>
 </project>
