@@ -1,0 +1,19 @@
+id: example.notification.send
+name: Send Email Notification
+bounded_context: example
+entity: notification
+action: send
+owner: platform-team
+lifecycle: active
+description: Sends email notifications to users
+tags:
+  - notifications
+  - email
+emits:
+  - notification.sent
+consumes:
+  - email.verification.requested
+  - user.created
+apis:
+  - method: POST
+    path: /api/notifications/email

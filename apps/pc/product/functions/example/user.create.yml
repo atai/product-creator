@@ -1,0 +1,18 @@
+id: example.user.create
+name: Create User
+bounded_context: example
+entity: user
+action: create
+owner: platform-team
+lifecycle: active
+description: Creates a new user account in the system
+tags:
+  - user-management
+  - core
+emits:
+  - user.created
+  - email.verification.requested
+consumes: []
+apis:
+  - method: POST
+    path: /api/users
