@@ -1,8 +1,0 @@
-stages:
-  build: false
-  docupdate: false
-  staticanalys: false
-  stagetesting: false
-  endtoendtesting: false
-  integrationtesting: false
-  packaging: false
