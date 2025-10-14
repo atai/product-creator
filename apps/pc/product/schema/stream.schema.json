@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Stream",
+  "description": "A stream is a multi-stage business process flow",
+  "type": "object",
+  "required": ["stream", "goal", "stages"],
+  "properties": {
+    "stream": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Stream identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name"
+    },
+    "goal": {
+      "type": "string",
+      "description": "Goal/purpose of this stream"
+    },
+    "kpis": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "KPI metrics for this stream"
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "entry_events", "exit_events"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Stage name"
+          },
+          "entry_events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Events that start this stage"
+          },
+          "exit_events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Events that complete this stage"
+          },
+          "workflows": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Workflow IDs for this stage"
+          }
+        }
+      },
+      "minItems": 1,
+      "description": "Stages of the stream"
+    },
+    "rules": {
+      "type": "object",
+      "properties": {
+        "unique_function_per_stage": {
+          "type": "boolean",
+          "description": "If true, a function cannot appear in multiple stages"
+        }
+      },
+      "description": "Validation rules"
+    }
+  }
+}

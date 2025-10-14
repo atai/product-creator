@@ -6,13 +6,29 @@ import { GraphNode, GraphEdge } from '@/lib/types';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    const rootFilter = searchParams.get('root');
     const boundedContext = searchParams.get('bounded_context');
     const lifecycle = searchParams.get('lifecycle');
 
     const storage = await getStorage();
     let functions = storage.getAll();
 
-    // Apply filters
+    // Apply root filter first
+    if (rootFilter) {
+      const functionsTable = storage['store'].getTable('functions');
+      const filteredIds = Object.entries(functionsTable)
+        .filter(([, data]: [string, unknown]) => {
+          const row = data as Record<string, unknown>;
+          const root = storage.getRootForFilePath(row.filePath as string);
+          return root === rootFilter;
+        })
+        .map(([id]) => id);
+
+      functions = functions.filter(f => filteredIds.includes(f.id));
+      logger.info('Filtered graph functions by root', { rootFilter, count: functions.length });
+    }
+
+    // Apply other filters
     if (boundedContext) {
       functions = functions.filter((f) => f.bounded_context === boundedContext);
     }
@@ -35,14 +51,19 @@ export async function GET(request: NextRequest) {
     // Filter edges to only include those between filtered functions
     const edges: GraphEdge[] = allEdges
       .filter(
-        (edge: any) =>
-          functionIds.has(edge.source as string) && functionIds.has(edge.target as string)
+        (edge: unknown) => {
+          const e = edge as Record<string, unknown>;
+          return functionIds.has(e.source as string) && functionIds.has(e.target as string);
+        }
       )
-      .map((edge: any) => ({
-        source: edge.source as string,
-        target: edge.target as string,
-        event: edge.event as string,
-      }));
+      .map((edge: unknown) => {
+        const e = edge as Record<string, unknown>;
+        return {
+          source: e.source as string,
+          target: e.target as string,
+          event: e.event as string,
+        };
+      });
 
     return NextResponse.json({ nodes, edges });
   } catch (error) {

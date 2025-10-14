@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import cytoscape from 'cytoscape';
 import { GraphNode, GraphEdge, FunctionCard } from '@/lib/types';
 
 export default function GraphPage() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [functions, setFunctions] = useState<FunctionCard[]>([]);
   const [filters, setFilters] = useState({
@@ -16,7 +18,11 @@ export default function GraphPage() {
   const cyInstance = useRef<cytoscape.Core | null>(null);
 
   useEffect(() => {
-    fetch('/api/index')
+    // Load functions with root filter from URL
+    const rootParam = searchParams.get('root');
+    const url = rootParam ? `/api/index?root=${encodeURIComponent(rootParam)}` : '/api/index';
+
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
         setFunctions(data);
@@ -26,12 +32,14 @@ export default function GraphPage() {
         console.error('Failed to load functions', err);
         setLoading(false);
       });
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (loading || !cyRef.current) return;
 
     const params = new URLSearchParams();
+    const rootParam = searchParams.get('root');
+    if (rootParam) params.append('root', rootParam);
     if (filters.bounded_context) params.append('bounded_context', filters.bounded_context);
     if (filters.lifecycle) params.append('lifecycle', filters.lifecycle);
 
@@ -141,7 +149,7 @@ export default function GraphPage() {
       .catch((err) => {
         console.error('Failed to load graph', err);
       });
-  }, [loading, filters]);
+  }, [loading, filters, searchParams]);
 
   const uniqueContexts = Array.from(new Set(functions.map((f) => f.bounded_context)));
   const lifecycles = ['draft', 'active', 'deprecated', 'removed'];
@@ -155,14 +163,8 @@ export default function GraphPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50">
+    <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <Link href="/" className="text-blue-600 hover:underline">
-            ← Back to list
-          </Link>
-          <h1 className="text-3xl font-bold mt-4">Function Dependencies Graph</h1>
-        </div>
 
         <div className="mb-6 flex gap-4">
           <select

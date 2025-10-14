@@ -13,11 +13,33 @@ const validate = ajv.compile(schema);
 
 export async function POST(request: NextRequest) {
   try {
-    const data: FunctionCard = await request.json();
+    const body = await request.json();
+    const data: FunctionCard = body.data || body;
+    const targetRoot: string | undefined = body.targetRoot;
+
+    logger.info('Save request received', {
+      id: data.id,
+      bounded_context: data.bounded_context,
+      entity: data.entity,
+      action: data.action,
+      name: data.name,
+      targetRoot,
+      fullData: JSON.stringify(data)
+    });
+
+    // Validate targetRoot is provided
+    if (!targetRoot) {
+      logger.warn('Target root not provided');
+      return NextResponse.json(
+        { error: 'Target root directory is required' },
+        { status: 400 }
+      );
+    }
 
     // Validate
     const valid = validate(data);
     if (!valid) {
+      logger.warn('Validation failed', { errors: validate.errors });
       return NextResponse.json(
         { error: 'Validation failed', details: validate.errors },
         { status: 400 }
@@ -33,6 +55,7 @@ export async function POST(request: NextRequest) {
       idParts[1] !== data.entity ||
       idParts[2] !== data.action
     ) {
+      logger.warn('ID pattern mismatch', { id: data.id, expected: expectedPath });
       return NextResponse.json(
         { error: 'ID does not match pattern: <bounded_context>.<entity>.<action>' },
         { status: 400 }
@@ -42,11 +65,21 @@ export async function POST(request: NextRequest) {
     const storage = await getStorage();
     const existing = storage.getById(data.id);
 
-    const result = await storage.save(data);
+    logger.info('Attempting save', {
+      id: data.id,
+      existingFound: !!existing,
+      isUpdate: !!existing
+    });
+
+    const result = await storage.save(data, targetRoot);
 
     if (!result.success) {
+      logger.error('Save failed in storage layer', { error: result.error });
       if (result.error?.includes('already exists')) {
         return NextResponse.json({ error: result.error }, { status: 409 });
+      }
+      if (result.error?.includes('Missing required fields')) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
       }
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
