@@ -67,9 +67,9 @@ export function useEntityForm<T>(options: UseEntityFormOptions<T>) {
       }
 
       // Navigate back to list
-      const rootParam = searchParams.get('root');
-      const listUrl = rootParam
-        ? `${options.listRoute}?root=${encodeURIComponent(rootParam)}`
+      const appParam = searchParams.get('app');
+      const listUrl = appParam
+        ? `${options.listRoute}?app=${encodeURIComponent(appParam)}`
         : options.listRoute;
 
       router.push(listUrl);

@@ -8,7 +8,7 @@ import CatalogPageLayout from '@/components/CatalogPageLayout';
 
 export default function StreamsPage() {
   const searchParams = useSearchParams();
-  const selectedRoot = searchParams.get('root') || '';
+  const selectedApp = searchParams.get('app') || '';
 
   // Refactored to use generic hook - eliminates duplication
   const {
@@ -24,7 +24,7 @@ export default function StreamsPage() {
     stream.name || '',
     stream.goal,
     ],
-    { root: selectedRoot }
+    { app: selectedApp }
   );
 
   return (
@@ -34,7 +34,7 @@ export default function StreamsPage() {
       hintKey="streams"
       actions={
         <Link
-          href={`/streams/new${selectedRoot ? `?root=${encodeURIComponent(selectedRoot)}` : ''}`}
+          href={`/streams/new${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
         >
           New Stream
@@ -90,7 +90,7 @@ export default function StreamsPage() {
                 <tr key={stream.stream} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
-                      href={`/streams/${stream.stream}${selectedRoot ? `?root=${encodeURIComponent(selectedRoot)}` : ''}`}
+                      href={`/streams/${stream.stream}${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
                       className="text-blue-600 hover:text-blue-900 font-medium"
                     >
                       {stream.stream}
@@ -127,13 +127,13 @@ export default function StreamsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <Link
-                      href={`/streams/${stream.stream}${selectedRoot ? `?root=${encodeURIComponent(selectedRoot)}` : ''}`}
+                      href={`/streams/${stream.stream}${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
                       className="text-blue-600 hover:text-blue-900 mr-4"
                     >
                       Edit
                     </Link>
                     <Link
-                      href={`/streams/${stream.stream}/swimlanes${selectedRoot ? `?root=${encodeURIComponent(selectedRoot)}` : ''}`}
+                      href={`/streams/${stream.stream}/swimlanes${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
                       className="text-purple-600 hover:text-purple-900"
                     >
                       Swimlanes

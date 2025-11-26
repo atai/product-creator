@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 
 export default function DocPage() {
   const searchParams = useSearchParams();
-  const selectedRoot = searchParams.get('root') || '';
+  const selectedApp = searchParams.get('app') || '';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -16,7 +16,7 @@ export default function DocPage() {
         <div className="rounded-lg border border-dashed border-gray-300 bg-white p-6">
           <p className="text-gray-700">
             Placeholder content — generating the documentation bundle for{' '}
-            {selectedRoot ? <span className="font-semibold">{selectedRoot}</span> : 'all directories'}.
+            {selectedApp ? <span className="font-semibold">{selectedApp}</span> : 'all apps'}.
           </p>
           <p className="text-sm text-gray-500 mt-3">
             This section will aggregate business objects, functions, workflows, and presentation assets

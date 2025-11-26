@@ -18,9 +18,9 @@ export default function GraphPage() {
   const cyInstance = useRef<cytoscape.Core | null>(null);
 
   useEffect(() => {
-    // Load functions with root filter from URL
-    const rootParam = searchParams.get('root');
-    const url = rootParam ? `/api/index?root=${encodeURIComponent(rootParam)}` : '/api/index';
+    // Load functions with app filter from URL
+    const appParam = searchParams.get('app');
+    const url = appParam ? `/api/index?app=${encodeURIComponent(appParam)}` : '/api/index';
 
     fetch(url)
       .then((res) => res.json())
@@ -38,8 +38,8 @@ export default function GraphPage() {
     if (loading || !cyRef.current) return;
 
     const params = new URLSearchParams();
-    const rootParam = searchParams.get('root');
-    if (rootParam) params.append('root', rootParam);
+    const appParam = searchParams.get('app');
+    if (appParam) params.append('app', appParam);
     if (filters.bounded_context) params.append('bounded_context', filters.bounded_context);
     if (filters.lifecycle) params.append('lifecycle', filters.lifecycle);
 

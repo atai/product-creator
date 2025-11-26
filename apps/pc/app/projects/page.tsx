@@ -249,6 +249,50 @@ export default function ProjectsManagementPage() {
     }
   };
 
+  const handleSyncFromCode = async (app: AppEntity) => {
+    if (!app.codeBasePath) {
+      setError('Code base path is not set for this application');
+      return;
+    }
+    try {
+      setStatusMessage('');
+      setError('');
+      const response = await fetch(`/api/apps/${app.id}/sync-code`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to sync from code');
+      }
+      setStatusMessage(`Synchronized objects from code for ${app.name}`);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sync from code');
+    }
+  };
+
+  const handleSyncFromSchema = async (app: AppEntity) => {
+    if (!app.dbSchemaPath) {
+      setError('DB schema path is not set for this application');
+      return;
+    }
+    try {
+      setStatusMessage('');
+      setError('');
+      const response = await fetch(`/api/apps/${app.id}/sync-schema`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to sync from schema');
+      }
+      setStatusMessage(`Synchronized objects from DB schema for ${app.name}`);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sync from schema');
+    }
+  };
+
   useEffect(() => {
     // Update app form projectId when selectedProjectId changes (only in create mode)
     if (appForm.mode === 'create' && selectedProjectId) {
@@ -336,8 +380,8 @@ export default function ProjectsManagementPage() {
       {loading ? (
         <div className="text-center text-gray-600 py-12">Loading projects and apps...</div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <section className="bg-white rounded-lg shadow p-6">
+        <div className="grid gap-6 lg:grid-cols-2 h-[calc(100vh-12rem)]">
+          <section className="bg-white rounded-lg shadow p-6 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Projects</h2>
@@ -352,7 +396,7 @@ export default function ProjectsManagementPage() {
               </button>
             </div>
 
-            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+            <div className="space-y-3 flex-1 overflow-y-auto pr-1">
               {projects.map((project) => {
                 const projectApps = apps.filter((app) => app.projectId === project.id);
                 const isSelected = selectedProjectId === project.id;
@@ -478,7 +522,7 @@ export default function ProjectsManagementPage() {
             )}
           </section>
 
-          <section className="bg-white rounded-lg shadow p-6">
+          <section className="bg-white rounded-lg shadow p-6 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Applications</h2>
@@ -504,7 +548,7 @@ export default function ProjectsManagementPage() {
               </button>
             </div>
 
-            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+            <div className="space-y-3 flex-1 overflow-y-auto pr-1">
               {appsByProject.map((app) => (
                 <div
                   key={app.id}
@@ -521,6 +565,24 @@ export default function ProjectsManagementPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleSyncFromCode(app)}
+                      disabled={!app.codeBasePath}
+                      title={app.codeBasePath ? 'Synchronize objects from code' : 'Code base path is not set'}
+                    >
+                      Sync from Code
+                    </button>
+                    <button
+                      type="button"
+                      className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleSyncFromSchema(app)}
+                      disabled={!app.dbSchemaPath}
+                      title={app.dbSchemaPath ? 'Synchronize objects from DB schema' : 'DB schema path is not set'}
+                    >
+                      Sync from Schema
+                    </button>
                     <button
                       type="button"
                       className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"

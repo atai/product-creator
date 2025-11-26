@@ -6,26 +6,30 @@ import { GraphNode, GraphEdge } from '@/lib/types';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const rootFilter = searchParams.get('root');
+    const appId = searchParams.get('app');
     const boundedContext = searchParams.get('bounded_context');
     const lifecycle = searchParams.get('lifecycle');
 
     const storage = await getStorage();
     let functions = storage.getAll();
 
-    // Apply root filter first
-    if (rootFilter) {
-      const functionsTable = storage['store'].getTable('functions');
-      const filteredIds = Object.entries(functionsTable)
-        .filter(([, data]: [string, unknown]) => {
-          const row = data as Record<string, unknown>;
-          const root = storage.getRootForFilePath(row.filePath as string);
-          return root === rootFilter;
-        })
-        .map(([id]) => id);
+    // Apply app filter first
+    if (appId) {
+      const app = storage.getAppById(appId);
+      if (app && app.directory) {
+        const directory = app.directory;
+        const functionsTable = storage['store'].getTable('functions');
+        const filteredIds = Object.entries(functionsTable)
+          .filter(([, data]: [string, unknown]) => {
+            const row = data as Record<string, unknown>;
+            const root = storage.getRootForFilePath(row.filePath as string);
+            return root === directory;
+          })
+          .map(([id]) => id);
 
-      functions = functions.filter(f => filteredIds.includes(f.id));
-      logger.info('Filtered graph functions by root', { rootFilter, count: functions.length });
+        functions = functions.filter(f => filteredIds.includes(f.id));
+        logger.info('Filtered graph functions by app', { appId, directory, count: functions.length });
+      }
     }
 
     // Apply other filters

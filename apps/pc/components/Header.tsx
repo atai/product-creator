@@ -4,18 +4,12 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-interface RootInfo {
-  path: string;
-  label: string;
-}
-
 export default function Header() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [roots, setRoots] = useState<RootInfo[]>([]);
-  const [selectedRoot, setSelectedRoot] = useState<string>('');
-  const [apps, setApps] = useState<{ id: string; name: string; directory: string }[]>([]);
+  const [apps, setApps] = useState<{ id: string; name: string; directory: string; projectId: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [selectedApp, setSelectedApp] = useState<string>('');
   const rootAwarePaths = new Set([
     '/',
@@ -27,14 +21,10 @@ export default function Header() {
     '/doc',
   ]);
 
-  const buildHrefWithParams = (path: string, rootValue?: string, appValue?: string) => {
-    const resolvedRoot = rootValue ?? selectedRoot;
+  const buildHrefWithParams = (path: string, appValue?: string) => {
     const resolvedApp = appValue ?? selectedApp;
     const targetPath = rootAwarePaths.has(path) ? path : '/';
     const params = new URLSearchParams();
-    if (resolvedRoot) {
-      params.set('root', resolvedRoot);
-    }
     if (resolvedApp) {
       params.set('app', resolvedApp);
     }
@@ -42,30 +32,10 @@ export default function Header() {
     return query ? `${targetPath}?${query}` : targetPath;
   };
 
-  const navigateWithRoot = (path: string, rootValue?: string, appValue?: string) => {
-    const href = buildHrefWithParams(path, rootValue, appValue);
+  const navigateWithApp = (path: string, appValue?: string) => {
+    const href = buildHrefWithParams(path, appValue);
     router.push(href);
   };
-
-  useEffect(() => {
-    // Load roots
-    fetch('/api/roots')
-      .then((res) => res.json())
-      .then((data) => {
-        const rootList = data.roots || [];
-        setRoots(rootList);
-
-        const rootParam = searchParams.get('root');
-        if (rootParam) {
-          setSelectedRoot(rootParam);
-        } else if (rootList.length > 0) {
-          setSelectedRoot(rootList[0].path);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load roots', err);
-      });
-  }, [searchParams]);
 
   useEffect(() => {
     const appParam = searchParams.get('app');
@@ -75,35 +45,41 @@ export default function Header() {
   }, [searchParams]);
 
   useEffect(() => {
-    const loadApps = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch('/api/apps');
-        const data = await response.json();
-        setApps(data.apps || []);
+        const [appsResponse, projectsResponse] = await Promise.all([
+          fetch('/api/apps'),
+          fetch('/api/projects'),
+        ]);
+        
+        if (!appsResponse.ok || !projectsResponse.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        
+        const appsData = await appsResponse.json();
+        const projectsData = await projectsResponse.json();
+        
+        setApps(appsData.apps || []);
+        setProjects(projectsData.projects || []);
       } catch (error) {
-        console.error('Failed to load apps', error);
+        console.error('Failed to load apps or projects', error);
       }
     };
-    loadApps();
+    loadData();
   }, []);
 
-  const filteredApps = useMemo(() => {
-    if (!selectedRoot) return apps;
-    return apps.filter(app => app.directory === selectedRoot);
-  }, [apps, selectedRoot]);
-
-  const handleRootChange = (newRoot: string) => {
-    setSelectedRoot(newRoot);
-    const dropApp = selectedApp ? '' : selectedApp;
-    navigateWithRoot(pathname, newRoot, dropApp);
-    if (selectedApp) {
-      setSelectedApp('');
-    }
-  };
+  // Create a map of project IDs to project names for quick lookup
+  const projectMap = useMemo(() => {
+    const map = new Map<string, string>();
+    projects.forEach((project) => {
+      map.set(project.id, project.name);
+    });
+    return map;
+  }, [projects]);
 
   const handleAppChange = (newApp: string) => {
     setSelectedApp(newApp);
-    const href = buildHrefWithParams(pathname, selectedRoot, newApp || undefined);
+    const href = buildHrefWithParams(pathname, newApp || undefined);
     router.push(href);
   };
 
@@ -156,7 +132,7 @@ export default function Header() {
                   href={buildHrefWithParams(item.path)}
                   onClick={(event) => {
                     event.preventDefault();
-                    navigateWithRoot(item.path);
+                    navigateWithApp(item.path);
                   }}
                   className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                     isActive(item.path)
@@ -188,7 +164,7 @@ export default function Header() {
                         key={item.path}
                         type="button"
                         onClick={() => {
-                          navigateWithRoot(item.path);
+                          navigateWithApp(item.path);
                           closePresentation();
                         }}
                         className={`w-full text-left px-4 py-2 text-sm ${
@@ -207,36 +183,22 @@ export default function Header() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {roots.length > 0 && (
-              <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Directory:</label>
-              <select
-                value={selectedRoot}
-                onChange={(e) => handleRootChange(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-900 text-sm"
-              >
-                {roots.map((root) => (
-                  <option key={root.path} value={root.path}>
-                    {root.label}
-                  </option>
-                ))}
-              </select>
-              </div>
-            )}
-
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">Apps:</label>
               <select
                 value={selectedApp}
                 onChange={(e) => handleAppChange(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-900 text-sm min-w-[160px]"
+                className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-900 text-sm min-w-[200px]"
               >
                 <option value="">All apps</option>
-                {filteredApps.map((app) => (
-                  <option key={app.id} value={app.id}>
-                    {app.name}
-                  </option>
-                ))}
+                {apps.map((app) => {
+                  const projectName = projectMap.get(app.projectId) || app.projectId;
+                  return (
+                    <option key={app.id} value={app.id}>
+                      {projectName}: {app.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

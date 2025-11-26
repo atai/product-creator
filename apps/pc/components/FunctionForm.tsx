@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { FunctionCard } from '@/lib/types';
 import * as yaml from 'js-yaml';
@@ -11,11 +11,6 @@ import FormHelpHint from './FormHelpHint';
 interface FunctionFormProps {
   existingCard?: FunctionCard | null;
   mode: 'new' | 'edit';
-}
-
-interface RootInfo {
-  path: string;
-  label: string;
 }
 
 type FunctionFormData = Omit<FunctionCard, 'tags' | 'emits' | 'consumes' | 'apis'> & {
@@ -30,11 +25,11 @@ type FunctionFormData = Omit<FunctionCard, 'tags' | 'emits' | 'consumes' | 'apis
 
 export default function FunctionForm({ existingCard, mode }: FunctionFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [preview, setPreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [roots, setRoots] = useState<RootInfo[]>([]);
-  const [selectedRoot, setSelectedRoot] = useState<string>('');
+  const [selectedApp, setSelectedApp] = useState<string>('');
 
   const {
     register,
@@ -75,41 +70,11 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
   });
 
   useEffect(() => {
-    // Load available roots
-    fetch('/api/roots')
-      .then((res) => res.json())
-      .then((data) => {
-        const rootList = data.roots || [];
-        setRoots(rootList);
-
-        if (existingCard) {
-          // For edit mode, get root from existing card
-          fetch(`/api/card-root?id=${existingCard.id}`)
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.root) {
-                setSelectedRoot(data.root);
-              } else if (rootList.length > 0) {
-                setSelectedRoot(rootList[0].path);
-              }
-            })
-            .catch(() => {
-              // Fallback to first root on error
-              if (rootList.length > 0) {
-                setSelectedRoot(rootList[0].path);
-              }
-            });
-        } else {
-          // Set first root as default for new cards
-          if (rootList.length > 0) {
-            setSelectedRoot(rootList[0].path);
-          }
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load roots', err);
-      });
-  }, [existingCard]);
+    const appParam = searchParams.get('app');
+    if (appParam) {
+      setSelectedApp(appParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (existingCard) {
@@ -159,9 +124,9 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
     setSaving(true);
     setError('');
 
-    // Validate root is selected
-    if (!selectedRoot) {
-      setError('Please select a target directory');
+    // Validate app is selected
+    if (!selectedApp) {
+      setError('Please select an app in the header');
       setSaving(false);
       return;
     }
@@ -186,7 +151,7 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: payload,
-          targetRoot: selectedRoot,
+          appId: selectedApp,
         }),
       });
 
@@ -225,25 +190,9 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
         <div className="grid grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded shadow">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {!isEditMode && roots.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-700">Target Directory *</label>
-                  <select
-                    value={selectedRoot}
-                    onChange={(e) => setSelectedRoot(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded bg-white text-gray-900"
-                    required
-                  >
-                    <option value="">Select Directory</option>
-                    {roots.map((root) => (
-                      <option key={root.path} value={root.path}>
-                        {root.label}
-                      </option>
-                    ))}
-                  </select>
-                  {!selectedRoot && (
-                    <p className="text-sm text-gray-500 mt-1">Choose where to save this function</p>
-                  )}
+              {!isEditMode && !selectedApp && (
+                <div className="rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                  Please select an app from the header to choose where the YAML file will be written.
                 </div>
               )}
 

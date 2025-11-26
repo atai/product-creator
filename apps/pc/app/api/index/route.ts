@@ -6,23 +6,27 @@ export async function GET(request: NextRequest) {
   try {
     const storage = await getStorage();
     const searchParams = request.nextUrl.searchParams;
-    const rootFilter = searchParams.get('root');
+    const appId = searchParams.get('app');
 
     let functions = storage.getAll();
 
-    // Filter by root if specified
-    if (rootFilter) {
-      const functionsTable = storage['store'].getTable('functions');
-      const filteredIds = Object.entries(functionsTable)
-        .filter(([, data]: [string, unknown]) => {
-          const row = data as Record<string, unknown>;
-          const root = storage.getRootForFilePath(row.filePath as string);
-          return root === rootFilter;
-        })
-        .map(([id]) => id);
+    // Filter by app if specified
+    if (appId) {
+      const app = storage.getAppById(appId);
+      if (app && app.directory) {
+        const directory = app.directory;
+        const functionsTable = storage['store'].getTable('functions');
+        const filteredIds = Object.entries(functionsTable)
+          .filter(([, data]: [string, unknown]) => {
+            const row = data as Record<string, unknown>;
+            const root = storage.getRootForFilePath(row.filePath as string);
+            return root === directory;
+          })
+          .map(([id]) => id);
 
-      functions = functions.filter(f => filteredIds.includes(f.id));
-      logger.info('Filtered functions by root', { rootFilter, count: functions.length });
+        functions = functions.filter(f => filteredIds.includes(f.id));
+        logger.info('Filtered functions by app', { appId, directory, count: functions.length });
+      }
     }
 
     return NextResponse.json(functions);

@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const data: FunctionCard = body.data || body;
-    const targetRoot: string | undefined = body.targetRoot;
+    const appId: string | undefined = body.appId;
 
     logger.info('Save request received', {
       id: data.id,
@@ -23,18 +23,30 @@ export async function POST(request: NextRequest) {
       entity: data.entity,
       action: data.action,
       name: data.name,
-      targetRoot,
+      appId,
       fullData: JSON.stringify(data)
     });
 
-    // Validate targetRoot is provided
-    if (!targetRoot) {
-      logger.warn('Target root not provided');
+    // Validate appId is provided and get directory from app
+    if (!appId) {
+      logger.warn('App ID not provided');
       return NextResponse.json(
-        { error: 'Target root directory is required' },
+        { error: 'App ID is required' },
         { status: 400 }
       );
     }
+
+    const storage = await getStorage();
+    const app = storage.getAppById(appId);
+    if (!app || !app.directory) {
+      logger.warn('App not found or directory missing', { appId });
+      return NextResponse.json(
+        { error: 'App not found or directory not configured' },
+        { status: 400 }
+      );
+    }
+
+    const targetRoot = app.directory;
 
     // Validate
     const valid = validate(data);
@@ -62,7 +74,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const storage = await getStorage();
     const existing = storage.getById(data.id);
 
     logger.info('Attempting save', {

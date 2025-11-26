@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
  * Eliminates duplication between workflows/streams list pages
  */
 interface UseEntityListOptions {
-  root?: string;
+  app?: string;
 }
 
 export function useEntityList<T>(
@@ -17,13 +17,13 @@ export function useEntityList<T>(
   const [filteredItems, setFilteredItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const { root } = options;
+  const { app } = options;
 
   const loadItems = useCallback(async () => {
     try {
       setLoading(true);
-      const endpointWithRoot = buildEndpoint(apiEndpoint, root);
-      const response = await fetch(endpointWithRoot);
+      const endpointWithApp = buildEndpoint(apiEndpoint, app);
+      const response = await fetch(endpointWithApp);
       if (!response.ok) throw new Error('Failed to fetch items');
       const data = await response.json();
       setItems(data);
@@ -33,7 +33,7 @@ export function useEntityList<T>(
     } finally {
       setLoading(false);
     }
-  }, [apiEndpoint, root]);
+  }, [apiEndpoint, app]);
 
   useEffect(() => {
     loadItems();
@@ -65,8 +65,8 @@ export function useEntityList<T>(
   };
 }
 
-const buildEndpoint = (apiEndpoint: string, root?: string) => {
-  if (!root) return apiEndpoint;
+const buildEndpoint = (apiEndpoint: string, app?: string) => {
+  if (!app) return apiEndpoint;
   const separator = apiEndpoint.includes('?') ? '&' : '?';
-  return `${apiEndpoint}${separator}root=${encodeURIComponent(root)}`;
+  return `${apiEndpoint}${separator}app=${encodeURIComponent(app)}`;
 };

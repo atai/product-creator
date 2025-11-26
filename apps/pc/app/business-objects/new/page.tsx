@@ -31,7 +31,7 @@ const defaultField = (): BusinessObjectField => ({
 export default function NewBusinessObjectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedRoot = searchParams.get('root') || '';
+  const selectedApp = searchParams.get('app') || '';
 
   const [form, setForm] = useState<BusinessObjectFormState>({
     id: '',
@@ -52,8 +52,8 @@ export default function NewBusinessObjectPage() {
     const loadObjects = async () => {
       try {
         setLoadingTypes(true);
-        const endpoint = selectedRoot
-          ? `/api/business-objects?root=${encodeURIComponent(selectedRoot)}`
+        const endpoint = selectedApp
+          ? `/api/business-objects?app=${encodeURIComponent(selectedApp)}`
           : '/api/business-objects';
         const response = await fetch(endpoint);
         if (response.ok) {
@@ -68,7 +68,7 @@ export default function NewBusinessObjectPage() {
     };
 
     loadObjects();
-  }, [selectedRoot]);
+  }, [selectedApp]);
 
   const typeOptions = useMemo(
     () => buildTypeOptions(existingObjects, form.id.trim() || undefined),
@@ -167,7 +167,7 @@ export default function NewBusinessObjectPage() {
     if (!form.id.trim()) return 'ID is required';
     if (!form.name.trim()) return 'Name is required';
     if (!form.owner.trim()) return 'Owner is required';
-    if (!selectedRoot) return 'Please select a directory in the header before creating objects.';
+    if (!selectedApp) return 'Please select an app in the header before creating objects.';
     if (!form.fields.length) return 'At least one field is required';
     if (form.fields.some((field) => !field.name.trim() || !field.type.trim())) {
       return 'Each field needs name and type';
@@ -225,7 +225,7 @@ export default function NewBusinessObjectPage() {
                   }))
                 : undefined,
           },
-          targetRoot: selectedRoot,
+          appId: selectedApp,
         }),
       });
 
@@ -234,8 +234,8 @@ export default function NewBusinessObjectPage() {
         throw new Error(result.error || 'Failed to save business object');
       }
 
-      const redirectUrl = selectedRoot
-        ? `/business-objects?root=${encodeURIComponent(selectedRoot)}`
+      const redirectUrl = selectedApp
+        ? `/business-objects?app=${encodeURIComponent(selectedApp)}`
         : '/business-objects';
       router.push(redirectUrl);
     } catch (err: unknown) {
@@ -285,8 +285,8 @@ export default function NewBusinessObjectPage() {
           <button
             type="button"
             onClick={() => {
-              const url = selectedRoot
-                ? `/business-objects?root=${encodeURIComponent(selectedRoot)}`
+              const url = selectedApp
+                ? `/business-objects?app=${encodeURIComponent(selectedApp)}`
                 : '/business-objects';
               router.push(url);
             }}
@@ -296,9 +296,9 @@ export default function NewBusinessObjectPage() {
           </button>
         </div>
 
-        {!selectedRoot && (
+        {!selectedApp && (
           <div className="mb-4 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-            Select a directory from the header to choose where the YAML file will be written.
+            Select an app from the header to choose where the YAML file will be written.
           </div>
         )}
 
@@ -380,7 +380,7 @@ export default function NewBusinessObjectPage() {
               />
             </div>
             <div className="text-sm text-gray-500">
-              Target directory: {selectedRoot ? <span className="font-semibold">{selectedRoot}</span> : 'Not selected'}
+              Target app: {selectedApp ? <span className="font-semibold">{selectedApp}</span> : 'Not selected'}
             </div>
           </section>
 
@@ -582,8 +582,8 @@ export default function NewBusinessObjectPage() {
             <button
               type="button"
               onClick={() => {
-                const url = selectedRoot
-                  ? `/business-objects?root=${encodeURIComponent(selectedRoot)}`
+                const url = selectedApp
+                  ? `/business-objects?app=${encodeURIComponent(selectedApp)}`
                   : '/business-objects';
                 router.push(url);
               }}
@@ -593,9 +593,9 @@ export default function NewBusinessObjectPage() {
             </button>
             <button
               type="submit"
-              disabled={saving || !selectedRoot}
+              disabled={saving || !selectedApp}
               className={`px-4 py-2 rounded-md text-sm font-medium text-white ${
-                saving || !selectedRoot
+                saving || !selectedApp
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700'
               }`}

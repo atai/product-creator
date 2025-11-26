@@ -8,7 +8,7 @@ import CatalogPageLayout from '@/components/CatalogPageLayout';
 
 export default function WorkflowsPage() {
   const searchParams = useSearchParams();
-  const selectedRoot = searchParams.get('root') || '';
+  const selectedApp = searchParams.get('app') || '';
 
   // Refactored to use generic hook - eliminates duplication
   const {
@@ -24,7 +24,7 @@ export default function WorkflowsPage() {
     workflow.name || '',
     ...workflow.steps,
     ],
-    { root: selectedRoot }
+    { app: selectedApp }
   );
 
   return (
@@ -34,7 +34,7 @@ export default function WorkflowsPage() {
       hintKey="workflows"
       actions={
         <Link
-          href={`/workflows/new${selectedRoot ? `?root=${encodeURIComponent(selectedRoot)}` : ''}`}
+          href={`/workflows/new${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
         >
           New Workflow
@@ -87,7 +87,7 @@ export default function WorkflowsPage() {
                 <tr key={workflow.workflow} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
-                      href={`/workflows/${workflow.workflow}${selectedRoot ? `?root=${encodeURIComponent(selectedRoot)}` : ''}`}
+                      href={`/workflows/${workflow.workflow}${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
                       className="text-blue-600 hover:text-blue-900 font-medium"
                     >
                       {workflow.workflow}
@@ -119,7 +119,7 @@ export default function WorkflowsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <Link
-                      href={`/workflows/${workflow.workflow}${selectedRoot ? `?root=${encodeURIComponent(selectedRoot)}` : ''}`}
+                      href={`/workflows/${workflow.workflow}${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
                       className="text-blue-600 hover:text-blue-900"
                     >
                       Edit

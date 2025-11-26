@@ -22,9 +22,9 @@ export default function MatrixPage() {
   const [actions, setActions] = useState<string[]>([]);
 
   useEffect(() => {
-    // Load functions with root filter from URL
-    const rootParam = searchParams.get('root');
-    const url = rootParam ? `/api/index?root=${encodeURIComponent(rootParam)}` : '/api/index';
+    // Load functions with app filter from URL
+    const appParam = searchParams.get('app');
+    const url = appParam ? `/api/index?app=${encodeURIComponent(appParam)}` : '/api/index';
 
     fetch(url)
       .then((res) => res.json())

@@ -24,8 +24,7 @@ export default function WorkflowEditPage() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [roots, setRoots] = useState<{ path: string; label: string }[]>([]);
-  const [selectedRoot, setSelectedRoot] = useState<string>('');
+  const [selectedApp, setSelectedApp] = useState<string>('');
 
   const {
     register,
@@ -71,28 +70,14 @@ export default function WorkflowEditPage() {
   });
 
   useEffect(() => {
-    loadRoots();
+    const appParam = searchParams.get('app');
+    if (appParam) {
+      setSelectedApp(appParam);
+    }
     if (!isNew) {
       loadWorkflow();
     }
-  }, [workflowId]);
-
-  const loadRoots = async () => {
-    try {
-      const response = await fetch('/api/roots');
-      const data = await response.json();
-      setRoots(data.roots || []);
-
-      const rootParam = searchParams.get('root');
-      if (rootParam) {
-        setSelectedRoot(rootParam);
-      } else if (data.roots && data.roots.length > 0) {
-        setSelectedRoot(data.roots[0].path);
-      }
-    } catch (error) {
-      console.error('Failed to load roots:', error);
-    }
-  };
+  }, [workflowId, searchParams]);
 
   const loadWorkflow = async () => {
     try {
@@ -144,7 +129,7 @@ export default function WorkflowEditPage() {
       const response = await fetch('/api/save-workflow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workflow, targetRoot: selectedRoot }),
+        body: JSON.stringify({ workflow, appId: selectedApp }),
       });
 
       if (!response.ok) {
@@ -152,7 +137,7 @@ export default function WorkflowEditPage() {
         throw new Error(result.error || 'Failed to save workflow');
       }
 
-      router.push(`/workflows${selectedRoot ? `?root=${encodeURIComponent(selectedRoot)}` : ''}`);
+      router.push(`/workflows${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`);
     } catch (error: unknown) {
       console.error('Error saving workflow:', error);
       setError((error as Error).message || 'Failed to save workflow');
@@ -219,25 +204,6 @@ export default function WorkflowEditPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
-              {roots.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Directory *
-                  </label>
-                  <select
-                    value={selectedRoot}
-                    onChange={(e) => setSelectedRoot(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  >
-                    {roots.map((root) => (
-                      <option key={root.path} value={root.path}>
-                        {root.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </div>
           </div>
 

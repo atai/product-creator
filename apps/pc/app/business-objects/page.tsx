@@ -8,7 +8,7 @@ import CatalogPageLayout from '@/components/CatalogPageLayout';
 
 export default function BusinessObjectsPage() {
   const searchParams = useSearchParams();
-  const selectedRoot = searchParams.get('root') || '';
+  const selectedApp = searchParams.get('app') || '';
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const {
@@ -28,7 +28,7 @@ export default function BusinessObjectsPage() {
       ...bo.fields.map((field) => field.name),
       ...((bo.tables || []).map((table) => table.name)),
     ],
-    { root: selectedRoot }
+    { app: selectedApp }
   );
 
   const toggleExpanded = (id: string) => {
@@ -43,11 +43,11 @@ export default function BusinessObjectsPage() {
       actions={
         <div className="flex flex-col gap-2 text-right">
           <div className="text-sm text-gray-500">
-            {selectedRoot ? `Directory: ${selectedRoot}` : 'All directories'}
+            {selectedApp ? `App: ${selectedApp}` : 'All apps'}
           </div>
           <a
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
-            href={`/business-objects/new${selectedRoot ? `?root=${encodeURIComponent(selectedRoot)}` : ''}`}
+            href={`/business-objects/new${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
           >
             New Object
           </a>
@@ -68,7 +68,7 @@ export default function BusinessObjectsPage() {
       ) : filteredItems.length === 0 ? (
         <div className="text-center py-12 text-gray-600">
           {businessObjects.length === 0
-            ? 'No business objects found in the selected directory.'
+            ? 'No business objects found in the selected app.'
             : 'No matches for your search.'}
         </div>
       ) : (
