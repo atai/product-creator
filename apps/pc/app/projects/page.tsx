@@ -52,6 +52,15 @@ export default function ProjectsManagementPage() {
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [showAppForm, setShowAppForm] = useState<boolean>(false);
   const [showProjectForm, setShowProjectForm] = useState<boolean>(false);
+  const [showSyncForm, setShowSyncForm] = useState<boolean>(false);
+  const [syncApp, setSyncApp] = useState<AppEntity | null>(null);
+  const [syncId, setSyncId] = useState<string | null>(null);
+  const [syncStage, setSyncStage] = useState<'loading' | 'matching' | 'executing' | 'completed' | 'error'>('loading');
+  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; message?: string }>({ current: 0, total: 1 });
+  const [matchedObjects, setMatchedObjects] = useState<any[]>([]);
+  const [syncActions, setSyncActions] = useState<Record<string, 'skip' | 'update' | 'create' | 'delete'>>({});
+  const [syncSearchQuery, setSyncSearchQuery] = useState<string>('');
+  const [syncStatusFilter, setSyncStatusFilter] = useState<string>('all');
 
   const resetProjectForm = (showForm: boolean = false) => {
     setProjectForm(defaultProjectForm);
@@ -277,20 +286,139 @@ export default function ProjectsManagementPage() {
       return;
     }
     try {
-      setStatusMessage('');
       setError('');
-      const response = await fetch(`/api/apps/${app.id}/sync-schema`, {
+      setSyncApp(app);
+      setShowSyncForm(true);
+      setSyncStage('loading');
+      setSyncProgress({ current: 0, total: 1, message: 'Starting synchronization...' });
+      setMatchedObjects([]);
+      setSyncActions({});
+
+      // Start sync
+      const response = await fetch(`/api/apps/${app.id}/sync-schema/start`, {
         method: 'POST',
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to sync from schema');
+        throw new Error(data.error || 'Failed to start sync');
       }
-      setStatusMessage(`Synchronized objects from DB schema for ${app.name}`);
-      await loadData();
+
+      setSyncId(data.syncId);
+      
+      // Start polling for status
+      pollSyncStatus(app.id, data.syncId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sync from schema');
+      setError(err instanceof Error ? err.message : 'Failed to start sync from schema');
+      setShowSyncForm(false);
     }
+  };
+
+  const pollSyncStatus = async (appId: string, currentSyncId: string) => {
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/apps/${appId}/sync-schema/status/${currentSyncId}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        
+        if (data.syncId !== currentSyncId) return; // Different sync session
+
+        setSyncStage(data.stage);
+        setSyncProgress({
+          current: data.progress.current || 0,
+          total: data.progress.total || 1,
+          message: data.progress.message,
+        });
+
+        if (data.matchedObjects) {
+          setMatchedObjects(data.matchedObjects);
+          // Initialize actions from matched objects
+          const actions: Record<string, 'skip' | 'update' | 'create' | 'delete'> = {};
+          data.matchedObjects.forEach((obj: any) => {
+            actions[obj.prismaModel.name] = obj.action;
+          });
+          // Merge with existing actions (user may have changed them)
+          setSyncActions((prev) => ({ ...prev, ...actions, ...data.actions }));
+        }
+
+        // Continue polling if not completed or error
+        if (data.stage === 'loading' || data.stage === 'matching' || data.stage === 'executing') {
+          setTimeout(poll, 500);
+        }
+      } catch (err) {
+        console.error('Failed to poll sync status', err);
+      }
+    };
+    poll();
+  };
+
+  const handleSyncActionChange = async (modelName: string, action: 'skip' | 'update' | 'create' | 'delete') => {
+    if (!syncApp || !syncId) return;
+    
+    setSyncActions((prev) => ({ ...prev, [modelName]: action }));
+
+    // Save action to server
+    try {
+      await fetch(`/api/apps/${syncApp.id}/sync-schema/actions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          syncId,
+          modelName,
+          action,
+        }),
+      });
+    } catch (err) {
+      console.error('Failed to save action', err);
+    }
+  };
+
+  const handleExecuteSync = async () => {
+    if (!syncApp || !syncId) return;
+
+    try {
+      setSyncStage('executing');
+      setError('');
+
+      // Save all actions
+      await fetch(`/api/apps/${syncApp.id}/sync-schema/actions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          syncId,
+          actions: syncActions,
+        }),
+      });
+
+      // Start execution
+      const response = await fetch(`/api/apps/${syncApp.id}/sync-schema/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ syncId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to execute sync');
+      }
+
+      // Start polling for execution progress
+      pollSyncStatus(syncApp.id, syncId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to execute sync');
+      setSyncStage('error');
+    }
+  };
+
+  const resetSyncForm = () => {
+    setShowSyncForm(false);
+    setSyncApp(null);
+    setSyncId(null);
+    setSyncStage('loading');
+    setSyncProgress({ current: 0, total: 1 });
+    setMatchedObjects([]);
+    setSyncActions({});
+    setSyncSearchQuery('');
+    setSyncStatusFilter('all');
   };
 
   useEffect(() => {
@@ -718,6 +846,221 @@ export default function ProjectsManagementPage() {
                 )}
               </div>
             </form>
+            )}
+
+            {showSyncForm && syncApp && (
+              <div className="mt-6 space-y-4 border-t border-gray-200 pt-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Sync From Schema: {syncApp.name}
+                  </h3>
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                    onClick={resetSyncForm}
+                  >
+                    Close
+                  </button>
+                </div>
+
+                {/* Stage 1: Loading */}
+                {syncStage === 'loading' && (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                        <span>Загрузка данных из схемы</span>
+                        <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+                        />
+                      </div>
+                      {syncProgress.message && (
+                        <p className="text-sm text-gray-500 mt-2">{syncProgress.message}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stage 2: Matching */}
+                {syncStage === 'matching' && (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                        <span>Сопоставление данных</span>
+                        <span>{matchedObjects.length} объектов</span>
+                      </div>
+                      {syncProgress.message && (
+                        <p className="text-sm text-gray-500 mb-4">{syncProgress.message}</p>
+                      )}
+                    </div>
+
+                    {/* Search and Filter */}
+                    <div className="flex gap-4">
+                      <input
+                        type="text"
+                        placeholder="Поиск по имени..."
+                        value={syncSearchQuery}
+                        onChange={(e) => setSyncSearchQuery(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                      />
+                      <select
+                        value={syncStatusFilter}
+                        onChange={(e) => setSyncStatusFilter(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded text-sm"
+                      >
+                        <option value="all">Все статусы</option>
+                        <option value="new">Новый</option>
+                        <option value="matched">Сопоставлен</option>
+                        <option value="needs_matching">Нужно сопоставить</option>
+                        <option value="delete">Удалить</option>
+                      </select>
+                    </div>
+
+                    {/* Matched Objects Table */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="max-h-96 overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-2 text-left font-semibold text-gray-700">Модель</th>
+                              <th className="px-4 py-2 text-left font-semibold text-gray-700">Бизнес-объект</th>
+                              <th className="px-4 py-2 text-left font-semibold text-gray-700">Статус</th>
+                              <th className="px-4 py-2 text-left font-semibold text-gray-700">Действие</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {matchedObjects
+                              .filter((obj) => {
+                                const matchesSearch = obj.prismaModel.name.toLowerCase().includes(syncSearchQuery.toLowerCase());
+                                const matchesFilter = syncStatusFilter === 'all' || obj.status === syncStatusFilter;
+                                return matchesSearch && matchesFilter;
+                              })
+                              .map((obj, idx) => (
+                                <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
+                                  <td className="px-4 py-2">{obj.prismaModel.name}</td>
+                                  <td className="px-4 py-2">
+                                    {obj.businessObject ? (
+                                      <span className="text-gray-700">{obj.businessObject.name}</span>
+                                    ) : (
+                                      <span className="text-gray-400">—</span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-2">
+                                    <span className={`px-2 py-1 rounded text-xs ${
+                                      obj.status === 'new' ? 'bg-green-100 text-green-800' :
+                                      obj.status === 'matched' ? 'bg-blue-100 text-blue-800' :
+                                      obj.status === 'needs_matching' ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-red-100 text-red-800'
+                                    }`}>
+                                      {obj.status === 'new' ? 'Новый' :
+                                       obj.status === 'matched' ? 'Сопоставлен' :
+                                       obj.status === 'needs_matching' ? 'Нужно сопоставить' :
+                                       'Удалить'}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2">
+                                    <select
+                                      value={syncActions[obj.prismaModel.name] || obj.action}
+                                      onChange={(e) => handleSyncActionChange(obj.prismaModel.name, e.target.value as any)}
+                                      className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                    >
+                                      <option value="skip">Пропустить</option>
+                                      <option value="update">Обновить</option>
+                                      <option value="create">Создать</option>
+                                      <option value="delete">Удалить</option>
+                                    </select>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        onClick={handleExecuteSync}
+                      >
+                        Выполнить синхронизацию
+                      </button>
+                      <button
+                        type="button"
+                        className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+                        onClick={resetSyncForm}
+                      >
+                        Отмена
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Stage 3: Executing */}
+                {syncStage === 'executing' && (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                        <span>Создание и удаление данных</span>
+                        <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+                        />
+                      </div>
+                      {syncProgress.message && (
+                        <p className="text-sm text-gray-500 mt-2">{syncProgress.message}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stage 4: Completed */}
+                {syncStage === 'completed' && (
+                  <div className="space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-sm text-green-800 font-semibold">Синхронизация завершена успешно</p>
+                      <p className="text-sm text-green-600 mt-1">{syncProgress.message}</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        onClick={() => {
+                          resetSyncForm();
+                          loadData();
+                        }}
+                      >
+                        Закрыть и обновить
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Stage 5: Error */}
+                {syncStage === 'error' && (
+                  <div className="space-y-4">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-sm text-red-800 font-semibold">Ошибка синхронизации</p>
+                      <p className="text-sm text-red-600 mt-1">{syncProgress.message || 'Неизвестная ошибка'}</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+                        onClick={resetSyncForm}
+                      >
+                        Закрыть
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </section>
         </div>

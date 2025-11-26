@@ -28,6 +28,10 @@
       "enum": ["draft", "active", "deprecated", "removed"],
       "description": "Lifecycle state"
     },
+    "active": {
+      "type": "boolean",
+      "description": "Whether the object is active. Inactive objects are not deleted but marked as inactive."
+    },
     "fields": {
       "type": "array",
       "minItems": 1,
@@ -37,10 +41,12 @@
         "properties": {
           "name": {
             "type": "string",
+            "minLength": 1,
             "description": "Field identifier"
           },
           "type": {
             "type": "string",
+            "minLength": 1,
             "description": "Field data type"
           },
           "description": {
@@ -73,10 +79,12 @@
               "required": ["name", "type"],
               "properties": {
                 "name": {
-                  "type": "string"
+                  "type": "string",
+                  "minLength": 1
                 },
                 "type": {
-                  "type": "string"
+                  "type": "string",
+                  "minLength": 1
                 },
                 "description": {
                   "type": "string"
