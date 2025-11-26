@@ -18,6 +18,7 @@ export default function Header() {
     '/workflows',
     '/streams',
     '/business-objects',
+    '/functions',
     '/doc',
   ]);
 
@@ -122,9 +123,9 @@ export default function Header() {
 
             <nav className="flex flex-wrap gap-1 relative">
               {[
-                { label: 'Functions', path: '/' },
                 { label: 'Objects', path: '/business-objects' },
                 { label: 'Workflows', path: '/workflows' },
+                { label: 'Functions', path: '/functions' },
                 { label: 'Streams', path: '/streams' },
               ].map((item) => (
                 <Link
