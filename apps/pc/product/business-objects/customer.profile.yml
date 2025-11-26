@@ -1,0 +1,44 @@
+id: customer.profile
+name: Customer Profile
+description: Canonical customer attributes powering personalization and retention analytics.
+owner: Growth Intelligence
+lifecycle: active
+fields:
+  - name: customer_id
+    type: uuid
+    description: Stable identifier for a customer across products.
+  - name: lifecycle_stage
+    type: enum<prospect|active|churned>
+    description: Commercial relationship stage derived from usage and billing.
+  - name: favorite_channel
+    type: string
+    description: Preferred engagement channel inferred from campaign interactions.
+  - name: risk_score
+    type: decimal
+    description: Predictive churn score between 0-1.
+tables:
+  - name: dim_customer
+    description: Curated, slowly changing customer dimension.
+    columns:
+      - name: customer_id
+        type: uuid
+        description: Primary key.
+      - name: lifecycle_stage
+        type: string
+        description: Denormalized copy of lifecycle stage.
+      - name: favorite_channel
+        type: string
+      - name: risk_score
+        type: decimal(5,4)
+  - name: mart_customer_engagement
+    description: Daily materialized view for engagement KPIs mapped to the business object fields.
+    columns:
+      - name: customer_id
+        type: uuid
+      - name: activity_score
+        type: integer
+        description: Aggregated action count mapped to object risk model.
+
+
+
+

@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Business Object Schema",
+  "required": ["id", "name", "owner", "lifecycle", "fields"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+$",
+      "description": "Unique identifier for the business object"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human readable name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Summary of the business object"
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Team or domain responsible for this object"
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": ["draft", "active", "deprecated", "removed"],
+      "description": "Lifecycle state"
+    },
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Field identifier"
+          },
+          "type": {
+            "type": "string",
+            "description": "Field data type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Field purpose or behavior"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Atomic fields for the object"
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Table name or storage target"
+          },
+          "description": {
+            "type": "string",
+            "description": "How the table is used"
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "description": "Physical columns defined in the table"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Physical representations supporting this object"
+    }
+  },
+  "additionalProperties": false
+}
+
+
+
+

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Stream, StreamStage } from '@/lib/types';
+import FormHelpHint from '@/components/FormHelpHint';
 
 type StreamFormData = {
   stream: string;
@@ -185,10 +186,11 @@ export default function StreamEditPage() {
     <div className="min-h-screen bg-gray-50">
 
       <div className="max-w-7xl mx-auto px-8 py-8">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center">
           <h1 className="text-3xl font-bold text-gray-900">
             {isNew ? 'New Stream' : 'Edit Stream'}
           </h1>
+          <FormHelpHint hintKey="streamDetail" />
         </div>
 
         {error && (

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { FunctionCard } from '@/lib/types';
 import FunctionForm from '@/components/FunctionForm';
 import Link from 'next/link';
+import FormHelpHint from '@/components/FormHelpHint';
 
 export default function FunctionDetail() {
   const params = useParams();
@@ -63,7 +64,10 @@ export default function FunctionDetail() {
           <div className="max-w-7xl mx-auto">
             <div className="mb-8 flex justify-between items-center">
               <div>
-                <h1 className="text-2xl font-bold">{functionCard.name}</h1>
+                <div className="flex items-center">
+                  <h1 className="text-2xl font-bold">{functionCard.name}</h1>
+                  <FormHelpHint hintKey="functionDetail" />
+                </div>
                 <p className="text-gray-600 mt-1">{functionCard.id}</p>
               </div>
               <button

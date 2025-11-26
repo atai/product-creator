@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Application",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "projectId", "directory"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]{5}-[a-z0-9]{3}$",
+      "description": "Application identifier (<projectId>-<suffix>)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]{5}$"
+    },
+    "directory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "codeBasePath": {
+      "type": "string"
+    },
+    "dbSchemaPath": {
+      "type": "string"
+    }
+  }
+}
+
+
+
+

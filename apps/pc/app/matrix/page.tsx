@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { FunctionCard } from '@/lib/types';
+import FormHelpHint from '@/components/FormHelpHint';
 
 interface MatrixCell {
   exists: boolean;
@@ -100,7 +101,10 @@ export default function MatrixPage() {
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-4">Function Matrix</h1>
+          <div className="mb-4 flex items-center">
+            <h1 className="text-2xl font-bold">Function Matrix</h1>
+            <FormHelpHint hintKey="matrix" />
+          </div>
           <p className="text-gray-600 mb-4">
             Verb/Noun matrix showing which actions are implemented for each entity
           </p>

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Fuse from 'fuse.js';
 import { FunctionCard } from '@/lib/types';
+import CatalogPageLayout from '@/components/CatalogPageLayout';
 
 export default function Home() {
   const searchParams = useSearchParams();
@@ -75,10 +76,20 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-7xl mx-auto">
-
-        <div className="mb-6 space-y-4">
+    <CatalogPageLayout
+      title="Functions"
+      description="Каталог бизнес-функций: ищите по имени, тегам и API, фильтруйте по контексту, владельцу и статусу, чтобы быстро найти нужный сценарий."
+      hintKey="home"
+      actions={
+        <Link
+          href="/new"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium whitespace-nowrap"
+        >
+          New Function
+        </Link>
+      }
+      search={
+        <div className="space-y-4">
           <input
             type="text"
             placeholder="Search functions..."
@@ -87,94 +98,85 @@ export default function Home() {
             className="w-full px-4 py-2 border border-gray-300 rounded bg-white text-gray-900 placeholder-gray-500"
           />
 
-          <div className="flex gap-4 justify-between items-center">
-            <div className="flex gap-4">
-              <select
-                value={filters.bounded_context}
-                onChange={(e) => setFilters({ ...filters, bounded_context: e.target.value })}
-                className="px-4 py-2 border border-gray-300 rounded bg-white text-gray-900"
-              >
-                <option value="">All Contexts</option>
-                {uniqueContexts.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.owner}
-                onChange={(e) => setFilters({ ...filters, owner: e.target.value })}
-                className="px-4 py-2 border border-gray-300 rounded bg-white text-gray-900"
-              >
-                <option value="">All Owners</option>
-                {uniqueOwners.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.lifecycle}
-                onChange={(e) => setFilters({ ...filters, lifecycle: e.target.value })}
-                className="px-4 py-2 border border-gray-300 rounded bg-white text-gray-900"
-              >
-                <option value="">All Lifecycles</option>
-                {lifecycles.map((l) => (
-                  <option key={l} value={l}>
-                    {l}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <Link
-              href="/new"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium whitespace-nowrap"
+          <div className="flex flex-wrap gap-4">
+            <select
+              value={filters.bounded_context}
+              onChange={(e) => setFilters({ ...filters, bounded_context: e.target.value })}
+              className="px-4 py-2 border border-gray-300 rounded bg-white text-gray-900"
             >
-              New Function
-            </Link>
+              <option value="">All Contexts</option>
+              {uniqueContexts.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filters.owner}
+              onChange={(e) => setFilters({ ...filters, owner: e.target.value })}
+              className="px-4 py-2 border border-gray-300 rounded bg-white text-gray-900"
+            >
+              <option value="">All Owners</option>
+              {uniqueOwners.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filters.lifecycle}
+              onChange={(e) => setFilters({ ...filters, lifecycle: e.target.value })}
+              className="px-4 py-2 border border-gray-300 rounded bg-white text-gray-900"
+            >
+              <option value="">All Lifecycles</option>
+              {lifecycles.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-
-        <div className="bg-white rounded shadow">
-          {filteredFunctions.length === 0 ? (
-            <p className="p-8 text-gray-600">No functions found</p>
-          ) : (
-            <div className="divide-y">
-              {filteredFunctions.map((func) => (
-                <Link
-                  key={func.id}
-                  href={`/f/${func.id}`}
-                  className="block p-4 hover:bg-gray-50"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold text-lg">{func.name}</h3>
-                      <p className="text-sm text-gray-600">{func.id}</p>
-                      <p className="text-sm text-gray-500 mt-1">{func.description}</p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 text-xs rounded ${
-                        func.lifecycle === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : func.lifecycle === 'draft'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : func.lifecycle === 'deprecated'
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {func.lifecycle}
-                    </span>
+      }
+    >
+      <div className="bg-white rounded shadow">
+        {filteredFunctions.length === 0 ? (
+          <p className="p-8 text-gray-600">No functions found</p>
+        ) : (
+          <div className="divide-y">
+            {filteredFunctions.map((func) => (
+              <Link
+                key={func.id}
+                href={`/f/${func.id}`}
+                className="block p-4 hover:bg-gray-50"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-lg">{func.name}</h3>
+                    <p className="text-sm text-gray-600">{func.id}</p>
+                    <p className="text-sm text-gray-500 mt-1">{func.description}</p>
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+                  <span
+                    className={`px-2 py-1 text-xs rounded ${
+                      func.lifecycle === 'active'
+                        ? 'bg-green-100 text-green-800'
+                        : func.lifecycle === 'draft'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : func.lifecycle === 'deprecated'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {func.lifecycle}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </CatalogPageLayout>
   );
 }

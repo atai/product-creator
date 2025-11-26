@@ -6,6 +6,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { FunctionCard } from '@/lib/types';
 import * as yaml from 'js-yaml';
 import Link from 'next/link';
+import FormHelpHint from './FormHelpHint';
 
 interface FunctionFormProps {
   existingCard?: FunctionCard | null;
@@ -207,10 +208,11 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
+        <div className="mb-8 flex items-center">
           <h1 className="text-2xl font-bold">
             {isEditMode ? `Edit: ${existingCard?.name}` : 'New Function'}
           </h1>
+          <FormHelpHint hintKey="functionForm" />
           {isEditMode && existingCard && (
             <p className="text-gray-600 mt-2">{existingCard.id}</p>
           )}

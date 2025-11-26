@@ -34,7 +34,7 @@ export function useEntityForm<T>(options: UseEntityFormOptions<T>) {
 
       const data: T = await response.json();
       return options.onTransformLoad ? options.onTransformLoad(data) : data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Error loading ${options.entityName}:`, error);
       setError(`Failed to load ${options.entityName}`);
       throw error;
@@ -73,9 +73,10 @@ export function useEntityForm<T>(options: UseEntityFormOptions<T>) {
         : options.listRoute;
 
       router.push(listUrl);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Error saving ${options.entityName}:`, error);
-      setError(error.message || `Failed to save ${options.entityName}`);
+      const message = error instanceof Error ? error.message : `Failed to save ${options.entityName}`;
+      setError(message);
       throw error;
     } finally {
       setSaving(false);

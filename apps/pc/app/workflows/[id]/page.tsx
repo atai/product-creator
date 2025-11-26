@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Workflow } from '@/lib/types';
+import FormHelpHint from '@/components/FormHelpHint';
 
 type WorkflowFormData = {
   workflow: string;
@@ -174,10 +175,11 @@ export default function WorkflowEditPage() {
     <div className="min-h-screen bg-gray-50">
 
       <div className="max-w-4xl mx-auto px-8 py-8">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center">
           <h1 className="text-3xl font-bold text-gray-900">
             {isNew ? 'New Workflow' : 'Edit Workflow'}
           </h1>
+          <FormHelpHint hintKey="workflowDetail" />
         </div>
 
         {error && (
