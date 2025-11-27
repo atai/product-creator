@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStorage } from '@/lib/storage';
+import {
+  getRootObjects,
+  getChildObjects,
+  groupObjectsByParent,
+} from '@/lib/businessObjects/hierarchy';
+
+export interface BusinessObjectWithChildren extends BusinessObject {
+  childObjects?: BusinessObject[];
+}
 
 export async function GET(request: NextRequest) {
   try {
     const storage = await getStorage();
     const appId = request.nextUrl.searchParams.get('app');
+    const hierarchical = request.nextUrl.searchParams.get('hierarchical') === 'true';
 
     let businessObjects = storage.getAllBusinessObjects();
 
@@ -25,6 +35,22 @@ export async function GET(request: NextRequest) {
 
         businessObjects = businessObjects.filter((bo) => filteredIds.includes(bo.id));
       }
+    }
+
+    // If hierarchical mode is requested, group objects by parent
+    if (hierarchical) {
+      const rootObjects = getRootObjects(businessObjects);
+      const grouped = groupObjectsByParent(businessObjects);
+
+      const result: BusinessObjectWithChildren[] = rootObjects.map((obj) => {
+        const children = grouped.get(obj.id) || [];
+        return {
+          ...obj,
+          childObjects: children.length > 0 ? children : undefined,
+        };
+      });
+
+      return NextResponse.json(result);
     }
 
     return NextResponse.json(businessObjects);

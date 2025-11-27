@@ -1,38 +1,79 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BusinessObject } from '@/lib/types';
-import { useEntityList } from '@/hooks/useEntityList';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 
 export default function BusinessObjectsPage() {
   const searchParams = useSearchParams();
   const selectedApp = searchParams.get('app') || '';
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expandedChildren, setExpandedChildren] = useState<Record<string, boolean>>({});
+  const [businessObjects, setBusinessObjects] = useState<BusinessObject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const {
-    items: businessObjects,
-    filteredItems,
-    loading,
-    searchQuery,
-    setSearchQuery,
-  } = useEntityList<BusinessObject>(
-    '/api/business-objects',
-    (bo) => [
-      bo.id,
-      bo.name,
-      bo.owner,
-      bo.lifecycle,
-      bo.description || '',
-      ...bo.fields.map((field) => field.name),
-      ...((bo.tables || []).map((table) => table.name)),
-    ],
-    { app: selectedApp }
-  );
+  useEffect(() => {
+    const loadObjects = async () => {
+      try {
+        setLoading(true);
+        const endpoint = selectedApp
+          ? `/api/business-objects?app=${encodeURIComponent(selectedApp)}&hierarchical=true`
+          : '/api/business-objects?hierarchical=true';
+        const response = await fetch(endpoint);
+        if (response.ok) {
+          const data = await response.json();
+          setBusinessObjects(data);
+        }
+      } catch (error) {
+        console.error('Failed to load business objects', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadObjects();
+  }, [selectedApp]);
+
+  // Filter items based on search query, including child objects in search
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return businessObjects;
+    }
+
+    const query = searchQuery.toLowerCase();
+    return businessObjects.filter((bo) => {
+      // Search in parent object
+      const parentMatches =
+        bo.id.toLowerCase().includes(query) ||
+        bo.name.toLowerCase().includes(query) ||
+        bo.owner.toLowerCase().includes(query) ||
+        bo.lifecycle.toLowerCase().includes(query) ||
+        (bo.description || '').toLowerCase().includes(query) ||
+        bo.fields.some((f) => f.name.toLowerCase().includes(query)) ||
+        (bo.tables || []).some((t) => t.name.toLowerCase().includes(query));
+
+      // Search in child objects
+      const childMatches = bo.childObjects?.some(
+        (child) =>
+          child.id.toLowerCase().includes(query) ||
+          child.name.toLowerCase().includes(query) ||
+          (child.description || '').toLowerCase().includes(query) ||
+          child.fields.some((f) => f.name.toLowerCase().includes(query))
+      );
+
+      return parentMatches || childMatches;
+    });
+  }, [businessObjects, searchQuery]);
 
   const toggleExpanded = (id: string) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleChildExpanded = (parentId: string, childId: string) => {
+    const key = `${parentId}:${childId}`;
+    setExpandedChildren((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   return (
@@ -99,11 +140,17 @@ export default function BusinessObjectsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredItems.map((bo) => {
                 const isExpanded = expanded[bo.id];
+                const hasChildren = bo.childObjects && bo.childObjects.length > 0;
                 return (
                   <Fragment key={bo.id}>
                     <tr className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         {bo.id}
+                        {hasChildren && (
+                          <span className="ml-2 text-xs text-gray-500">
+                            ({bo.childObjects!.length} table part{bo.childObjects!.length !== 1 ? 's' : ''})
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">{bo.name}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{bo.owner}</td>
@@ -224,6 +271,114 @@ export default function BusinessObjectsPage() {
                               )}
                             </section>
                           </div>
+
+                          {/* Table Parts Section */}
+                          {hasChildren && (
+                            <section className="mt-6 pt-6 border-t border-gray-300">
+                              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                                Table Parts ({bo.childObjects!.length})
+                              </h3>
+                              <div className="space-y-3">
+                                {bo.childObjects!.map((child) => {
+                                  const childExpanded = expandedChildren[`${bo.id}:${child.id}`];
+                                  return (
+                                    <div
+                                      key={child.id}
+                                      className="border border-blue-200 rounded-lg bg-blue-50"
+                                    >
+                                      <div className="p-3">
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-xs text-blue-600 font-medium">
+                                              Table Part
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                              {child.id}
+                                            </span>
+                                            <span className="text-sm text-gray-700">
+                                              {child.name}
+                                            </span>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            onClick={() => toggleChildExpanded(bo.id, child.id)}
+                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                          >
+                                            {childExpanded ? 'Hide' : 'Show'} details
+                                          </button>
+                                        </div>
+                                        {child.description && (
+                                          <p className="mt-1 text-sm text-gray-600">
+                                            {child.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {childExpanded && (
+                                        <div className="px-3 pb-3 border-t border-blue-200 pt-3">
+                                          <div className="grid gap-4 md:grid-cols-2">
+                                            <div>
+                                              <h4 className="text-xs font-semibold text-gray-700 mb-2">
+                                                Fields ({child.fields.length})
+                                              </h4>
+                                              {child.fields.length > 0 ? (
+                                                <div className="space-y-1">
+                                                  {child.fields.map((field) => (
+                                                    <div
+                                                      key={field.name}
+                                                      className="text-xs bg-white border border-gray-200 rounded p-2"
+                                                    >
+                                                      <span className="font-medium text-gray-900">
+                                                        {field.name}
+                                                      </span>
+                                                      <span className="ml-2 text-gray-500">
+                                                        {field.type}
+                                                      </span>
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              ) : (
+                                                <div className="text-xs text-gray-500">
+                                                  No fields
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div>
+                                              <h4 className="text-xs font-semibold text-gray-700 mb-2">
+                                                Tables ({child.tables?.length || 0})
+                                              </h4>
+                                              {child.tables && child.tables.length > 0 ? (
+                                                <div className="space-y-2">
+                                                  {child.tables.map((table) => (
+                                                    <div
+                                                      key={table.name}
+                                                      className="text-xs bg-white border border-gray-200 rounded p-2"
+                                                    >
+                                                      <div className="font-medium text-gray-900">
+                                                        {table.name}
+                                                      </div>
+                                                      {table.description && (
+                                                        <div className="text-gray-600 mt-1">
+                                                          {table.description}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              ) : (
+                                                <div className="text-xs text-gray-500">
+                                                  No tables
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </section>
+                          )}
                         </td>
                       </tr>
                     )}

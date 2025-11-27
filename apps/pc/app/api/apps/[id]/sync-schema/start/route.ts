@@ -11,8 +11,9 @@ export async function POST(
   _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
   try {
-    const { id } = await params;
+    id = (await params).id;
     const storage = await getStorage();
     const app = storage.getAppById(id);
 
@@ -95,9 +96,39 @@ export async function POST(
       message: 'Synchronization started',
     });
   } catch (error) {
-    logger.error('Failed to start sync', { error });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    logger.error('Failed to start sync', { error: errorMessage, stack: errorStack, appId: id });
+    
+    // Try to create a sync state with error if we have an app ID
+    if (id) {
+      try {
+        const syncId = createSyncState(id, '', '');
+        updateSyncState(syncId, {
+          stage: 'error',
+          progress: {
+            stage: 'error',
+            current: 0,
+            total: 1,
+            error: errorMessage,
+          },
+        });
+        return NextResponse.json({
+          success: false,
+          error: errorMessage,
+          syncId,
+        }, { status: 500 });
+      } catch (e) {
+        logger.error('Failed to create error sync state', { error: e });
+      }
+    }
+    
+    // If we can't create sync state, just return error
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: errorMessage || 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? errorStack : undefined,
+      },
       { status: 500 }
     );
   }

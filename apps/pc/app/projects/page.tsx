@@ -56,8 +56,10 @@ export default function ProjectsManagementPage() {
   const [syncApp, setSyncApp] = useState<AppEntity | null>(null);
   const [syncId, setSyncId] = useState<string | null>(null);
   const [syncStage, setSyncStage] = useState<'loading' | 'matching' | 'executing' | 'completed' | 'error'>('loading');
-  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; message?: string }>({ current: 0, total: 1 });
+  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; message?: string; error?: string }>({ current: 0, total: 1 });
   const [matchedObjects, setMatchedObjects] = useState<any[]>([]);
+  const [matchedFunctions, setMatchedFunctions] = useState<any[]>([]);
+  const [syncType, setSyncType] = useState<'schema' | 'code'>('schema');
   const [syncActions, setSyncActions] = useState<Record<string, 'skip' | 'update' | 'create' | 'delete'>>({});
   const [syncSearchQuery, setSyncSearchQuery] = useState<string>('');
   const [syncStatusFilter, setSyncStatusFilter] = useState<string>('all');
@@ -264,19 +266,46 @@ export default function ProjectsManagementPage() {
       return;
     }
     try {
-      setStatusMessage('');
       setError('');
-      const response = await fetch(`/api/apps/${app.id}/sync-code`, {
+      setSyncApp(app);
+      setSyncType('code');
+      setShowSyncForm(true);
+      setSyncStage('loading');
+      setSyncProgress({ current: 0, total: 1, message: 'Starting synchronization...' });
+      setMatchedFunctions([]);
+      setMatchedObjects([]);
+      setSyncActions({});
+
+      // Start sync
+      const response = await fetch(`/api/apps/${app.id}/sync-code/start`, {
         method: 'POST',
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to sync from code');
+      
+      let data: any;
+      try {
+        data = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to start sync: ${response.statusText || 'Unknown error'}`);
       }
-      setStatusMessage(`Synchronized objects from code for ${app.name}`);
-      await loadData();
+      
+      if (!response.ok) {
+        throw new Error(data.error || data.message || `Failed to start sync: ${response.statusText}`);
+      }
+
+      setSyncId(data.syncId);
+      
+      // Start polling for status
+      pollCodeSyncStatus(app.id, data.syncId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sync from code');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to start sync from code';
+      setError(errorMessage);
+      setSyncStage('error');
+      setSyncProgress({
+        current: 0,
+        total: 1,
+        message: 'Не удалось запустить синхронизацию',
+        error: errorMessage,
+      });
     }
   };
 
@@ -288,19 +317,29 @@ export default function ProjectsManagementPage() {
     try {
       setError('');
       setSyncApp(app);
+      setSyncType('schema');
       setShowSyncForm(true);
       setSyncStage('loading');
       setSyncProgress({ current: 0, total: 1, message: 'Starting synchronization...' });
       setMatchedObjects([]);
+      setMatchedFunctions([]);
       setSyncActions({});
 
       // Start sync
       const response = await fetch(`/api/apps/${app.id}/sync-schema/start`, {
         method: 'POST',
       });
-      const data = await response.json();
+      
+      let data: any;
+      try {
+        data = await response.json();
+      } catch (e) {
+        // If response is not JSON, use the status text
+        throw new Error(`Failed to start sync: ${response.statusText || 'Unknown error'}`);
+      }
+      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to start sync');
+        throw new Error(data.error || data.message || `Failed to start sync: ${response.statusText}`);
       }
 
       setSyncId(data.syncId);
@@ -308,9 +347,110 @@ export default function ProjectsManagementPage() {
       // Start polling for status
       pollSyncStatus(app.id, data.syncId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start sync from schema');
-      setShowSyncForm(false);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to start sync from schema';
+      setError(errorMessage);
+      setSyncStage('error');
+      setSyncProgress({
+        current: 0,
+        total: 1,
+        message: 'Не удалось запустить синхронизацию',
+        error: errorMessage,
+      });
+      // Don't hide the form - show error instead
     }
+  };
+
+  const pollCodeSyncStatus = async (appId: string, currentSyncId: string) => {
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/apps/${appId}/sync-code/status/${currentSyncId}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            // State was lost - show error to user
+            console.error('Sync state not found (404)', { syncId: currentSyncId });
+            setSyncStage('error');
+            setError('Состояние синхронизации потеряно. Попробуйте запустить синхронизацию заново.');
+            setSyncProgress({
+              current: 0,
+              total: 1,
+              message: 'Ошибка: состояние синхронизации не найдено',
+              error: 'Состояние синхронизации потеряно',
+            });
+            return; // Stop polling
+          }
+          console.error('Failed to fetch sync status', response.status, response.statusText);
+          // Retry after delay for other errors
+          setTimeout(poll, 1000);
+          return;
+        }
+        const data = await response.json();
+        
+        if (data.syncId !== currentSyncId) {
+          console.log('Different sync session, stopping poll');
+          return; // Different sync session
+        }
+
+        // Only switch to 'matching' stage if we have matched functions
+        const hasMatchedFunctions = data.matchedFunctions && Array.isArray(data.matchedFunctions) && data.matchedFunctions.length > 0;
+        const effectiveStage = data.stage === 'matching' && !hasMatchedFunctions ? 'loading' : data.stage;
+
+        console.log('Sync status update', {
+          stage: effectiveStage,
+          progress: data.progress,
+          hasMatchedFunctions,
+          matchedCount: data.matchedFunctions?.length || 0,
+        });
+
+        setSyncStage(effectiveStage);
+        setSyncProgress({
+          current: data.progress.current || 0,
+          total: data.progress.total || 1,
+          message: data.progress.message,
+          error: data.progress.error,
+        });
+
+        if (data.matchedFunctions && Array.isArray(data.matchedFunctions)) {
+          setMatchedFunctions(data.matchedFunctions);
+          // Initialize actions from matched functions
+          const actions: Record<string, 'skip' | 'update' | 'create' | 'delete'> = {};
+          data.matchedFunctions.forEach((func: any) => {
+            const key = `${func.exportedFunction.relativePath}:${func.exportedFunction.name}`;
+            actions[key] = func.action;
+          });
+          // Merge with existing actions (user may have changed them)
+          setSyncActions((prev) => ({ ...prev, ...actions, ...data.actions }));
+        }
+
+        // Continue polling if not completed or error
+        if (effectiveStage === 'loading' || (effectiveStage === 'matching' && hasMatchedFunctions) || effectiveStage === 'executing') {
+          setTimeout(poll, 500);
+        } else if (effectiveStage === 'error') {
+          const errorMsg = data.progress.error || data.progress.message || 'Произошла ошибка при синхронизации';
+          setError(errorMsg);
+          setSyncProgress((prev) => ({
+            ...prev,
+            error: errorMsg,
+            message: `Ошибка: ${errorMsg}`,
+          }));
+        } else if (effectiveStage === 'completed') {
+          // Stop polling on completion
+          console.log('Sync completed successfully');
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to poll sync status';
+        console.error('Failed to poll code sync status', err);
+        setSyncStage('error');
+        setSyncProgress({
+          current: 0,
+          total: 1,
+          message: 'Не удалось получить статус синхронизации',
+          error: errorMessage,
+        });
+        setError(errorMessage);
+      }
+    };
+    // Start polling immediately
+    poll();
   };
 
   const pollSyncStatus = async (appId: string, currentSyncId: string) => {
@@ -327,6 +467,7 @@ export default function ProjectsManagementPage() {
           current: data.progress.current || 0,
           total: data.progress.total || 1,
           message: data.progress.message,
+          error: data.progress.error,
         });
 
         if (data.matchedObjects) {
@@ -343,27 +484,41 @@ export default function ProjectsManagementPage() {
         // Continue polling if not completed or error
         if (data.stage === 'loading' || data.stage === 'matching' || data.stage === 'executing') {
           setTimeout(poll, 500);
+        } else if (data.stage === 'error') {
+          // Stop polling on error, error is already displayed
+          setError(data.progress.error || 'Произошла ошибка при синхронизации');
         }
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to poll sync status';
         console.error('Failed to poll sync status', err);
+        setSyncStage('error');
+        setSyncProgress({
+          current: 0,
+          total: 1,
+          message: 'Не удалось получить статус синхронизации',
+          error: errorMessage,
+        });
+        setError(errorMessage);
       }
     };
     poll();
   };
 
-  const handleSyncActionChange = async (modelName: string, action: 'skip' | 'update' | 'create' | 'delete') => {
+  const handleSyncActionChange = async (key: string, action: 'skip' | 'update' | 'create' | 'delete') => {
     if (!syncApp || !syncId) return;
     
-    setSyncActions((prev) => ({ ...prev, [modelName]: action }));
+    setSyncActions((prev) => ({ ...prev, [key]: action }));
 
     // Save action to server
     try {
-      await fetch(`/api/apps/${syncApp.id}/sync-schema/actions`, {
+      const endpoint = syncType === 'code' ? 'sync-code' : 'sync-schema';
+      const paramName = syncType === 'code' ? 'functionKey' : 'modelName';
+      await fetch(`/api/apps/${syncApp.id}/${endpoint}/actions`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           syncId,
-          modelName,
+          [paramName]: key,
           action,
         }),
       });
@@ -379,8 +534,10 @@ export default function ProjectsManagementPage() {
       setSyncStage('executing');
       setError('');
 
+      const endpoint = syncType === 'code' ? 'sync-code' : 'sync-schema';
+
       // Save all actions
-      await fetch(`/api/apps/${syncApp.id}/sync-schema/actions`, {
+      await fetch(`/api/apps/${syncApp.id}/${endpoint}/actions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -390,7 +547,7 @@ export default function ProjectsManagementPage() {
       });
 
       // Start execution
-      const response = await fetch(`/api/apps/${syncApp.id}/sync-schema/execute`, {
+      const response = await fetch(`/api/apps/${syncApp.id}/${endpoint}/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ syncId }),
@@ -402,7 +559,11 @@ export default function ProjectsManagementPage() {
       }
 
       // Start polling for execution progress
-      pollSyncStatus(syncApp.id, syncId);
+      if (syncType === 'code') {
+        pollCodeSyncStatus(syncApp.id, syncId);
+      } else {
+        pollSyncStatus(syncApp.id, syncId);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to execute sync');
       setSyncStage('error');
@@ -416,6 +577,8 @@ export default function ProjectsManagementPage() {
     setSyncStage('loading');
     setSyncProgress({ current: 0, total: 1 });
     setMatchedObjects([]);
+    setMatchedFunctions([]);
+    setSyncType('schema');
     setSyncActions({});
     setSyncSearchQuery('');
     setSyncStatusFilter('all');
@@ -852,7 +1015,7 @@ export default function ProjectsManagementPage() {
               <div className="mt-6 space-y-4 border-t border-gray-200 pt-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    Sync From Schema: {syncApp.name}
+                    Sync From {syncType === 'code' ? 'Code' : 'Schema'}: {syncApp.name}
                   </h3>
                   <button
                     type="button"
@@ -868,7 +1031,7 @@ export default function ProjectsManagementPage() {
                   <div className="space-y-4">
                     <div>
                       <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                        <span>Загрузка данных из схемы</span>
+                        <span>Загрузка данных {syncType === 'code' ? 'из кода' : 'из схемы'}</span>
                         <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
@@ -890,7 +1053,7 @@ export default function ProjectsManagementPage() {
                     <div>
                       <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
                         <span>Сопоставление данных</span>
-                        <span>{matchedObjects.length} объектов</span>
+                        <span>{syncType === 'code' ? matchedFunctions.length : matchedObjects.length} {syncType === 'code' ? 'функций' : 'объектов'}</span>
                       </div>
                       {syncProgress.message && (
                         <p className="text-sm text-gray-500 mb-4">{syncProgress.message}</p>
@@ -919,66 +1082,144 @@ export default function ProjectsManagementPage() {
                       </select>
                     </div>
 
-                    {/* Matched Objects Table */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="max-h-96 overflow-y-auto">
-                        <table className="w-full text-sm">
+                    {/* Matched Objects/Functions Table */}
+                    {((syncType === 'code' && matchedFunctions.length > 0) || (syncType === 'schema' && matchedObjects.length > 0)) && (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="max-h-96 overflow-y-auto">
+                          <table className="w-full text-sm">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-4 py-2 text-left font-semibold text-gray-700">Модель</th>
-                              <th className="px-4 py-2 text-left font-semibold text-gray-700">Бизнес-объект</th>
-                              <th className="px-4 py-2 text-left font-semibold text-gray-700">Статус</th>
-                              <th className="px-4 py-2 text-left font-semibold text-gray-700">Действие</th>
+                              {syncType === 'code' ? (
+                                <>
+                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Функция</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Файл</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Функция в YAML</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Статус</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Действие</th>
+                                </>
+                              ) : (
+                                <>
+                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Модель</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Бизнес-объект</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Статус</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Действие</th>
+                                </>
+                              )}
                             </tr>
                           </thead>
                           <tbody>
-                            {matchedObjects
-                              .filter((obj) => {
-                                const matchesSearch = obj.prismaModel.name.toLowerCase().includes(syncSearchQuery.toLowerCase());
-                                const matchesFilter = syncStatusFilter === 'all' || obj.status === syncStatusFilter;
-                                return matchesSearch && matchesFilter;
-                              })
-                              .map((obj, idx) => (
-                                <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
-                                  <td className="px-4 py-2">{obj.prismaModel.name}</td>
-                                  <td className="px-4 py-2">
-                                    {obj.businessObject ? (
-                                      <span className="text-gray-700">{obj.businessObject.name}</span>
-                                    ) : (
-                                      <span className="text-gray-400">—</span>
-                                    )}
-                                  </td>
-                                  <td className="px-4 py-2">
-                                    <span className={`px-2 py-1 rounded text-xs ${
-                                      obj.status === 'new' ? 'bg-green-100 text-green-800' :
-                                      obj.status === 'matched' ? 'bg-blue-100 text-blue-800' :
-                                      obj.status === 'needs_matching' ? 'bg-yellow-100 text-yellow-800' :
-                                      'bg-red-100 text-red-800'
-                                    }`}>
-                                      {obj.status === 'new' ? 'Новый' :
-                                       obj.status === 'matched' ? 'Сопоставлен' :
-                                       obj.status === 'needs_matching' ? 'Нужно сопоставить' :
-                                       'Удалить'}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-2">
-                                    <select
-                                      value={syncActions[obj.prismaModel.name] || obj.action}
-                                      onChange={(e) => handleSyncActionChange(obj.prismaModel.name, e.target.value as any)}
-                                      className="px-2 py-1 border border-gray-300 rounded text-xs"
-                                    >
-                                      <option value="skip">Пропустить</option>
-                                      <option value="update">Обновить</option>
-                                      <option value="create">Создать</option>
-                                      <option value="delete">Удалить</option>
-                                    </select>
-                                  </td>
-                                </tr>
-                              ))}
+                            {syncType === 'code' ? (
+                              matchedFunctions
+                                .filter((func) => {
+                                  const matchesSearch = func.exportedFunction.name.toLowerCase().includes(syncSearchQuery.toLowerCase()) ||
+                                    func.exportedFunction.relativePath.toLowerCase().includes(syncSearchQuery.toLowerCase());
+                                  const matchesFilter = syncStatusFilter === 'all' || func.status === syncStatusFilter;
+                                  return matchesSearch && matchesFilter;
+                                })
+                                .map((func, idx) => {
+                                  const key = `${func.exportedFunction.relativePath}:${func.exportedFunction.name}`;
+                                  return (
+                                    <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
+                                      <td className="px-4 py-2">
+                                        <div className="font-medium">{func.exportedFunction.name}</div>
+                                        {func.exportedFunction.isAsync && (
+                                          <span className="text-xs text-gray-500">async</span>
+                                        )}
+                                      </td>
+                                      <td className="px-4 py-2">
+                                        <span className="text-xs font-mono text-gray-600">{func.exportedFunction.relativePath}</span>
+                                      </td>
+                                      <td className="px-4 py-2">
+                                        {func.functionCard ? (
+                                          <span className="text-gray-700">{func.functionCard.name} ({func.functionCard.id})</span>
+                                        ) : (
+                                          <span className="text-gray-400">—</span>
+                                        )}
+                                      </td>
+                                      <td className="px-4 py-2">
+                                        <span className={`px-2 py-1 rounded text-xs ${
+                                          func.status === 'new' ? 'bg-green-100 text-green-800' :
+                                          func.status === 'matched' ? 'bg-blue-100 text-blue-800' :
+                                          func.status === 'needs_matching' ? 'bg-yellow-100 text-yellow-800' :
+                                          'bg-red-100 text-red-800'
+                                        }`}>
+                                          {func.status === 'new' ? 'Новый' :
+                                           func.status === 'matched' ? 'Сопоставлен' :
+                                           func.status === 'needs_matching' ? 'Нужно сопоставить' :
+                                           'Удалить'}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-2">
+                                        <select
+                                          value={syncActions[key] || func.action}
+                                          onChange={(e) => handleSyncActionChange(key, e.target.value as any)}
+                                          className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                        >
+                                          <option value="skip">Пропустить</option>
+                                          <option value="update">Обновить</option>
+                                          <option value="create">Создать</option>
+                                          <option value="delete">Удалить</option>
+                                        </select>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                            ) : (
+                              matchedObjects
+                                .filter((obj) => {
+                                  const matchesSearch = obj.prismaModel.name.toLowerCase().includes(syncSearchQuery.toLowerCase());
+                                  const matchesFilter = syncStatusFilter === 'all' || obj.status === syncStatusFilter;
+                                  return matchesSearch && matchesFilter;
+                                })
+                                .map((obj, idx) => (
+                                  <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
+                                    <td className="px-4 py-2">{obj.prismaModel.name}</td>
+                                    <td className="px-4 py-2">
+                                      {obj.businessObject ? (
+                                        <span className="text-gray-700">{obj.businessObject.name}</span>
+                                      ) : (
+                                        <span className="text-gray-400">—</span>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      <span className={`px-2 py-1 rounded text-xs ${
+                                        obj.status === 'new' ? 'bg-green-100 text-green-800' :
+                                        obj.status === 'matched' ? 'bg-blue-100 text-blue-800' :
+                                        obj.status === 'needs_matching' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-red-100 text-red-800'
+                                      }`}>
+                                        {obj.status === 'new' ? 'Новый' :
+                                         obj.status === 'matched' ? 'Сопоставлен' :
+                                         obj.status === 'needs_matching' ? 'Нужно сопоставить' :
+                                         'Удалить'}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      <select
+                                        value={syncActions[obj.prismaModel.name] || obj.action}
+                                        onChange={(e) => handleSyncActionChange(obj.prismaModel.name, e.target.value as any)}
+                                        className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                      >
+                                        <option value="skip">Пропустить</option>
+                                        <option value="update">Обновить</option>
+                                        <option value="create">Создать</option>
+                                        <option value="delete">Удалить</option>
+                                      </select>
+                                    </td>
+                                  </tr>
+                                ))
+                            )}
                           </tbody>
                         </table>
                       </div>
                     </div>
+                    )}
+
+                    {((syncType === 'code' && matchedFunctions.length === 0) || (syncType === 'schema' && matchedObjects.length === 0)) && syncStage === 'matching' && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>Ожидание данных...</p>
+                      </div>
+                    )}
 
                     <div className="flex gap-3">
                       <button
@@ -1047,7 +1288,17 @@ export default function ProjectsManagementPage() {
                   <div className="space-y-4">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                       <p className="text-sm text-red-800 font-semibold">Ошибка синхронизации</p>
-                      <p className="text-sm text-red-600 mt-1">{syncProgress.message || 'Неизвестная ошибка'}</p>
+                      <p className="text-sm text-red-600 mt-1">
+                        {syncProgress.error || syncProgress.message || 'Произошла ошибка при синхронизации'}
+                      </p>
+                      {(syncProgress.error || syncProgress.message) && (
+                        <details className="mt-2">
+                          <summary className="text-sm text-red-700 cursor-pointer hover:text-red-800">Подробности ошибки</summary>
+                          <pre className="mt-2 text-xs text-red-600 bg-red-100 p-2 rounded overflow-auto max-h-48 whitespace-pre-wrap break-words">
+                            {syncProgress.error || syncProgress.message}
+                          </pre>
+                        </details>
+                      )}
                     </div>
                     <div className="flex gap-3">
                       <button

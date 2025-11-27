@@ -2,6 +2,7 @@ packages:
   - apps/*
 
 onlyBuiltDependencies:
+  - '@prisma/engines'
   - '@tailwindcss/oxide'
   - sharp
   - unrs-resolver

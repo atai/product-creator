@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/internals": "^6.0.0",
     "ajv": "^8.17.1",
     "chokidar": "^4.0.3",
     "cytoscape": "^3.33.1",
@@ -19,6 +20,7 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.65.0",
     "tinybase": "^6.7.1",
+    "typescript": "^5",
     "winston": "^3.18.3"
   },
   "devDependencies": {

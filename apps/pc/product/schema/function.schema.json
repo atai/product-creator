@@ -85,6 +85,18 @@
     "description": {
       "type": "string",
       "description": "Detailed description of the function"
+    },
+    "calls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "IDs of functions called by this function"
+    },
+    "source_file": {
+      "type": "string",
+      "description": "Relative path to the source file containing this function"
     }
   }
 }
