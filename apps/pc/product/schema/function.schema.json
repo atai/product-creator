@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Function Card Schema",
+  "required": ["id", "name", "bounded_context", "entity", "action", "owner", "lifecycle"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+$",
+      "description": "Unique identifier in format: <context>.<entity>.<action>"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name of the function"
+    },
+    "bounded_context": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Bounded context this function belongs to"
+    },
+    "entity": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Entity this function operates on"
+    },
+    "action": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Action performed by this function"
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Team or individual responsible for this function"
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": ["draft", "active", "deprecated", "removed"],
+      "description": "Current lifecycle stage"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Tags for categorization"
+    },
+    "emits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Events emitted by this function"
+    },
+    "consumes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Events consumed by this function"
+    },
+    "apis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["method", "path"],
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "default": [],
+      "description": "API endpoints exposed by this function"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the function"
+    },
+    "calls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "IDs of functions called by this function"
+    },
+    "source_file": {
+      "type": "string",
+      "description": "Relative path to the source file containing this function"
+    }
+  }
+}

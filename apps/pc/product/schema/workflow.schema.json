@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Workflow",
+  "description": "A workflow is a sequence of functions that work together",
+  "type": "object",
+  "required": ["workflow", "steps"],
+  "properties": {
+    "workflow": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
+      "description": "Workflow identifier in format: context.name"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Function ID"
+      },
+      "minItems": 1,
+      "description": "Ordered list of function IDs"
+    },
+    "emits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Events emitted by this workflow"
+    },
+    "compensations": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Map of function ID to compensation function ID"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "product-creator-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter pc dev",
+    "build": "pnpm --filter pc build",
+    "start": "pnpm --filter pc start",
+    "lint": "pnpm --filter pc lint"
+  }
+}

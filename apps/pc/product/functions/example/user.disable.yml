@@ -1,0 +1,12 @@
+lifecycle: draft
+tags: []
+emits: []
+consumes: []
+apis: []
+bounded_context: example
+entity: user
+action: disable
+name: Disabling user account
+owner: admin
+description: ''
+id: example.user.disable
