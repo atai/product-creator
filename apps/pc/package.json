@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@prisma/internals": "^6.0.0",
-    "ajv": "^8.17.1",
+    "ajv": "^8.18.0",
     "chokidar": "^4.0.3",
     "cytoscape": "^3.33.1",
     "fuse.js": "^7.1.0",
