@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { FunctionCard } from '@/lib/types';
+import { FunctionCard } from '@pc/core/types';
 import * as yaml from 'js-yaml';
 import Link from 'next/link';
 import FormHelpHint from './FormHelpHint';

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Stream } from '@/lib/types';
+import { Stream } from '@pc/core/types';
 import { useEntityList } from '@/hooks/useEntityList';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 

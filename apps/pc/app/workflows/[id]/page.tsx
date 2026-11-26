@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { Workflow } from '@/lib/types';
+import { Workflow } from '@pc/core/types';
 import FormHelpHint from '@/components/FormHelpHint';
 
 type WorkflowFormData = {

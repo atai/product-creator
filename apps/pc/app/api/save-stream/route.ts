@@ -1,8 +1,2 @@
-import { createSaveHandler } from '@/lib/api/handlers';
-import { Stream } from '@/lib/types';
-
-// Refactored using generic handler
-export const POST = createSaveHandler<Stream>(
-  (storage, data, targetRoot) => storage.saveStream(data, targetRoot),
-  'stream'
-);
+// Implementation lives in packages/core (shared with apps/desktop)
+export { POST } from '@pc/core/http/routes/save-stream/route';

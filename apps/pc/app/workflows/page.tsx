@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Workflow } from '@/lib/types';
+import { Workflow } from '@pc/core/types';
 import { useEntityList } from '@/hooks/useEntityList';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 

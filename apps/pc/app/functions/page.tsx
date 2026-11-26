@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Fuse from 'fuse.js';
-import { FunctionCard } from '@/lib/types';
+import { FunctionCard } from '@pc/core/types';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 
 export default function FunctionsPage() {

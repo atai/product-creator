@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { FunctionCard } from '@/lib/types';
+import { FunctionCard } from '@pc/core/types';
 import FormHelpHint from '@/components/FormHelpHint';
 
 interface MatrixCell {

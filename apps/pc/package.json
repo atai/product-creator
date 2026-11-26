@@ -6,9 +6,11 @@
     "dev": "next dev -p 3067 --turbopack",
     "build": "next build --turbopack",
     "start": "next start -p 3067",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@pc/core": "workspace:*",
     "@prisma/internals": "^6.0.0",
     "ajv": "^8.17.1",
     "chokidar": "^4.0.3",

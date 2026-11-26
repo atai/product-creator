@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState, FormEvent, useRef } from 'react';
-import { Project, AppEntity } from '@/lib/types';
+import { Project, AppEntity } from '@pc/core/types';
 import { useRoots } from '@/hooks/useRoots';
-import type { MatchedObject, SyncAction as SyncActionType } from '@/lib/sync/matcher';
-import type { MatchedFunction } from '@/lib/sync/codeMatcher';
+import type { MatchedObject, SyncAction as SyncActionType } from '@pc/core/sync/matcher';
+import type { MatchedFunction } from '@pc/core/sync/codeMatcher';
 
 /** Shape of the JSON returned by the sync start/status endpoints */
 interface SyncApiResponse {

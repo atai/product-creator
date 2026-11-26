@@ -1,0 +1,27 @@
+{
+  "name": "@pc/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Product Creator domain core: feature catalog storage, validation, code/Prisma/OpenAPI sync, project model and HTTP-style handlers",
+  "type": "module",
+  "exports": {
+    "./schema/*": "./schema/*",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/internals": "^6.0.0",
+    "ajv": "^8.17.1",
+    "chokidar": "^4.0.3",
+    "js-yaml": "^4.3.2",
+    "tinybase": "^6.7.1",
+    "typescript": "^5",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20"
+  }
+}

@@ -7,8 +7,8 @@ import {
   BusinessObjectField,
   BusinessObjectTable,
   BusinessObjectTableColumn,
-} from '@/lib/types';
-import { BASE_FIELD_TYPES, buildTypeOptions } from '@/lib/businessObjectTypeCatalog';
+} from '@pc/core/types';
+import { BASE_FIELD_TYPES, buildTypeOptions } from '@pc/core/businessObjectTypeCatalog';
 
 type BusinessObjectFormState = {
   id: string;

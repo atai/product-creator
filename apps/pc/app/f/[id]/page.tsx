@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { FunctionCard } from '@/lib/types';
+import { FunctionCard } from '@pc/core/types';
 import FunctionForm from '@/components/FunctionForm';
 import Link from 'next/link';
 import FormHelpHint from '@/components/FormHelpHint';

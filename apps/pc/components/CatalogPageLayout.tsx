@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import FormHelpHint from './FormHelpHint';
-import { HelpHintKey } from '@/lib/helpTexts';
+import { HelpHintKey } from '@pc/core/helpTexts';
 
 interface CatalogPageLayoutProps {
   title: string;

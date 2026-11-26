@@ -2,7 +2,7 @@
 
 import { Fragment, useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BusinessObject } from '@/lib/types';
+import { BusinessObject } from '@pc/core/types';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 
 export default function BusinessObjectsPage() {

@@ -3,6 +3,8 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Domain logic and API handlers live in the shared workspace package (TypeScript sources)
+  transpilePackages: ['@pc/core'],
   turbopack: {
     root: path.resolve(__dirname, "../.."),
   },

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { getHelpHint, HelpHintKey, HelpHint } from '@/lib/helpTexts';
+import { getHelpHint, HelpHintKey, HelpHint } from '@pc/core/helpTexts';
 
 interface FormHelpHintProps {
   hintKey?: HelpHintKey;

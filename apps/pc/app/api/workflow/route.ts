@@ -1,7 +1,2 @@
-import { createGetByIdHandler } from '@/lib/api/handlers';
-
-// Refactored using generic handler
-export const GET = createGetByIdHandler(
-  (storage, id) => storage.getWorkflowById(id),
-  'Workflow'
-);
+// Implementation lives in packages/core (shared with apps/desktop)
+export { GET } from '@pc/core/http/routes/workflow/route';

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { Stream, StreamStage } from '@/lib/types';
+import { Stream, StreamStage } from '@pc/core/types';
 import FormHelpHint from '@/components/FormHelpHint';
 
 type StreamFormData = {
