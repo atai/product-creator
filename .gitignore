@@ -128,7 +128,7 @@ gradle-app.setting
 /frontend/package-lock.json
 
 # Next.js / Node.js
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 /.next/
