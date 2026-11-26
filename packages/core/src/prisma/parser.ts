@@ -6,6 +6,16 @@ import { PrismaModel, PrismaField, PrismaAttribute } from './types';
 // Using a variable prevents Turbopack from trying to resolve the module path at build time
 const PRISMA_INTERNALS_MODULE = '@prisma/internals';
 
+/**
+ * Prisma 7 schemas keep the connection URL in prisma.config.ts, but the Prisma 6 parser
+ * requires `url` in the datasource block. Only the data model is needed here, so add a placeholder.
+ */
+export function withDatasourceUrl(schema: string): string {
+  return schema.replace(/datasource\s+\w+\s*\{[^}]*\}/g, (block) =>
+    /\burl\s*=/.test(block) ? block : block.replace(/\}\s*$/, '  url = env("PC_PRISMA_PLACEHOLDER_URL")\n}')
+  );
+}
+
 /** Subset of the Prisma DMMF field used by this converter */
 interface DmmfField {
   name: string;
@@ -34,10 +44,14 @@ interface DmmfModel {
 export async function parsePrismaSchema(schemaPath: string): Promise<PrismaModel[]> {
   // Dynamic import using a variable path to prevent Turbopack from statically analyzing
   // This ensures WASM files are only loaded at runtime, not during module evaluation
-  const { getDMMF } = await import(PRISMA_INTERNALS_MODULE);
+  type GetDMMF = (options: { datamodel: string }) => Promise<{ datamodel?: { models?: DmmfModel[] } }>;
+  const internals = (await import(PRISMA_INTERNALS_MODULE)) as { getDMMF?: GetDMMF; default?: { getDMMF?: GetDMMF } };
+  // ESM import of the CommonJS package exposes it either directly or under `default` (Electron main bundle)
+  const getDMMF = internals.getDMMF ?? internals.default?.getDMMF;
+  if (!getDMMF) throw new Error('@prisma/internals: getDMMF not found');
   
   const schemaContent = fs.readFileSync(schemaPath, 'utf-8');
-  const dmmf = await getDMMF({ datamodel: schemaContent });
+  const dmmf = await getDMMF({ datamodel: withDatasourceUrl(schemaContent) });
   
   if (!dmmf || !dmmf.datamodel || !dmmf.datamodel.models) {
     throw new Error('Failed to parse Prisma schema: invalid DMMF structure');
