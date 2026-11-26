@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import type {
+  ComponentGenerateInfo,
   ComponentInput,
   ComponentModel,
   EditResult,
+  GenerateStatus,
   ProjectModel,
   WorkspaceInfo,
   WorkspaceProjectInfo,
@@ -86,6 +88,152 @@ export default function WorkspacePage() {
   );
 }
 
+/** OpenAPI generation state of a project: file status, run status and live logs of its components */
+function useOpenApi(root: string, project: ProjectModel | undefined) {
+  const [infos, setInfos] = useState<Record<string, ComponentGenerateInfo>>({});
+  const [logs, setLogs] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [allowed, setAllowed] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!project) return;
+    try {
+      const list = await window.pc.openapi.info(root);
+      setInfos(Object.fromEntries(list.map((i) => [i.componentId, i])));
+      setLogs((prev) => ({ ...Object.fromEntries(list.map((i) => [i.componentId, i.status.log])), ...prev }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [root, project]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  useEffect(
+    () =>
+      window.pc.onOpenApiEvent((event) => {
+        if (event.type === 'log') {
+          setLogs((prev) => ({ ...prev, [event.componentId]: ((prev[event.componentId] ?? '') + event.chunk).slice(-50_000) }));
+          return;
+        }
+        const { status } = event;
+        setInfos((prev) => (prev[status.componentId] ? { ...prev, [status.componentId]: { ...prev[status.componentId], status } } : prev));
+        if (status.state === 'running') setLogs((prev) => ({ ...prev, [status.componentId]: '' }));
+        else void refresh();
+      }),
+    [refresh]
+  );
+
+  /** Commands come from the project's files: confirm once per session before running them */
+  const confirmRun = (commands: string[]): boolean => {
+    if (allowed) return true;
+    const ok = window.confirm(
+      `Run the OpenAPI generate command${commands.length > 1 ? 's' : ''} configured in this project?\n\n${commands.join('\n')}\n\nThe commands run on your machine in the project folder.`
+    );
+    if (ok) setAllowed(true);
+    return ok;
+  };
+
+  const generate = async (c: ComponentModel) => {
+    if (!c.openapiGenerate || !confirmRun([c.openapiGenerate.command])) return;
+    setError(null);
+    try {
+      await window.pc.openapi.generate(root, c.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+  const generateAll = async () => {
+    const commands = project?.components.flatMap((c) => (c.openapiGenerate ? [c.openapiGenerate.command] : [])) ?? [];
+    if (!confirmRun(Array.from(new Set(commands)))) return;
+    setError(null);
+    try {
+      await window.pc.openapi.generateAll(root);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+  return { infos, logs, error, generate, generateAll, cancel: (id: string) => window.pc.openapi.cancel(id) };
+}
+
+const STATE_STYLE: Record<GenerateStatus['state'], string> = {
+  idle: 'text-gray-400',
+  running: 'text-blue-600',
+  ok: 'text-green-700',
+  failed: 'text-red-600',
+  timeout: 'text-red-600',
+  cancelled: 'text-amber-600',
+};
+
+function formatTime(ms: number | undefined): string {
+  return ms ? new Date(ms).toLocaleString() : '—';
+}
+
+interface OpenApiCellProps {
+  component: ComponentModel;
+  info: ComponentGenerateInfo | undefined;
+  log: string;
+  onGenerate: () => void;
+  onCancel: () => void;
+}
+
+function OpenApiCell({ component: c, info, log, onGenerate, onCancel }: OpenApiCellProps) {
+  const [showLog, setShowLog] = useState(false);
+  const status = info?.status;
+  const running = status?.state === 'running';
+  return (
+    <div data-testid="openapi-cell">
+      {c.dbSchemaPath && <div className="font-mono text-xs">{c.dbSchemaPath}</div>}
+      {info?.specs.map((sp) => (
+        <div key={sp.path} className="text-xs">
+          <span className="font-mono">{sp.path}</span>{' '}
+          <span className="text-gray-500">
+            {sp.exists ? `${sp.operations ?? '?'} ops · ${formatTime(sp.mtime)}` : 'not generated'}
+          </span>
+        </div>
+      ))}
+      {!info && c.openapi?.map((sp) => <div key={sp} className="font-mono text-xs">{sp}</div>)}
+      {!c.dbSchemaPath && !c.openapi?.length && '—'}
+      {c.openapiGenerate && (
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          {running ? (
+            <button className="text-xs text-red-600 hover:underline" onClick={onCancel}>
+              Cancel
+            </button>
+          ) : (
+            <button
+              className="text-xs rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50"
+              title={c.openapiGenerate.command}
+              onClick={onGenerate}
+            >
+              Generate OpenAPI
+            </button>
+          )}
+          {status && status.state !== 'idle' && (
+            <span className={`text-xs ${STATE_STYLE[status.state]}`} title={status.message}>
+              {status.state}
+              {status.state === 'ok' && status.operations !== undefined ? ` · ${status.operations} ops` : ''}
+              {status.finishedAt ? ` · ${formatTime(status.finishedAt)}` : ''}
+            </span>
+          )}
+          {(log || status?.log) && (
+            <button className="text-xs text-blue-600 hover:underline" onClick={() => setShowLog(!showLog)}>
+              {showLog ? 'Hide log' : 'Log'}
+            </button>
+          )}
+        </div>
+      )}
+      {status?.message && status.state !== 'ok' && status.state !== 'running' && <div className="text-xs text-red-600">{status.message}</div>}
+      {showLog && (
+        <pre className="mt-1 max-h-48 overflow-auto rounded bg-gray-900 p-2 text-[11px] leading-snug text-gray-100 whitespace-pre-wrap">
+          {log || status?.log}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 interface CardProps {
   info: WorkspaceProjectInfo;
   editing: Editing;
@@ -96,6 +244,8 @@ interface CardProps {
 function ProjectCard({ info, editing, setEditing, run }: CardProps) {
   const { root, project } = info;
   const editingHere = editing?.root === root ? editing : null;
+  const openapi = useOpenApi(root, project);
+  const hasGenerators = Boolean(project?.components.some((c) => c.openapiGenerate));
   const newComponent = (kind: ComponentModel['kind']): ComponentInput => ({ kind, slug: '', name: '', path: '' });
 
   return (
@@ -119,6 +269,7 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
             </div>
           )}
           {info.error && <div className="text-sm text-red-600 mt-2">{info.error}</div>}
+          {openapi.error && <div className="text-sm text-red-600 mt-2">{openapi.error}</div>}
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
           {project && (
@@ -132,6 +283,11 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
               <button className={btn} onClick={() => setEditing({ root, type: 'component', component: newComponent('library') })}>
                 Add library
               </button>
+              {hasGenerators && (
+                <button className={btn} title="Run the configured OpenAPI generate command of every component" onClick={() => void openapi.generateAll()}>
+                  Generate all OpenAPI
+                </button>
+              )}
               <button
                 className={btn}
                 title="Add components found in the folder layout (pnpm workspace) that are not in the project yet"
@@ -203,10 +359,14 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
                           </td>
                           <td className="py-1 pr-3 font-mono text-xs">{c.path}</td>
                           <td className="py-1 pr-3 font-mono text-xs">{c.catalog}</td>
-                          <td className="py-1 pr-3 font-mono text-xs">
-                            {c.dbSchemaPath && <div>{c.dbSchemaPath}</div>}
-                            {c.openapi?.map((s) => <div key={s}>{s}</div>)}
-                            {!c.dbSchemaPath && !c.openapi && '—'}
+                          <td className="py-1 pr-3">
+                            <OpenApiCell
+                              component={c}
+                              info={openapi.infos[c.id]}
+                              log={openapi.logs[c.id] ?? ''}
+                              onGenerate={() => void openapi.generate(c)}
+                              onCancel={() => void openapi.cancel(c.id)}
+                            />
                           </td>
                           <td className="py-1 pr-3 text-xs">
                             {c.dependsOn?.map((d) => project.components.find((x) => x.id === d)?.name ?? d).join(', ') || '—'}
@@ -299,6 +459,11 @@ function ComponentForm({
 }) {
   const [v, setV] = useState<ComponentInput>(value);
   const [specs, setSpecs] = useState((value.openapi ?? []).join('\n'));
+  const [gen, setGen] = useState({
+    command: value.openapiGenerate?.command ?? '',
+    cwd: value.openapiGenerate?.cwd ?? '',
+    timeoutSec: value.openapiGenerate?.timeoutSec ? String(value.openapiGenerate.timeoutSec) : '',
+  });
   const others = project.components.filter((c) => c.id !== value.id);
   const set = <K extends keyof ComponentInput>(key: K, val: ComponentInput[K]) => setV({ ...v, [key]: val });
   const toggleDep = (id: string) =>
@@ -310,7 +475,13 @@ function ComponentForm({
       data-testid="component-form"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave({ ...v, openapi: specs.split('\n').map((s) => s.trim()).filter(Boolean) });
+        onSave({
+          ...v,
+          openapi: specs.split('\n').map((s) => s.trim()).filter(Boolean),
+          openapiGenerate: gen.command.trim()
+            ? { command: gen.command.trim(), cwd: gen.cwd.trim() || undefined, timeoutSec: gen.timeoutSec ? Number(gen.timeoutSec) : undefined }
+            : undefined,
+        });
       }}
     >
       <div className="col-span-3 text-sm font-semibold">
@@ -341,9 +512,30 @@ function ComponentForm({
       <Field label="Description">
         <input className={input} value={v.description ?? ''} onChange={(e) => set('description', e.target.value)} />
       </Field>
-      <Field label="OpenAPI specs" hint="one path per line, committed files">
+      <Field label="OpenAPI specs" hint="one path per line: committed files or the output of the command">
         <textarea className={input} rows={2} value={specs} onChange={(e) => setSpecs(e.target.value)} />
       </Field>
+      <div className="col-span-3 grid grid-cols-3 gap-3 rounded border border-gray-200 bg-white/60 p-3">
+        <div className="col-span-3 text-xs font-medium text-gray-600">
+          OpenAPI generation <span className="font-normal text-gray-400">— optional; the command runs on your machine when you press “Generate OpenAPI”</span>
+        </div>
+        <div className="col-span-3">
+          <Field label="Command" hint="e.g. pnpm run generate:openapi — executed as written; list its output file in “OpenAPI specs” above">
+            <input
+              className={`${input} font-mono`}
+              value={gen.command}
+              placeholder="pnpm run generate:openapi"
+              onChange={(e) => setGen({ ...gen, command: e.target.value })}
+            />
+          </Field>
+        </div>
+        <Field label="Working directory" hint={`relative to the project root; default: ${v.path || 'source path'}`}>
+          <input className={input} value={gen.cwd} onChange={(e) => setGen({ ...gen, cwd: e.target.value })} />
+        </Field>
+        <Field label="Timeout, seconds" hint="default 120">
+          <input className={input} type="number" min={1} max={3600} value={gen.timeoutSec} onChange={(e) => setGen({ ...gen, timeoutSec: e.target.value })} />
+        </Field>
+      </div>
       <Field label="Catalog folder" hint={value.id ? 'fixed after creation' : `default: ${project.catalogRoot}/<path>`}>
         <input className={input} value={v.catalog ?? ''} disabled={Boolean(value.id)} onChange={(e) => set('catalog', e.target.value)} />
       </Field>

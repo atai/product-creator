@@ -26,6 +26,21 @@ export const DEFAULT_CATALOG_ROOT = 'docs/product';
 
 export type ComponentKind = 'service' | 'library';
 
+/**
+ * Command that generates the OpenAPI spec of a component (run by Product Creator).
+ * `cwd` and the spec paths are relative to the project root; `cwd` defaults to the component folder.
+ */
+export interface OpenApiGenerate {
+  /** Shell command, executed as configured (no arguments are appended or interpolated) */
+  command: string;
+  cwd?: string;
+  /** Kill the command after this many seconds (default 120) */
+  timeoutSec?: number;
+}
+
+export const DEFAULT_GENERATE_TIMEOUT_SEC = 120;
+export const MAX_GENERATE_TIMEOUT_SEC = 3600;
+
 export interface ComponentModel {
   /** Stable UUID */
   id: string;
@@ -42,6 +57,8 @@ export interface ComponentModel {
   dbSchemaPath?: string;
   /** Interface specs (OpenAPI), relative to root; default: files committed in the repo */
   openapi?: string[];
+  /** How to generate the spec(s); the output path is listed in `openapi` */
+  openapiGenerate?: OpenApiGenerate;
   /** UUIDs of components (usually libraries) this component depends on */
   dependsOn?: string[];
   /** Catalog folder relative to root = folder of the component file (derived, not stored) */
@@ -92,7 +109,14 @@ interface RawProjectFile {
   services?: Array<Record<string, unknown>>;
 }
 
-type RawComponentFile = Partial<Omit<ComponentModel, 'catalog' | 'kind'>> & { openapi?: string | string[] };
+interface RawOpenApi {
+  spec?: string | string[];
+  generate?: { command?: unknown; cwd?: unknown; timeoutSec?: unknown };
+}
+type RawComponentFile = Partial<Omit<ComponentModel, 'catalog' | 'kind' | 'openapi' | 'openapiGenerate'>> & {
+  /** list / single path (committed specs) or { spec, generate } */
+  openapi?: string | string[] | RawOpenApi;
+};
 
 const CATALOG_DIRS = new Set(['functions', 'business-objects', 'workflows', 'streams', 'node_modules', '.git']);
 
@@ -110,6 +134,40 @@ function findComponentFiles(dir: string, depth = 0): { file: string; kind: Compo
     }
   }
   return found;
+}
+
+/** Validate a project-relative path: no absolute paths, no escaping the project root */
+export function assertInsideRoot(value: string, what: string) {
+  const normalized = path.posix.normalize(value.replace(/\\/g, '/'));
+  if (path.isAbsolute(value) || path.win32.isAbsolute(value) || normalized === '..' || normalized.startsWith('../')) {
+    throw new Error(`${what} must be a path inside the project (got "${value}")`);
+  }
+}
+
+/** Clean and validate a generate config; returns undefined when there is no command */
+export function normalizeGenerate(input: { command?: unknown; cwd?: unknown; timeoutSec?: unknown } | undefined): OpenApiGenerate | undefined {
+  if (!input) return undefined;
+  const command = typeof input.command === 'string' ? input.command.trim() : '';
+  if (!command) return undefined;
+  if (/[\r\n\0]/.test(command)) throw new Error('OpenAPI generate command must be a single line');
+  const cwd = typeof input.cwd === 'string' && input.cwd.trim() ? input.cwd.trim() : undefined;
+  if (cwd) assertInsideRoot(cwd, 'OpenAPI generate cwd');
+  let timeoutSec: number | undefined;
+  if (input.timeoutSec !== undefined && input.timeoutSec !== null && input.timeoutSec !== '') {
+    timeoutSec = Number(input.timeoutSec);
+    if (!Number.isInteger(timeoutSec) || timeoutSec < 1 || timeoutSec > MAX_GENERATE_TIMEOUT_SEC) {
+      throw new Error(`OpenAPI generate timeoutSec must be an integer between 1 and ${MAX_GENERATE_TIMEOUT_SEC}`);
+    }
+  }
+  return { command, cwd, timeoutSec };
+}
+
+/** Read the `openapi` YAML value in any supported shape */
+function parseOpenApi(raw: RawComponentFile['openapi']): { specs?: string[]; generate?: OpenApiGenerate } {
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    return { specs: asList(raw.spec), generate: normalizeGenerate(raw.generate) };
+  }
+  return { specs: asList(raw as string | string[] | undefined) };
 }
 
 function asList(value: string | string[] | undefined): string[] | undefined {
@@ -133,7 +191,8 @@ export function readComponentFile(root: string, file: string, kind: ComponentKin
     path: raw.path || '.',
     codeBasePath: raw.codeBasePath || undefined,
     dbSchemaPath: raw.dbSchemaPath || undefined,
-    openapi: asList(raw.openapi),
+    openapi: parseOpenApi(raw.openapi).specs,
+    openapiGenerate: parseOpenApi(raw.openapi).generate,
     dependsOn: asList(raw.dependsOn),
     catalog,
   };
@@ -171,6 +230,10 @@ export function readProject(rootDir: string): ProjectModel | null {
 // Writing
 // ---------------------------------------------------------------------------------------------
 
+function stripUndefined<T extends object>(o: T): T {
+  return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
+}
+
 function dump(data: Record<string, unknown>): string {
   const clean = Object.fromEntries(
     Object.entries(data).filter(([, v]) => v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0))
@@ -203,7 +266,9 @@ export function componentFileContent(c: ComponentModel): string {
     path: c.path,
     codeBasePath: c.codeBasePath,
     dbSchemaPath: c.dbSchemaPath,
-    openapi: c.openapi,
+    openapi: c.openapiGenerate
+      ? { spec: c.openapi?.length === 1 ? c.openapi[0] : c.openapi, generate: stripUndefined({ ...c.openapiGenerate }) }
+      : c.openapi,
     dependsOn: c.dependsOn,
   });
 }
@@ -260,7 +325,7 @@ export function componentsFromDiscovery(
     let catalog = defaultCatalog(catalogRoot, { path: d.path, slug });
     if (usedCatalogs.has(catalog)) catalog = defaultCatalog(catalogRoot, { path: '.', slug });
     usedCatalogs.add(catalog);
-    return { d, model: { id: newId(), kind: d.kind, slug, name: d.name, path: d.path, dbSchemaPath: d.dbSchemaPath, openapi: d.openapi, catalog } as ComponentModel };
+    return { d, model: { id: newId(), kind: d.kind, slug, name: d.name, path: d.path, dbSchemaPath: d.dbSchemaPath, openapi: d.openapi, openapiGenerate: d.openapiGenerate && { command: d.openapiGenerate.command }, catalog } as ComponentModel };
   });
   // Resolve workspace dependencies (package names) to component UUIDs
   const byPackage = new Map<string, string>();
@@ -405,6 +470,8 @@ export function saveComponent(rootDir: string, input: ComponentInput): Component
   assertSlug(slug);
   if (!input.path?.trim()) throw new Error('"path" is required');
   if (project.components.some((c) => c.slug === slug && c.id !== input.id)) throw new Error(`Slug "${slug}" is already used`);
+  const openapiGenerate = normalizeGenerate(input.openapiGenerate);
+  (input.openapi ?? []).filter((s) => s.trim()).forEach((s) => assertInsideRoot(s.trim(), 'OpenAPI spec path'));
   const ids = new Set(project.components.map((c) => c.id));
   const dependsOn = (input.dependsOn ?? []).filter((d) => ids.has(d) && d !== input.id);
 
@@ -424,6 +491,7 @@ export function saveComponent(rootDir: string, input: ComponentInput): Component
     codeBasePath: input.codeBasePath?.trim() || undefined,
     dbSchemaPath: input.dbSchemaPath?.trim() || undefined,
     openapi: asList((input.openapi ?? []).map((s) => s.trim())),
+    openapiGenerate,
     dependsOn: dependsOn.length ? dependsOn : undefined,
     catalog,
   };

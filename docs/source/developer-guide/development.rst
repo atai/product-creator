@@ -51,6 +51,12 @@ the same dispatcher as the UI, renders the window, optionally saves a screenshot
      PC_SMOKE_SYNC_APP=emperor-web-ui.frontend \
      npx electron . --project ~/git/product-creator --project ~/git/emperor-web-ui
 
+``PC_SMOKE_GENERATE=<component slug>`` runs the OpenAPI generate command of a component of the first
+project and prints the result and the operations seen by the Interfaces API; ``PC_SMOKE_EVAL=<js>`` runs
+a script in the renderer (e.g. clicks a button; override ``window.confirm`` first) and
+``PC_SMOKE_TEXT_FILTER`` prints matching lines of the page. Use ``--user-data-dir=<tmp>`` to keep the
+smoke run's workspace separate from your own.
+
 ``PC_SMOKE_SYNC_APP=<component uuid>`` runs code and schema sync up to the *matching* stage (nothing is
 written). ``PC_SMOKE_EDIT=<name>`` renames the first component of the first project through the editor
 IPC (writes YAML — use a scratch copy of the project). The JSON report is printed after

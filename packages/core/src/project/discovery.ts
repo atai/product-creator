@@ -20,8 +20,57 @@ export interface DiscoveredComponent {
   packageName?: string;
   dbSchemaPath?: string;
   openapi?: string[];
+  /** Detected OpenAPI generation command (package.json script) */
+  openapiGenerate?: DetectedGenerator;
   /** npm package names of workspace dependencies */
   dependsOnPackages: string[];
+}
+
+export interface DetectedGenerator {
+  command: string;
+  /** Spec file written by the command, relative to the project root */
+  spec: string;
+}
+
+/** package.json script names that generate an OpenAPI document, in order of preference */
+export const OPENAPI_SCRIPT_NAMES = ['openapi:generate', 'generate:openapi', 'openapi', 'swagger', 'docs:generate'];
+
+type PackageManager = 'pnpm' | 'yarn' | 'npm';
+
+export function detectPackageManager(root: string): PackageManager {
+  if (fs.existsSync(path.join(root, 'pnpm-lock.yaml')) || fs.existsSync(path.join(root, 'pnpm-workspace.yaml'))) return 'pnpm';
+  if (fs.existsSync(path.join(root, 'yarn.lock'))) return 'yarn';
+  return 'npm';
+}
+
+const SPEC_IN_SCRIPT = /(?:-o|--output|--out|>)\s*["']?([^\s"']*openapi[^\s"']*\.(?:json|ya?ml))/i;
+const SPEC_ANY = /["']?([^\s"'=]*openapi\.(?:json|ya?ml))/i;
+
+/**
+ * Detect how a package generates its OpenAPI spec: a script such as `openapi`, `openapi:generate`,
+ * `generate:openapi`, `swagger`, or (fallback) any script mentioning swagger/openapi, or a build
+ * script that emits openapi.json. The default output is `dist/openapi.json` (as in Emperor).
+ */
+export function detectOpenApiGenerator(
+  root: string,
+  componentRel: string,
+  scripts: Record<string, string> | undefined
+): DetectedGenerator | undefined {
+  if (!scripts) return undefined;
+  const names = Object.keys(scripts);
+  const byName =
+    OPENAPI_SCRIPT_NAMES.find((n) => names.includes(n)) ??
+    names.find((n) => /openapi|swagger/i.test(n) && !/^(test|lint|check|validate)/i.test(n));
+  const buildName = !byName && /openapi/i.test(scripts.build ?? '') ? 'build' : undefined;
+  const script = byName ?? buildName;
+  if (!script) return undefined;
+  const pm = detectPackageManager(root);
+  const command = pm === 'yarn' ? `yarn ${script}` : `${pm} run ${script}`;
+  const body = scripts[script] ?? '';
+  const emitted = SPEC_IN_SCRIPT.exec(body)?.[1] ?? SPEC_ANY.exec(body)?.[1];
+  const specInComponent = emitted ? emitted.replace(/^\.\//, '') : 'dist/openapi.json';
+  const spec = componentRel === '.' ? specInComponent : path.posix.join(componentRel, specInComponent);
+  return { command, spec };
 }
 
 export function slugify(value: string): string {
@@ -151,6 +200,7 @@ function describe(root: string, abs: string): DiscoveredComponent {
   const relPath = rel(root, abs);
   const pkg = readJson<{
     name?: string;
+    scripts?: Record<string, string>;
     dependencies?: Record<string, string>;
     devDependencies?: Record<string, string>;
     peerDependencies?: Record<string, string>;
@@ -160,6 +210,8 @@ function describe(root: string, abs: string): DiscoveredComponent {
     root,
     OPENAPI_CANDIDATES.map((c) => path.join(abs, c)).filter((p) => fs.existsSync(p)).map((p) => rel(root, p))
   );
+  const generator = detectOpenApiGenerator(root, relPath, pkg?.scripts);
+  if (generator && !specs.includes(generator.spec)) specs.push(generator.spec);
   const deps = { ...pkg?.dependencies, ...pkg?.devDependencies, ...pkg?.peerDependencies };
   const baseName = relPath === '.' ? pkg?.name || path.basename(root) : relPath;
   return {
@@ -170,6 +222,7 @@ function describe(root: string, abs: string): DiscoveredComponent {
     packageName: pkg?.name,
     dbSchemaPath: prisma ? rel(root, prisma) : undefined,
     openapi: specs.length ? specs : undefined,
+    openapiGenerate: generator,
     dependsOnPackages: Object.entries(deps)
       .filter(([, version]) => typeof version === 'string' && version.startsWith('workspace:'))
       .map(([name]) => name),

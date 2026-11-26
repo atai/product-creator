@@ -46,9 +46,27 @@ YAML-as-database persistence of projects, services and libraries (see
 Prisma schema, OpenAPI candidates filtered by ``git ls-files``, ``workspace:`` dependencies),
 ``slugify()``.
 
+``interfaces/generator.ts`` — OpenAPI generation (PRODUCTCREATOR-23):
+
+* ``runOpenApiGenerate(project, component, { onLog, env, signal })`` — spawns ``openapi.generate.command``
+  with ``shell: true`` in ``cwd`` (default: component path; must be inside the project root), as a detached
+  process group so that timeout / cancel kill the whole tree (``taskkill /T`` on Windows). stdout/stderr
+  are streamed to ``onLog`` and kept (last 200 kB). The result state is ``ok`` / ``failed`` / ``timeout`` /
+  ``cancelled``; exit code 0 additionally requires that all listed spec files exist and parse
+  (``operations`` = number of operations found).
+* ``OpenApiGenerationManager`` — status per component id, no parallel runs of one component,
+  ``generate`` / ``generateAll`` (sequential) / ``cancel``, ``info(project)`` (spec file status: exists,
+  mtime, operations) and an event stream (``status`` / ``log``) for the UI.
+* ``buildEnv`` adds ``node_modules/.bin`` of the cwd chain and common tool dirs to PATH and sets ``CI=1``;
+  ``loginShellPath()`` resolves the PATH of the user's login shell (the desktop app does this on start).
+* Config helpers in ``project/model.ts``: ``normalizeGenerate`` (single line command, timeout 1–3600,
+  ``cwd`` inside the project), ``assertInsideRoot``. Detection in ``project/discovery.ts``:
+  ``detectOpenApiGenerator``.
+
 The desktop main process exposes the editor operations over IPC (``pc:editor:*`` in
 ``apps/desktop/src/shared/ipc.ts``); after every successful write the workspace is re-read and the
-renderer reloads.
+renderer reloads. Generation uses ``pc:openapi:info|generate|generate-all|cancel`` and pushes
+``pc:openapi:event`` (log chunks and status changes) to the renderer.
 
 HTTP handlers
 -------------

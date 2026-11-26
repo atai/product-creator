@@ -33,6 +33,8 @@ version of Product Creator.
      - Distributables: local + CI for macOS, Windows, Linux
    * - `PRODUCTCREATOR-17 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-17>`_
      - ESLint and unit tests
+   * - `PRODUCTCREATOR-23 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-23>`_
+     - OpenAPI generation command per component
 
 Known gaps
 ----------

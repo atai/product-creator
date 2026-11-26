@@ -22,8 +22,9 @@ Model
      FB["Function card<br/>(service B)"] -- "implements" --> OP
 
 * **Interface spec** — an OpenAPI 3.x / Swagger 2 document of a component (``openapi`` in its
-  ``service.pc.yml``). Default source: **spec files committed in the repository** (import takes only
-  files tracked by git); generated files can be listed explicitly.
+  ``service.pc.yml``). Sources: **spec files committed in the repository** (import takes only files
+  tracked by git) and/or the output of a **generate command** that Product Creator runs itself
+  (``openapi.generate``, see :doc:`/user-guide/interfaces`).
 * **Operation** — ``<METHOD> <path>`` (stable key) plus ``operationId``, summary, tags, deprecated.
 * **Operation ref** — ``<componentId>#<METHOD> <path>``, e.g.
   ``61f70fc3-558a-43e8-aea8-1946caf1d9a7#POST /issues``. The component id is a UUID, unique across
@@ -43,6 +44,8 @@ Implemented (first step)
   ``InterfaceSpec``, ``InterfaceLink``, ``operationRef()``.
 * Component model carries ``openapi`` paths (``*.pc.yml``; import takes committed files).
 * ``GET /api/interfaces?app=`` and the **Interfaces** page.
+* Generation of specs by a configured command (``interfaces/generator.ts``), Workspace actions
+  *Generate OpenAPI* / *Generate all*, auto-detection of ``package.json`` scripts on import.
 
 Next steps
 ----------
@@ -58,7 +61,7 @@ Next steps
 Open questions
 --------------
 
-* Generated specs (e.g. Emperor builds ``dist/openapi.json`` from code): build them in CI and commit, or
-  add an optional "generate" command per component.
+* Generated specs — decided: a per-component generate command run by Product Creator (PRODUCTCREATOR-23).
+  Open: generate automatically before a trace report / on file changes instead of on demand.
 * Non-HTTP interfaces (events, AsyncAPI, MCP tools) — same link model with another spec loader?
 * Versioning of operation refs across releases.

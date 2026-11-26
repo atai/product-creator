@@ -34,6 +34,8 @@ export interface InterfaceSpec {
   openapi?: string;
   operations: InterfaceOperation[];
   error?: string;
+  /** The file does not exist (e.g. generated spec that was not generated yet) */
+  missing?: boolean;
 }
 
 /** Role of a function in relation to an interface operation */
@@ -91,6 +93,9 @@ export function loadOpenApiSpec(file: string): InterfaceSpec {
       operations,
     };
   } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') {
+      return { file: abs, operations: [], missing: true, error: 'Spec file not found — generate it first (Workspace → Generate OpenAPI)' };
+    }
     return { file: abs, operations: [], error: error instanceof Error ? error.message : String(error) };
   }
 }

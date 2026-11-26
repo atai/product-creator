@@ -1,7 +1,9 @@
 /** IPC contract between main, preload and renderer */
-import type { ComponentInput, ComponentModel, ProjectModel, ProjectPatch } from '@pc/core/project/model';
+import type { ComponentInput, ComponentModel, OpenApiGenerate, ProjectModel, ProjectPatch } from '@pc/core/project/model';
+import type { ComponentGenerateInfo, GenerateEvent, GenerateStatus } from '@pc/core/interfaces/generator';
 
-export type { ComponentInput, ComponentModel, ProjectModel, ProjectPatch };
+export type { ComponentInput, ComponentModel, OpenApiGenerate, ProjectModel, ProjectPatch };
+export type { ComponentGenerateInfo, GenerateEvent, GenerateStatus };
 
 export interface ApiRequest {
   method: string;
@@ -53,6 +55,14 @@ export interface PcBridge {
     deleteComponent(root: string, id: string): Promise<EditResult>;
     importNew(root: string): Promise<EditResult>;
   };
+  /** OpenAPI generation: runs the configured command of a component (child process, streamed log) */
+  openapi: {
+    info(root: string): Promise<ComponentGenerateInfo[]>;
+    generate(root: string, componentId: string): Promise<GenerateStatus>;
+    generateAll(root: string): Promise<GenerateStatus[]>;
+    cancel(componentId: string): Promise<boolean>;
+  };
+  onOpenApiEvent(callback: (event: GenerateEvent) => void): () => void;
   onWorkspaceChanged(callback: (info: WorkspaceInfo) => void): () => void;
 }
 
@@ -67,4 +77,9 @@ export const IPC = {
   editorSaveComponent: 'pc:editor:save-component',
   editorDeleteComponent: 'pc:editor:delete-component',
   editorImportNew: 'pc:editor:import-new',
+  openapiInfo: 'pc:openapi:info',
+  openapiGenerate: 'pc:openapi:generate',
+  openapiGenerateAll: 'pc:openapi:generate-all',
+  openapiCancel: 'pc:openapi:cancel',
+  openapiEvent: 'pc:openapi:event',
 } as const;

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import * as path from 'path';
-import { deleteComponent, importNewComponents, saveComponent, updateProject } from '@pc/core/project/model';
+import { deleteComponent, importNewComponents, readProject, saveComponent, updateProject, type ProjectModel } from '@pc/core/project/model';
+import { loginShellPath, OpenApiGenerationManager } from '@pc/core/interfaces/generator';
 import { IPC, type ApiRequest, type ApiResponse, type ComponentInput, type EditResult, type ProjectPatch } from '../shared/ipc';
 import { parseProjectArgs, defaultProjectFolder } from './args';
 import { Workspace } from './workspace';
@@ -10,6 +11,17 @@ process.env.PC_LOG_DIR ??= path.join(app.getPath('userData'), 'logs');
 
 let mainWindow: BrowserWindow | null = null;
 const workspace = new Workspace(path.join(app.getPath('userData'), 'workspace.json'));
+
+// GUI-launched apps (Dock/Finder) miss the shell PATH (pnpm, node): resolve it once from the login shell
+let shellPath: string | undefined;
+const generation = new OpenApiGenerationManager({ env: () => (shellPath ? { PATH: shellPath } : undefined) });
+generation.onEvent((event) => mainWindow?.webContents.send(IPC.openapiEvent, event));
+
+function projectAt(root: string): ProjectModel {
+  const project = readProject(workspace.requireRoot(root));
+  if (!project) throw new Error(`No project model in ${root}`);
+  return project;
+}
 
 async function handleApi(request: ApiRequest): Promise<ApiResponse> {
   // Imported lazily so that storage is configured before first use
@@ -62,6 +74,17 @@ function registerIpc() {
     if (workspace.remove(root)) await notifyWorkspaceChanged();
     return workspace.info();
   });
+
+  // OpenAPI generation (runs the commands configured in *.pc.yml)
+  ipcMain.handle(IPC.openapiInfo, (_e, root: string) => generation.info(projectAt(root)));
+  ipcMain.handle(IPC.openapiGenerate, (_e, root: string, id: string) => {
+    const project = projectAt(root);
+    const component = project.components.find((c) => c.id === id);
+    if (!component) throw new Error(`Component ${id} not found`);
+    return generation.generate(project, component);
+  });
+  ipcMain.handle(IPC.openapiGenerateAll, (_e, root: string) => generation.generateAll(projectAt(root)));
+  ipcMain.handle(IPC.openapiCancel, (_e, id: string) => generation.cancel(id));
 
   // Editor: every change is written to the YAML database first, then the workspace is re-read
   const edit = (fn: () => void) => async (): Promise<EditResult> => {
@@ -145,6 +168,28 @@ async function runSmokeTest() {
     }
     report[url] = { status: res.status, size };
   }
+  // PC_SMOKE_GENERATE=<component slug>: run its OpenAPI generate command, then list interfaces
+  const genSlug = process.env.PC_SMOKE_GENERATE;
+  if (genSlug) {
+    const root = workspace.getRoots()[0];
+    const project = projectAt(root);
+    const component = project.components.find((c) => c.slug === genSlug);
+    if (!component) {
+      report.generate = { error: `no component with slug ${genSlug}` };
+    } else {
+      const result = await generation.generate(project, component);
+      const res = await handleApi({ method: 'GET', url: `/api/interfaces?app=${component.id}` });
+      const specs = (JSON.parse(res.body) as { specs: { file: string; operations: unknown[]; error?: string }[] }[])[0]?.specs ?? [];
+      report.generate = {
+        state: result.state,
+        exitCode: result.exitCode,
+        message: result.message,
+        operations: result.operations,
+        interfaces: specs.map((s) => ({ file: s.file, operations: s.operations.length, error: s.error })),
+        logTail: result.log.slice(-300),
+      };
+    }
+  }
   // PC_SMOKE_SYNC_APP=<appId>: run code + schema sync up to the matching stage (nothing is written)
   const syncApp = process.env.PC_SMOKE_SYNC_APP;
   if (syncApp) {
@@ -175,8 +220,20 @@ async function runSmokeTest() {
     if (process.env.PC_SMOKE_ROUTE) {
       await win.webContents.executeJavaScript(`location.hash = ${JSON.stringify('#' + process.env.PC_SMOKE_ROUTE)}`);
     }
+    // PC_SMOKE_EVAL=<js>: run a script in the renderer (e.g. click buttons), then wait for the result
+    if (process.env.PC_SMOKE_EVAL) {
+      await new Promise((r) => setTimeout(r, 1500));
+      report.eval = await win.webContents.executeJavaScript(process.env.PC_SMOKE_EVAL);
+      await new Promise((r) => setTimeout(r, Number(process.env.PC_SMOKE_EVAL_WAIT ?? 4000)));
+    }
     await new Promise((r) => setTimeout(r, 2500));
     report.rendererText = String(await win.webContents.executeJavaScript('document.body.innerText')).slice(0, 300);
+    if (process.env.PC_SMOKE_TEXT_FILTER) {
+      report.matches = String(await win.webContents.executeJavaScript('document.body.innerText'))
+        .split('\n')
+        .filter((l) => l.includes(process.env.PC_SMOKE_TEXT_FILTER as string))
+        .slice(0, 20);
+    }
     if (process.env.PC_SMOKE_SCREENSHOT) {
       const image = await win.webContents.capturePage();
       (await import('fs')).writeFileSync(process.env.PC_SMOKE_SCREENSHOT, image.toPNG());
@@ -206,6 +263,9 @@ if (!app.requestSingleInstanceLock()) {
     else if (workspace.getRoots().length === 0 && !app.isPackaged) workspace.add(defaultProjectFolder());
     await workspace.reload();
     registerIpc();
+    void loginShellPath().then((p) => {
+      shellPath = p;
+    });
     buildMenu();
     createWindow();
     if (process.env.PC_SMOKE_TEST) void runSmokeTest();

@@ -23,6 +23,7 @@ Repository layout
          src/project/model.ts   # YAML-as-DB project model, editor operations, migration
          src/project/discovery.ts  # one-time import from the repository layout
          src/interfaces/openapi.ts  # OpenAPI loader / link model
+         src/interfaces/generator.ts  # runs OpenAPI generate commands
          src/code/, src/prisma/, src/sync/  # code & Prisma sync
          src/http/routes/**     # API handlers, src/http/router.ts — route table
          test/                  # vitest unit tests

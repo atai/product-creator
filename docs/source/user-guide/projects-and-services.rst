@@ -45,9 +45,13 @@ When a folder without ``product-creator.yml`` is opened for the first time, the 
    ``libs/``, ``shared/`` or ``common/`` become **libraries**, the others **services**;
 3. ``workspace:`` dependencies in ``package.json`` become ``dependsOn`` links;
 4. ``prisma/schema.prisma`` is used as the DB schema;
-5. OpenAPI files (``openapi.{yaml,yml,json}``, ``docs/openapi.*``, ``api/openapi.*``,
-   ``public/openapi.json``, ``dist/openapi.*``) are taken **only if committed to git** — generated
-   build output is ignored by default;
+5. OpenAPI: spec files (``openapi.{yaml,yml,json}``, ``docs/openapi.*``, ``api/openapi.*``,
+   ``public/openapi.json``) are taken **only if committed to git**; if ``package.json`` has a script that
+   generates the spec (``openapi:generate``, ``generate:openapi``, ``openapi``, ``swagger``,
+   ``docs:generate`` or another script with *openapi*/*swagger* in its name, or a ``build`` script
+   that mentions openapi) the **generate command** is prefilled (``pnpm run <script>``; ``npm``/``yarn``
+   by lock file) and its output (``dist/openapi.json`` unless the script says ``-o <file>``) is added to the
+   specs — see :doc:`interfaces`;
 6. the catalog folder is ``docs/product/<component path>`` (existing catalogs there are reused).
 
 A repository without workspaces becomes a single service. After the import, the folder layout is no
@@ -106,11 +110,23 @@ File format
    path: frontend                         # source folder
    codeBasePath: frontend/src             # analysed by "sync from code" (default: path)
    dbSchemaPath: frontend/prisma/schema.prisma
-   openapi:
-     - frontend/openapi.yaml              # committed spec files
+   openapi:                               # committed spec files (list) ...
+     - frontend/openapi.yaml
    dependsOn:
      - 8974bf01-4559-4951-98f3-94ee7dcd0013   # UUID of a library
 
+A service whose spec is produced by a command uses the object form of ``openapi``:
+
+.. code-block:: yaml
+
+   openapi:
+     spec: integrations/youtrack/dist/openapi.json     # output of the command (string or list)
+     generate:
+       command: pnpm run generate:openapi              # executed as written
+       cwd: integrations/youtrack                       # optional, default: the component's path
+       timeoutSec: 120                                  # optional, default 120
+
+All paths (including ``cwd``) are relative to the project root and must stay inside it.
 ``library.pc.yml`` has the same fields.
 
 Migration from the first format
