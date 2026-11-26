@@ -117,8 +117,8 @@ gradle-app.setting
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
 
-# Project specific
-lib
+# Project specific — only the root Java lib/, not apps/pc/lib
+/lib/
 
 # Local resources
 /frontend/local_temp/keystore.p12
