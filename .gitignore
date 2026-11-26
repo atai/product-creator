@@ -149,3 +149,7 @@ next-env.d.ts
 # Electron (apps/desktop) build output
 apps/desktop/out/
 apps/desktop/dist/
+
+# Sphinx docs
+docs/build/
+docs/.venv/

@@ -1,0 +1,6 @@
+# Sphinx toolchain (same stack as emperor-web-ui / mailoo-web docs)
+Sphinx==9.2.0
+sphinx-rtd-theme==3.1.0
+sphinxcontrib-mermaid==2.1.1
+# Sphinx 9.2 / sphinx-rtd-theme 3.1 require docutils<0.23
+docutils==0.22.4
