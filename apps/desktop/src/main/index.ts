@@ -144,7 +144,7 @@ async function runSmokeTest() {
   }
   const win = mainWindow;
   if (win) {
-    if (win.webContents.isLoading()) await new Promise((r) => win.webContents.once('did-finish-load', r));
+    if (win.webContents.isLoading()) await new Promise<void>((r) => win.webContents.once('did-finish-load', () => r()));
     if (process.env.PC_SMOKE_ROUTE) {
       await win.webContents.executeJavaScript(`location.hash = ${JSON.stringify('#' + process.env.PC_SMOKE_ROUTE)}`);
     }
