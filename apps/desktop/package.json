@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "dist": "electron-vite build && node scripts/dist.mjs",
     "dist:dir": "electron-vite build && node scripts/dist.mjs --dir",
-    "icons:build": "png2icons resources/icon.png resources/icon -allwe -bc"
+    "icons:build": "png2icons resources/icon.png resources/icon -allwe -bc",
+    "test": "vitest run"
   },
   "dependencies": {
     "@prisma/prisma-schema-wasm": "6.19.0-26.2ba551f319ab1df4bc874a89965d8b3641056773",
@@ -47,7 +48,8 @@
     "react-hook-form": "^7.65.0",
     "react-router-dom": "^7.18.7",
     "tailwindcss": "^4.1.14",
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "vitest": "^3.2.7"
   },
   "author": "atai",
   "homepage": "https://github.com/atai/product-creator"

@@ -38,6 +38,43 @@ Commands (from the repository root)
 .. warning::
    Do not run ``pnpm pc:build`` while ``pnpm pc:dev`` is running — both write to ``apps/pc/.next``.
 
+Settings and data folders (dev vs. production)
+----------------------------------------------
+
+The app keeps ``workspace.json`` (the list of opened projects), logs (``logs/``) and the update cache in
+Electron's ``userData`` folder. A development run must never share it with an installed build, so the
+folder depends on how the app was started (``apps/desktop/src/main/userData.ts``, applied first thing in
+``src/main/index.ts``, before the single-instance lock — a dev and an installed instance can run at
+the same time):
+
+.. list-table::
+   :header-rows: 1
+
+   * - OS
+     - Production (installed app)
+     - Development (``pnpm desktop``, ``electron .``, not packaged)
+   * - macOS
+     - ``~/Library/Application Support/Product Creator``
+     - ``~/Library/Application Support/Product Creator Dev``
+   * - Windows
+     - ``%APPDATA%\Product Creator``
+     - ``%APPDATA%\Product Creator Dev``
+   * - Linux
+     - ``~/.config/Product Creator`` (``$XDG_CONFIG_HOME``)
+     - ``~/.config/Product Creator Dev``
+
+Rules:
+
+* ``PC_USER_DATA_DIR=<dir>`` overrides the folder in any build (tests, throw-away runs).
+* An explicit ``--user-data-dir=<dir>`` switch is respected in development runs.
+* Everything that is stored per app follows ``userData`` (workspace, logs, caches) — do not build paths
+  from ``appData`` or the home directory directly.
+* The folder is created on start. Existing data of the installed build is never touched by a dev run;
+  if an older dev build wrote into the production folder, delete that ``workspace.json`` manually.
+
+The decision is a pure function (``resolveUserDataDir``) covered by ``apps/desktop/src/main/userData.test.ts``
+(``pnpm test``).
+
 Smoke test of the desktop app
 -----------------------------
 
@@ -54,8 +91,8 @@ the same dispatcher as the UI, renders the window, optionally saves a screenshot
 ``PC_SMOKE_GENERATE=<component slug>`` runs the OpenAPI generate command of a component of the first
 project and prints the result and the operations seen by the Interfaces API; ``PC_SMOKE_EVAL=<js>`` runs
 a script in the renderer (e.g. clicks a button; override ``window.confirm`` first) and
-``PC_SMOKE_TEXT_FILTER`` prints matching lines of the page. Use ``--user-data-dir=<tmp>`` to keep the
-smoke run's workspace separate from your own.
+``PC_SMOKE_TEXT_FILTER`` prints matching lines of the page. Smoke runs use the development folder; set
+``PC_USER_DATA_DIR=<tmp>`` to keep a run's workspace separate.
 
 ``PC_SMOKE_SYNC_APP=<component uuid>`` runs code and schema sync up to the *matching* stage (nothing is
 written). ``PC_SMOKE_EDIT=<name>`` renames the first component of the first project through the editor

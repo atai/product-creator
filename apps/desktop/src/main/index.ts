@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
+import { mkdirSync } from 'fs';
 import * as path from 'path';
 import { deleteComponent, importNewComponents, readProject, saveComponent, updateProject, type ProjectModel } from '@pc/core/project/model';
 import { loginShellPath, OpenApiGenerationManager } from '@pc/core/interfaces/generator';
@@ -6,6 +7,18 @@ import { IPC, type ApiRequest, type ApiResponse, type ComponentInput, type EditR
 import { parseProjectArgs, defaultProjectFolder } from './args';
 import { Workspace } from './workspace';
 import { checkForUpdatesInteractive, startAutoUpdates } from './updater';
+import { resolveUserDataDir } from './userData';
+
+// Settings and data folder. Must run before anything reads userData and before the single-instance lock:
+// a development run (not packaged) uses '<appData>/Product Creator Dev' and never touches the installed
+// build's '<appData>/Product Creator' (PC_USER_DATA_DIR overrides, for tests).
+const userDataDir = resolveUserDataDir({
+  isPackaged: app.isPackaged,
+  appData: app.getPath('appData'),
+  hasUserDataSwitch: app.commandLine.hasSwitch('user-data-dir'),
+});
+if (userDataDir) app.setPath('userData', userDataDir);
+mkdirSync(app.getPath('userData'), { recursive: true });
 
 // File logs of @pc/core go to the user data dir, never into the opened project
 process.env.PC_LOG_DIR ??= path.join(app.getPath('userData'), 'logs');

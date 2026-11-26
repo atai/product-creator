@@ -33,7 +33,8 @@ Several projects at once (workspace)
 ------------------------------------
 
 Opened folders form the **workspace**. It is remembered between runs (stored in the application data
-folder, e.g. ``~/Library/Application Support/Product Creator/workspace.json`` on macOS).
+folder, e.g. ``~/Library/Application Support/Product Creator/workspace.json`` on macOS; a development
+run from source uses a separate ``Product Creator Dev`` folder, see :doc:`/developer-guide/development`).
 
 * **File → Open Project Folder…** (``Cmd/Ctrl+O``) adds folders.
 * The **Workspace** page (gear icon in the header) lists projects with their services and libraries, is
