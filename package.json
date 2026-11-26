@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "desktop": "pnpm --filter desktop dev",
+    "desktop:build": "pnpm --filter desktop build",
+    "desktop:start": "pnpm --filter desktop start",
     "dev": "pnpm --filter pc dev",
     "build": "pnpm --filter pc build",
     "start": "pnpm --filter pc start",
-    "lint": "pnpm --filter pc lint"
+    "lint": "pnpm --filter pc lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "docs": "make -C docs html"
   }
 }

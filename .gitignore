@@ -145,3 +145,7 @@ next-env.d.ts
 # logs
 /logs
 *.log
+
+# Electron (apps/desktop) build output
+apps/desktop/out/
+apps/desktop/dist/

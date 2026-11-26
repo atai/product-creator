@@ -1,0 +1,21 @@
+# Product Creator project manifest (see docs: User Docs → Projects and services)
+id: product-creator
+name: Product Creator
+description: Feature catalog and traceable product documentation (ТЗ) linked to code
+docs: docs
+services:
+  - id: desktop
+    name: Desktop app (Electron)
+    path: apps/desktop
+    catalog: docs/product/desktop
+    codeBasePath: apps/desktop/src
+  - id: core
+    name: Core package
+    path: packages/core
+    catalog: docs/product/core
+    codeBasePath: packages/core/src
+  - id: pc
+    name: Web app (legacy Next.js)
+    path: apps/pc
+    catalog: apps/pc/product
+    codeBasePath: apps/pc

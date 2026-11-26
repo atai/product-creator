@@ -1,0 +1,46 @@
+{
+  "name": "desktop",
+  "productName": "Product Creator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Product Creator desktop app (Electron). Opens a project folder and manages its feature catalog.",
+  "main": "out/main/index.js",
+  "bin": {
+    "product-creator": "bin/product-creator.mjs"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+  },
+  "dependencies": {
+    "@pc/core": "workspace:*",
+    "@prisma/internals": "^6.19.0",
+    "ajv": "^8.17.1",
+    "chokidar": "^4.0.3",
+    "cytoscape": "^3.33.1",
+    "fuse.js": "^7.1.0",
+    "js-yaml": "^4.3.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-hook-form": "^7.65.0",
+    "react-router-dom": "^7.18.7",
+    "tinybase": "^6.7.1",
+    "typescript": "^5.9.3",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/cytoscape": "^3.31.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.19.21",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "@vitejs/plugin-react": "^6.3.0",
+    "electron": "^45.5.0",
+    "electron-vite": "^6.0.0",
+    "tailwindcss": "^4.1.14",
+    "vite": "^8.3.8"
+  }
+}

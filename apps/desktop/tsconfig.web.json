@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/renderer/src/*"],
+      "next/navigation": ["src/renderer/src/shims/navigation.ts"],
+      "next/link": ["src/renderer/src/shims/link.tsx"]
+    }
+  },
+  "include": ["src/renderer/src/**/*", "src/shared/**/*"]
+}

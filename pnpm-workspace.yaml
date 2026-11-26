@@ -2,10 +2,11 @@ packages:
   - apps/*
   - packages/*
 
-onlyBuiltDependencies:
-  - '@prisma/engines'
-  - '@tailwindcss/oxide'
-  - electron
-  - esbuild
-  - sharp
-  - unrs-resolver
+# pnpm >= 11: packages allowed to run install scripts
+allowBuilds:
+  '@prisma/engines': true
+  '@tailwindcss/oxide': true
+  electron: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
