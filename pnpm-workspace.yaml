@@ -10,3 +10,5 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+  # Squirrel.Windows helper of electron-builder; not used (NSIS target)
+  electron-winstaller: false

@@ -191,7 +191,7 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', async (_e, argv, workingDirectory) => {
-    const folders = parseProjectArgs(argv, { ...process.env, INIT_CWD: workingDirectory }, workingDirectory);
+    const folders = parseProjectArgs(argv, { ...process.env, INIT_CWD: workingDirectory }, workingDirectory, { packaged: app.isPackaged });
     if (folders.length && workspace.add(...folders)) await notifyWorkspaceChanged();
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
@@ -200,9 +200,10 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.whenReady().then(async () => {
-    const folders = parseProjectArgs(process.argv);
+    const folders = parseProjectArgs(process.argv, process.env, process.cwd(), { packaged: app.isPackaged });
     if (folders.length) workspace.add(...folders);
-    else if (workspace.getRoots().length === 0) workspace.add(defaultProjectFolder());
+    // dev: open the folder `pnpm desktop` ran in; packaged app starts with the saved workspace or empty
+    else if (workspace.getRoots().length === 0 && !app.isPackaged) workspace.add(defaultProjectFolder());
     await workspace.reload();
     registerIpc();
     buildMenu();

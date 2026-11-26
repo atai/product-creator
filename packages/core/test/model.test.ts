@@ -172,3 +172,10 @@ describe('migration from v1', () => {
     expect(again.project.components.map((c) => c.id).sort()).toEqual(project.components.map((c) => c.id).sort());
   });
 });
+
+describe('safety', () => {
+  it('refuses to import the home directory or filesystem root', () => {
+    expect(() => openProject(os.homedir())).toThrow(/not a project folder/);
+    expect(() => openProject(path.parse(process.cwd()).root)).toThrow(/not a project folder/);
+  });
+});

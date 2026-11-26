@@ -1,0 +1,30 @@
+# Desktop distributables (PRODUCTCREATOR-16). Local: `pnpm desktop:dist` builds for the current OS.
+# CI: .github/workflows/ci.yml builds macOS, Windows and Linux. Builds are unsigned for now.
+appId: cloud.ecooz.productcreator
+productName: Product Creator
+artifactName: product-creator-${version}-${os}-${arch}.${ext}
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.map'
+# Renderer and @pc/core are bundled by electron-vite; only main-process runtime deps are packaged
+asar: true
+npmRebuild: false
+publish: null
+mac:
+  category: public.app-category.developer-tools
+  target: [dmg, zip]
+  # unsigned until signing/notarization is set up (follow-up)
+  identity: null
+win:
+  target: [nsis, zip]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  category: Development
+  target: [AppImage, tar.gz]
+  maintainer: atai

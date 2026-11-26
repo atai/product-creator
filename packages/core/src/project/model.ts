@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import yaml from 'js-yaml';
 import type { AppEntity, Project } from '../types';
@@ -345,6 +346,9 @@ export function importFromLayout(rootDir: string): ProjectModel {
 export function openProject(rootDir: string): OpenResult {
   const root = path.resolve(rootDir);
   if (!isDir(root)) throw new Error(`Folder not found: ${root}`);
+  if (root === path.parse(root).root || root === os.homedir()) {
+    throw new Error(`${root} is not a project folder (filesystem root / home directory). Open a repository folder.`);
+  }
   const existing = readProject(root);
   if (existing) return { project: existing, origin: 'read', notes: [] };
   const raw = readYaml<RawProjectFile>(path.join(root, PROJECT_FILE));
