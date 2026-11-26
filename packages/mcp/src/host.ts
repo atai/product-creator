@@ -33,7 +33,12 @@ export interface Principal {
   /** `local` or `relay:<botTokenId>`; sessions are bound to it */
   id: string;
   kind: 'local' | 'relay';
+  /** Effective scope. For a relay caller: the stricter of the bot-token scope and the local scope setting */
   scope: McpScope;
+  /** Relay caller only: scope of the bot token as issued in Emperor */
+  tokenScope?: McpScope;
+  /** Relay caller only: the token allows writes but the local setting is read-only */
+  cappedByLocal?: boolean;
   /** Bot User-Agent as reported by the relay (for the action log) */
   userAgent?: string;
 }

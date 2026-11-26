@@ -128,6 +128,11 @@ let relay: FakeRelay;
 let client: RelayClient;
 let statuses: RelayStatus[];
 let localEnabled = true;
+let localScope: 'read' | 'write' = 'read';
+const setLocalScope = (scope: 'read' | 'write') => {
+  localScope = scope;
+  mcp.configure({ scope });
+};
 
 beforeAll(async () => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'pc-relay-'));
@@ -152,11 +157,12 @@ afterAll(async () => {
 
 const timing = { backoffMinMs: 20, backoffMaxMs: 80, pingMs: 60_000, random: () => 0 };
 const newClient = (overrides: Partial<ConstructorParameters<typeof RelayClient>[0]> = {}) =>
-  new RelayClient({ url: relay.url, deviceKey: DEVICE_KEY, relayKey: RELAY_KEY, localUrl: () => (localEnabled ? mcp.url : undefined), clientName: 'product-creator/test', onStatus: (s) => statuses.push(s), timing, ...overrides });
+  new RelayClient({ url: relay.url, deviceKey: DEVICE_KEY, relayKey: RELAY_KEY, localUrl: () => (localEnabled ? mcp.url : undefined), clientName: 'product-creator/test', mcpScope: () => localScope, onStatus: (s) => statuses.push(s), timing, ...overrides });
 
 beforeEach(async () => {
   statuses = [];
   localEnabled = true;
+  setLocalScope('read');
   relay = new FakeRelay();
   await relay.start();
 });
@@ -247,6 +253,54 @@ describe('handshake', () => {
   });
 });
 
+describe('local mode reported to the relay', () => {
+  const caps = () => relay.frames.filter((f) => f.type === FrameType.CAPABILITIES);
+
+  it('HELLO carries capabilities.mcpScope (read_only / read_write)', async () => {
+    setLocalScope('read');
+    client = newClient();
+    client.start();
+    await relay.until(() => relay.frames.some((f) => f.type === FrameType.HELLO));
+    expect(relay.frames.find((f) => f.type === FrameType.HELLO)!.header).toMatchObject({ capabilities: { mcpScope: 'read_only' } });
+    client.stop();
+    setLocalScope('write');
+    relay.frames.length = 0;
+    client = newClient();
+    client.start();
+    await relay.until(() => relay.frames.some((f) => f.type === FrameType.HELLO));
+    expect(relay.frames.find((f) => f.type === FrameType.HELLO)!.header).toMatchObject({ capabilities: { mcpScope: 'read_write' } });
+  });
+
+  it('re-reports with an IGNORABLE CAPABILITIES frame when the scope changes while connected, once per change', async () => {
+    setLocalScope('read');
+    client = newClient();
+    client.start();
+    await relay.until(() => client.status().state === 'online');
+    client.refreshCapabilities();
+    expect(caps().length).toBe(0); // unchanged: nothing sent
+    setLocalScope('write');
+    client.refreshCapabilities();
+    client.refreshCapabilities();
+    await relay.until(() => caps().length === 1);
+    expect(caps()[0]).toMatchObject({ streamId: 0, header: { mcpScope: 'read_write' } });
+    expect(caps()[0].flags & FrameFlag.IGNORABLE).toBe(FrameFlag.IGNORABLE);
+    setLocalScope('read');
+    client.refreshCapabilities();
+    await relay.until(() => caps().length === 2);
+    expect(caps()[1].header).toMatchObject({ mcpScope: 'read_only' });
+  });
+
+  it('a relay that ignores unknown frames and fields keeps working (backward compatible)', async () => {
+    client = newClient();
+    client.start();
+    await relay.until(() => client.status().state === 'online');
+    setLocalScope('write');
+    client.refreshCapabilities();
+    const r = await relay.request(101, { body: init, scope: 'READ_WRITE' });
+    expect(r.status).toBe(200);
+  });
+});
+
 describe('relayed requests', () => {
   it('serves an MCP session; READ scope has no write tools; the bot is audited with its User-Agent', async () => {
     client = newClient();
@@ -273,7 +327,8 @@ describe('relayed requests', () => {
     expect(audit.recent(20).find((e) => e.principal === 'relay:bot-7' && e.userAgent === 'ChatGPT-User' && e.action === 'list_projects')).toBeTruthy();
   });
 
-  it('READ_WRITE token sees write tools', async () => {
+  it('READ_WRITE token sees write tools when the local scope allows writes', async () => {
+    setLocalScope('write');
     client = newClient();
     client.start();
     await relay.until(() => client.status().state === 'online');
@@ -281,6 +336,51 @@ describe('relayed requests', () => {
     const sid = r1.headers['mcp-session-id'];
     const r3 = await relay.request(12, { body: rpc(2, 'tools/list'), scope: 'READ_WRITE', headers: { 'mcp-session-id': sid } });
     expect(parse(r3.text).result.tools.map((t: { name: string }) => t.name)).toContain('create_catalog_entry');
+  });
+
+  it('local read-only caps a READ_WRITE token: write tools are neither listed nor callable', async () => {
+    setLocalScope('read');
+    client = newClient();
+    client.start();
+    await relay.until(() => client.status().state === 'online');
+    const r1 = await relay.request(71, { body: init, scope: 'READ_WRITE' });
+    expect(parse(r1.text).result.instructions).toContain('read-only');
+    const sid = r1.headers['mcp-session-id'];
+    const list = await relay.request(72, { body: rpc(2, 'tools/list'), scope: 'READ_WRITE', headers: { 'mcp-session-id': sid } });
+    const names = parse(list.text).result.tools.map((t: { name: string }) => t.name);
+    expect(names).toContain('list_projects');
+    for (const w of ['create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'sync_schema_apply', 'generate_openapi']) expect(names).not.toContain(w);
+    const call = await relay.request(73, { body: rpc(3, 'tools/call', { name: 'create_catalog_entry', arguments: { project: 'demo', component: 'svc', kind: 'function', data: {} } }), scope: 'READ_WRITE', headers: { 'mcp-session-id': sid } });
+    expect(parse(call.text).error ?? parse(call.text).result.isError).toBeTruthy();
+    expect(audit.recent(50).some((e) => e.action === 'create_catalog_entry' && e.principal === 'relay:bot-7' && e.outcome === 'ok')).toBe(false);
+  });
+
+  it('switching the local scope ends relayed sessions; the new session gets the new effective scope', async () => {
+    setLocalScope('write');
+    client = newClient();
+    client.start();
+    await relay.until(() => client.status().state === 'online');
+    const r1 = await relay.request(81, { body: init, scope: 'READ_WRITE' });
+    const sid = r1.headers['mcp-session-id'];
+    const before = await relay.request(82, { body: rpc(2, 'tools/list'), scope: 'READ_WRITE', headers: { 'mcp-session-id': sid } });
+    expect(parse(before.text).result.tools.map((t: { name: string }) => t.name)).toContain('create_catalog_entry');
+
+    setLocalScope('read');
+    const stale = await relay.request(83, { body: rpc(3, 'tools/list'), scope: 'READ_WRITE', headers: { 'mcp-session-id': sid } });
+    expect(stale.status).toBe(404);
+    const r2 = await relay.request(84, { body: init, scope: 'READ_WRITE' });
+    const after = await relay.request(85, { body: rpc(2, 'tools/list'), scope: 'READ_WRITE', headers: { 'mcp-session-id': r2.headers['mcp-session-id'] } });
+    expect(parse(after.text).result.tools.map((t: { name: string }) => t.name)).not.toContain('create_catalog_entry');
+  });
+
+  it('READ token stays read-only when the local scope is read-write', async () => {
+    setLocalScope('write');
+    client = newClient();
+    client.start();
+    await relay.until(() => client.status().state === 'online');
+    const r1 = await relay.request(91, { body: init, scope: 'READ' });
+    const list = await relay.request(92, { body: rpc(2, 'tools/list'), scope: 'READ', headers: { 'mcp-session-id': r1.headers['mcp-session-id'] } });
+    expect(parse(list.text).result.tools.map((t: { name: string }) => t.name)).not.toContain('create_catalog_entry');
   });
 
   it('cannot escalate the scope with forged headers (only the allow-list is forwarded)', async () => {

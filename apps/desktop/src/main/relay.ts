@@ -51,6 +51,7 @@ export class RelayController {
         relayKey: this.mcp.relayKey,
         localUrl: () => this.mcp.localUrl,
         clientName: `product-creator/${this.version}`,
+        mcpScope: () => this.settings.get().mcp.scope,
         log: this.log,
         onStatus: (status) => {
           this.last = status;
@@ -59,6 +60,8 @@ export class RelayController {
       });
       this.client.start();
     }
+    // the local scope may have changed while connected: tell the relay (collision with bot-token scopes)
+    this.client?.refreshCapabilities();
     if (!want) {
       this.clientKey = '';
       this.clientUrl = '';

@@ -1,5 +1,6 @@
 import * as http from 'http';
 import { WebSocket, type RawData } from 'ws';
+import type { McpScope } from '../host.js';
 import { MCP_PATH, RELAY_HEADERS } from '../server.js';
 import { CloseCode, decodeFrame, encodeFrame, FrameDecodeError, FrameFlag, FrameType, hasFlag, isKnownFrameType, WS_SUBPROTOCOL, type Frame, type ResetCode } from './frames.js';
 
@@ -43,6 +44,8 @@ export interface RelayClientOptions {
   localUrl: () => string | undefined;
   /** `product-creator/<version>` */
   clientName: string;
+  /** Local MCP scope setting right now; reported to the relay (read_only = writes are impossible) */
+  mcpScope: () => McpScope;
   onStatus?: (status: RelayStatus) => void;
   /** Called for each relayed request (for logs) — never receives secrets */
   log?: (message: string) => void;
@@ -106,6 +109,8 @@ export class RelayClient {
   private helloTimer?: NodeJS.Timeout;
   private stopped = true;
   private requests = 0;
+  /** Last mode the relay was told (HELLO or CAPABILITIES) */
+  private reportedMode?: string;
   private current: RelayStatus = { state: 'off', activeStreams: 0, requests: 0 };
 
   constructor(private options: RelayClientOptions) {}
@@ -193,7 +198,9 @@ export class RelayClient {
     }
     this.ws = ws;
     ws.on('open', () => {
-      this.send(FrameType.HELLO, 0, 0, { protocol: [1], client: this.options.clientName, maxConcurrentStreams: MAX_STREAMS });
+      const capabilities = this.capabilities();
+      this.reportedMode = capabilities.mcpScope;
+      this.send(FrameType.HELLO, 0, 0, { protocol: [1], client: this.options.clientName, maxConcurrentStreams: MAX_STREAMS, capabilities });
       this.helloTimer = setTimeout(() => this.fail('no WELCOME from the relay'), this.options.timing?.helloTimeoutMs ?? 10_000);
     });
     ws.on('unexpected-response', (_req, res) => {
@@ -216,6 +223,24 @@ export class RelayClient {
     });
     ws.on('message', (data: RawData, isBinary: boolean) => this.onMessage(ws, data, isBinary));
     ws.on('close', (code) => this.onClose(ws, code));
+  }
+
+  /** Capabilities reported to the relay: whether this app can write at all */
+  private capabilities(): { mcpScope: 'read_only' | 'read_write' } {
+    return { mcpScope: this.options.mcpScope() === 'write' ? 'read_write' : 'read_only' };
+  }
+
+  /**
+   * The local scope setting may have changed: tell the relay while connected (a CAPABILITIES frame with
+   * the IGNORABLE flag, so a relay without support for it skips it). A new connection reports it in HELLO.
+   */
+  refreshCapabilities() {
+    if (this.current.state !== 'online') return;
+    const capabilities = this.capabilities();
+    if (capabilities.mcpScope === this.reportedMode) return;
+    this.reportedMode = capabilities.mcpScope;
+    this.send(FrameType.CAPABILITIES, 0, FrameFlag.IGNORABLE, capabilities);
+    this.log(`relay: reported local mode ${capabilities.mcpScope}`);
   }
 
   private fail(message: string) {
@@ -332,6 +357,7 @@ export class RelayClient {
     this.attempt = 0;
     this.set({ state: 'online', error: undefined, publicUrl: clean(h.publicUrl), deviceId: clean(h.deviceId), connectedAt: new Date().toISOString() });
     this.log('relay: online');
+    this.refreshCapabilities(); // the setting may have changed since HELLO
     const t = this.options.timing ?? {};
     this.pingTimer = setInterval(() => {
       this.send(FrameType.PING, 0, 0, { t: Date.now() });

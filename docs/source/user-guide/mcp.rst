@@ -140,8 +140,33 @@ opened on your computer, and it works only while Product Creator **and** its MCP
 #. In Emperor create a **bot token** (``rly_…``) for that device with scope *READ* or *READ_WRITE* and
    give the remote agent the public URL plus ``Authorization: Bearer rly_…``.
 
-Remote agents use the scope of their bot token (the *scope* setting above belongs to the local token).
-They see the same tools and the same projects, and every call appears in the action log with the bot
+The scope of a remote agent is the **stricter** of its bot token scope and the *scope* setting above:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Bot token
+     - Local scope setting
+     - Remote agent can
+   * - READ
+     - read-only or read-write
+     - read only
+   * - READ_WRITE
+     - read-only
+     - read only — write tools are neither listed nor callable (the agent is told so in the server
+       instructions)
+   * - READ_WRITE
+     - read-write
+     - read and write
+
+If you want a remote agent to write, set the local scope to *read-write* as well. Changing the scope ends open
+remote sessions too; the agent reconnects (a new ``initialize``) and gets the new tool list.
+
+The app reports its local mode (*read_only* or *read_write*) to Emperor when it connects and again whenever you
+change the scope, so Emperor can warn you when a READ_WRITE token belongs to a read-only device. This needs a
+relay that understands the report; an older relay simply ignores it and the rule above still applies.
+
+Remote agents see the same tools and the same projects, and every call appears in the action log with the bot
 token id and the agent's User-Agent. Revoke a bot token or the whole device in Emperor to cut access;
 **Rotate key** in Emperor needs the new key pasted here.
 

@@ -37,7 +37,7 @@ Security model
 * Binds to ``127.0.0.1`` only; the ``Host`` header must be ``127.0.0.1``, ``localhost`` or ``[::1]``
   with the bound port (DNS rebinding).
 * Every request needs ``Authorization: Bearer <token>`` (constant-time comparison). The token is
-  ``pcmcp_`` + 32 random bytes; the scope belongs to the token (setting).
+  ``pcmcp_`` + 32 random bytes; the scope belongs to the token (setting); relay callers get the stricter of their bot-token scope and this setting.
 * A write tool is registered only for a ``write`` principal and checks the scope again when called.
 * Sessions (``Mcp-Session-Id``) are bound to the caller; another caller gets ``404``. Changing the
   token, scope or port closes the sessions of local clients.
@@ -102,13 +102,27 @@ service ``integrations/mcp-relay``); the PC side is ``packages/mcp/src/relay/`` 
     headers **only** with that key, so a local client with the normal token cannot claim ``READ_WRITE``
     (covered by tests), and a relay session cannot be used with the local token (sessions are bound to
     the caller);
-  * scope is enforced by PC from ``token.scope``: ``READ`` bot tokens get no write tools and cannot call
-    them; the action log records ``relay:<botTokenId>`` and the bot's User-Agent;
+  * scope is enforced by PC and is the **stricter** of ``token.scope`` and the local ``scope`` setting
+    (``McpHttpServer.authenticate``: ``write`` only if both allow it): ``READ`` tokens, and every token while
+    the app is read-only, get no write tools and cannot call them (the ``instructions`` of such a session say
+    why; ``Principal.tokenScope`` / ``cappedByLocal`` record it). ``configure({scope})`` with a changed scope
+    closes **all** sessions, relay ones included, because the tool list depends on the scope; the action log records ``relay:<botTokenId>`` and the bot's User-Agent;
   * the device key is stored with Electron ``safeStorage`` (OS keychain) in ``settings.json`` and is
     refused when secure storage is unavailable; it is never logged and never sent to the renderer
     (``keyHint`` shows ``rld_<deviceId>.••••`` only);
   * responses other than ``application/json`` / ``text/event-stream`` reset the stream (the relay would
     answer ``502`` anyway); ``Set-Cookie`` is never forwarded.
+
+* **Local mode report** (extension of ``pc-relay.v1``, backward compatible): the app tells the relay whether
+  writes are possible at all, so Emperor can show a collision with the bot-token scopes.
+
+  * ``HELLO`` header gets ``capabilities: {"mcpScope": "read_only" | "read_write"}`` (``read_write`` = the
+    local scope setting is *write*). Relays ignore unknown ``HELLO`` fields.
+  * While online, when the setting changes, ``RelayClient.refreshCapabilities()`` (called by
+    ``RelayController.apply`` on every settings change) sends a ``CAPABILITIES`` frame (type ``0x42``,
+    stream 0, flag ``IGNORABLE``, header ``{"mcpScope": …}``), once per actual change. A relay that does not
+    know the type skips it because of ``IGNORABLE``; a reconnect reports the mode in ``HELLO`` again.
+  * The report is informational: enforcement stays in PC (stricter-of rule above).
 
 * ``ws://`` endpoints are accepted only for loopback (a relay started locally for tests); the endpoint is
   editable under *Advanced* in Settings.

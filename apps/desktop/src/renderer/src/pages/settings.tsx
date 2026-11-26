@@ -185,7 +185,7 @@ export default function SettingsPage() {
             <h2 className="text-xl font-semibold">Expose remotely</h2>
             <p className="text-sm text-gray-600 mt-1">
               For agents that run elsewhere (ChatGPT, a server). The app keeps one outgoing connection to the Emperor relay and shows a public HTTPS URL. Available only while this app and the MCP server are running. Remote agents authenticate with a bot token from Emperor
-              and get that token&apos;s scope (read / read-write).
+              and get the stricter of that token&apos;s scope and the Scope above: with read-only here, write tools are off even for a read-write token. The app tells Emperor which mode it is in.
             </p>
           </div>
           <label className="flex items-center gap-2 text-sm font-medium whitespace-nowrap">

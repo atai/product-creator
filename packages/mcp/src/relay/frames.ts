@@ -22,6 +22,8 @@ export const FrameType = {
   RST_STREAM: 0x31,
   PING: 0x40,
   PONG: 0x41,
+  /** PC→R, extension: local capabilities changed (sent with IGNORABLE; relays that do not know it skip it) */
+  CAPABILITIES: 0x42,
   GOAWAY: 0x50,
   EVENT: 0x60,
   ERROR: 0x7f,

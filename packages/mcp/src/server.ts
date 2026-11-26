@@ -29,7 +29,8 @@ export interface McpHttpServerOptions {
   version?: string;
   /**
    * Secret known only to the in-process relay client. A request that carries it may assert the scope and
-   * identity of the remote bot token (the relay strips and checks the real bot token).
+   * identity of the remote bot token (the relay strips and checks the real bot token). The scope that
+   * applies is the stricter of that token scope and the local `scope` setting.
    */
   relayKey?: string;
 }
@@ -78,11 +79,16 @@ export class McpHttpServer {
     return Boolean(this.httpServer?.listening);
   }
 
-  /** New token and/or scope: open sessions end, clients must reconnect with the new credentials */
+  /**
+   * New token and/or scope: open sessions end, clients must reconnect with the new credentials.
+   * A scope change ends relay sessions too (their effective scope depends on the local scope);
+   * a token change only affects local clients.
+   */
   configure(update: { token?: string; scope?: McpScope }) {
+    const scopeChanged = update.scope !== undefined && update.scope !== this.scope;
     if (update.token !== undefined) this.token = update.token;
     if (update.scope !== undefined) this.scope = update.scope;
-    void this.closeSessions('local');
+    void this.closeSessions(scopeChanged ? undefined : 'local');
   }
 
   async start(): Promise<void> {
@@ -159,9 +165,18 @@ export class McpHttpServer {
     const ua = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : undefined;
     if (this.options.relayKey && safeEqual(presented, this.options.relayKey)) {
       const id = String(req.headers[RELAY_HEADERS.token] ?? '').slice(0, 64) || 'unknown';
-      const scope: McpScope = String(req.headers[RELAY_HEADERS.scope]).toUpperCase() === 'READ_WRITE' ? 'write' : 'read';
+      const tokenScope: McpScope = String(req.headers[RELAY_HEADERS.scope]).toUpperCase() === 'READ_WRITE' ? 'write' : 'read';
+      // the stricter of bot-token scope and local setting: a read-only app never writes, whatever the token says
+      const scope: McpScope = tokenScope === 'write' && this.scope === 'write' ? 'write' : 'read';
       const relayUa = req.headers[RELAY_HEADERS.userAgent];
-      return { id: `relay:${id}`, kind: 'relay', scope, userAgent: typeof relayUa === 'string' ? relayUa.slice(0, 200) : undefined };
+      return {
+        id: `relay:${id}`,
+        kind: 'relay',
+        scope,
+        tokenScope,
+        cappedByLocal: tokenScope === 'write' && scope === 'read',
+        userAgent: typeof relayUa === 'string' ? relayUa.slice(0, 200) : undefined,
+      };
     }
     if (this.token && safeEqual(presented, this.token)) return { id: 'local', kind: 'local', scope: this.scope, userAgent: ua?.slice(0, 200) };
     return undefined;
@@ -233,7 +248,11 @@ export class McpHttpServer {
   private async createSession(principal: Principal): Promise<Session> {
     const server = new McpServer(
       { name: 'product-creator', version: this.options.version ?? '0.0.0' },
-      { instructions: 'Product Creator: feature catalog, services/libraries, code and schema sync, OpenAPI. Start with list_projects. Tools work only on projects open in the desktop app.' }
+      {
+        instructions:
+          'Product Creator: feature catalog, services/libraries, code and schema sync, OpenAPI. Start with list_projects. Tools work only on projects open in the desktop app.' +
+          (principal.cappedByLocal ? ' This app is set to read-only mode: write tools are disabled although your token allows writes.' : '')
+      }
     );
     registerTools(server, { host: this.options.host, principal, audit: this.audit });
     const sessions = this.sessions;
