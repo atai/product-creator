@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { WorkspaceInfo } from '../../../shared/ipc';
 
 /** Desktop: opened projects (multi-project workspace) and their services */
@@ -29,12 +30,21 @@ export default function WorkspacePage() {
             repository layout (pnpm workspace / package.json workspaces).
           </p>
         </div>
-        <button
-          className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
-          onClick={() => run(() => window.pc.workspace.openDialog())}
-        >
-          Open project folder…
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/projects"
+            className="px-4 py-2 rounded border border-gray-300 bg-white text-sm hover:bg-gray-50"
+            title="Sync functions from code and business objects from the Prisma schema"
+          >
+            Sync code / schema…
+          </Link>
+          <button
+            className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
+            onClick={() => run(() => window.pc.workspace.openDialog())}
+          >
+            Open project folder…
+          </button>
+        </div>
       </div>
       {error && <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
       {info.projects.length === 0 && <p className="text-gray-500">No projects opened.</p>}
