@@ -257,7 +257,7 @@ function getBusinessObjectHash(obj: BusinessObject): string {
 /**
  * Hash an object for comparison
  */
-function hashObject(obj: any): string {
+function hashObject(obj: Record<string, unknown>): string {
   const str = JSON.stringify(obj, Object.keys(obj).sort());
   return crypto.createHash('sha256').update(str).digest('hex');
 }

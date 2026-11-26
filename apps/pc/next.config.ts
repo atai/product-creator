@@ -6,11 +6,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname, "../.."),
   },
-  // Experimental features for WASM support
-  // This tells Next.js to treat these packages as external and not bundle them
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/internals', '@prisma/prisma-schema-wasm'],
-  },
+  // Treat these packages as external (not bundled) for Prisma WASM support
+  serverExternalPackages: ['@prisma/internals', '@prisma/prisma-schema-wasm'],
   // Webpack configuration (fallback when not using turbopack)
   webpack: (config, { isServer }) => {
     if (isServer) {

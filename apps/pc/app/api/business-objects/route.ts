@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStorage } from '@/lib/storage';
+import type { BusinessObject } from '@/lib/types';
 import {
   getRootObjects,
   getChildObjects,

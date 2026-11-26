@@ -3,6 +3,20 @@
 import { useEffect, useMemo, useState, FormEvent, useRef } from 'react';
 import { Project, AppEntity } from '@/lib/types';
 import { useRoots } from '@/hooks/useRoots';
+import type { MatchedObject, SyncAction as SyncActionType } from '@/lib/sync/matcher';
+import type { MatchedFunction } from '@/lib/sync/codeMatcher';
+
+/** Shape of the JSON returned by the sync start/status endpoints */
+interface SyncApiResponse {
+  error?: string;
+  message?: string;
+  syncId?: string;
+  stage?: string;
+  progress?: { current: number; total: number; message?: string; error?: string };
+  matchedObjects?: MatchedObject[];
+  matchedFunctions?: MatchedFunction[];
+  actions?: Record<string, SyncActionType>;
+}
 
 type FormMode = 'create' | 'edit';
 
@@ -57,8 +71,8 @@ export default function ProjectsManagementPage() {
   const [syncId, setSyncId] = useState<string | null>(null);
   const [syncStage, setSyncStage] = useState<'loading' | 'matching' | 'executing' | 'completed' | 'error'>('loading');
   const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; message?: string; error?: string }>({ current: 0, total: 1 });
-  const [matchedObjects, setMatchedObjects] = useState<any[]>([]);
-  const [matchedFunctions, setMatchedFunctions] = useState<any[]>([]);
+  const [matchedObjects, setMatchedObjects] = useState<MatchedObject[]>([]);
+  const [matchedFunctions, setMatchedFunctions] = useState<MatchedFunction[]>([]);
   const [syncType, setSyncType] = useState<'schema' | 'code'>('schema');
   const [syncActions, setSyncActions] = useState<Record<string, 'skip' | 'update' | 'create' | 'delete'>>({});
   const [syncSearchQuery, setSyncSearchQuery] = useState<string>('');
@@ -281,7 +295,7 @@ export default function ProjectsManagementPage() {
         method: 'POST',
       });
       
-      let data: any;
+      let data: SyncApiResponse;
       try {
         data = await response.json();
       } catch (e) {
@@ -292,6 +306,9 @@ export default function ProjectsManagementPage() {
         throw new Error(data.error || data.message || `Failed to start sync: ${response.statusText}`);
       }
 
+      if (!data.syncId) {
+        throw new Error('Server did not return syncId');
+      }
       setSyncId(data.syncId);
       
       // Start polling for status
@@ -330,7 +347,7 @@ export default function ProjectsManagementPage() {
         method: 'POST',
       });
       
-      let data: any;
+      let data: SyncApiResponse;
       try {
         data = await response.json();
       } catch (e) {
@@ -342,6 +359,9 @@ export default function ProjectsManagementPage() {
         throw new Error(data.error || data.message || `Failed to start sync: ${response.statusText}`);
       }
 
+      if (!data.syncId) {
+        throw new Error('Server did not return syncId');
+      }
       setSyncId(data.syncId);
       
       // Start polling for status
@@ -413,7 +433,7 @@ export default function ProjectsManagementPage() {
           setMatchedFunctions(data.matchedFunctions);
           // Initialize actions from matched functions
           const actions: Record<string, 'skip' | 'update' | 'create' | 'delete'> = {};
-          data.matchedFunctions.forEach((func: any) => {
+          data.matchedFunctions.forEach((func: MatchedFunction) => {
             const key = `${func.exportedFunction.relativePath}:${func.exportedFunction.name}`;
             actions[key] = func.action;
           });
@@ -474,7 +494,7 @@ export default function ProjectsManagementPage() {
           setMatchedObjects(data.matchedObjects);
           // Initialize actions from matched objects
           const actions: Record<string, 'skip' | 'update' | 'create' | 'delete'> = {};
-          data.matchedObjects.forEach((obj: any) => {
+          data.matchedObjects.forEach((obj: MatchedObject) => {
             actions[obj.prismaModel.name] = obj.action;
           });
           // Merge with existing actions (user may have changed them)
@@ -1152,7 +1172,7 @@ export default function ProjectsManagementPage() {
                                       <td className="px-4 py-2">
                                         <select
                                           value={syncActions[key] || func.action}
-                                          onChange={(e) => handleSyncActionChange(key, e.target.value as any)}
+                                          onChange={(e) => handleSyncActionChange(key, e.target.value as SyncActionType)}
                                           className="px-2 py-1 border border-gray-300 rounded text-xs"
                                         >
                                           <option value="skip">Пропустить</option>
@@ -1197,7 +1217,7 @@ export default function ProjectsManagementPage() {
                                     <td className="px-4 py-2">
                                       <select
                                         value={syncActions[obj.prismaModel.name] || obj.action}
-                                        onChange={(e) => handleSyncActionChange(obj.prismaModel.name, e.target.value as any)}
+                                        onChange={(e) => handleSyncActionChange(obj.prismaModel.name, e.target.value as SyncActionType)}
                                         className="px-2 py-1 border border-gray-300 rounded text-xs"
                                       >
                                         <option value="skip">Пропустить</option>

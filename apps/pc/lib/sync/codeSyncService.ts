@@ -1,5 +1,5 @@
-import { analyzeCode, ExportedFunction, findTypeScriptFiles } from '../code/parser';
-import { CodeAnalysisResult } from '../code/types';
+import { analyzeCode, findTypeScriptFiles } from '../code/parser';
+import { CodeAnalysisResult, ExportedFunction } from '../code/types';
 import { FunctionCard } from '../types';
 import { matchCodeToFunctions, MatchedFunction, SyncAction } from './codeMatcher';
 import { loadSyncMapping, saveSyncMapping, updateMappingEntry } from './mappingStorage';
@@ -346,7 +346,9 @@ export class CodeSyncService {
               updateMappingEntry(
                 this.functionsDirectory,
                 mappingKey,
-                matched.functionId || this.generateFunctionId(matched.exportedFunction),
+                matched.functionId ||
+                  this.generateFunctionId(matched.exportedFunction) ||
+                  this.generateDefaultId(matched.exportedFunction),
                 'create'
               );
               break;

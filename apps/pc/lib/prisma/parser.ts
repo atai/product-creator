@@ -6,6 +6,27 @@ import { PrismaModel, PrismaField, PrismaAttribute } from './types';
 // Using a variable prevents Turbopack from trying to resolve the module path at build time
 const PRISMA_INTERNALS_MODULE = '@prisma/internals';
 
+/** Subset of the Prisma DMMF field used by this converter */
+interface DmmfField {
+  name: string;
+  type: string;
+  dbName?: string | null;
+  isId?: boolean;
+  isUnique?: boolean;
+  isRequired?: boolean;
+  isList?: boolean;
+  default?: { toString(): string } | null;
+  documentation?: string;
+}
+
+/** Subset of the Prisma DMMF model used by this converter */
+interface DmmfModel {
+  name: string;
+  dbName?: string | null;
+  fields: DmmfField[];
+  documentation?: string;
+}
+
 /**
  * Parse Prisma schema file and extract models
  * Uses @prisma/internals for parsing (loaded dynamically to avoid WASM issues in Turbopack)
@@ -22,13 +43,13 @@ export async function parsePrismaSchema(schemaPath: string): Promise<PrismaModel
     throw new Error('Failed to parse Prisma schema: invalid DMMF structure');
   }
 
-  return dmmf.datamodel.models.map((model: any) => convertToPrismaModel(model));
+  return dmmf.datamodel.models.map((model: DmmfModel) => convertToPrismaModel(model));
 }
 
 /**
  * Convert Prisma DMMF model to our PrismaModel format
  */
-function convertToPrismaModel(dmmfModel: any): PrismaModel {
+function convertToPrismaModel(dmmfModel: DmmfModel): PrismaModel {
   const attributes: PrismaAttribute[] = [];
   let tableName: string | undefined;
 
@@ -38,7 +59,7 @@ function convertToPrismaModel(dmmfModel: any): PrismaModel {
     attributes.push({ name: '@@map', args: [dmmfModel.dbName] });
   }
 
-  const fields: PrismaField[] = dmmfModel.fields.map((field: any) => {
+  const fields: PrismaField[] = dmmfModel.fields.map((field: DmmfField) => {
     const fieldAttributes: PrismaAttribute[] = [];
     
     // Extract @map attribute for column name
