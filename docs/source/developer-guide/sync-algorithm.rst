@@ -1,219 +1,158 @@
-Алгоритм синхронизации Prisma схемы с бизнес-объектами
-======================================================
+Prisma schema ↔ business objects sync algorithm
+===============================================
 
-.. _1-алгоритм-выбора-действия-по-умолчанию:
+1. Choosing the default action
+------------------------------
 
-1. Алгоритм выбора действия по умолчанию
-----------------------------------------
+The sync uses a multi-step algorithm to determine the default action for every Prisma model.
 
-Система синхронизации использует многоуровневый алгоритм для определения
-действия по умолчанию для каждой модели Prisma:
+Step 1: check the mapping (repeated syncs)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Шаг 1: Проверка mapping (для повторных синхронизаций)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If the Prisma model already has an entry in ``.sync-mapping.json``:
 
-Если для модели Prisma уже существует запись в файле
-``.sync-mapping.json``:
+- the **action from the mapping** is used as the default action;
+- the business object is looked up by ``businessObjectId`` from the mapping;
+- if the object is found and the mapped action is ``skip``, the status is ``matched``;
+- if the object is found and the mapped action is not ``skip``, the status is ``needs_matching``.
 
-- Используется **действие из mapping** как действие по умолчанию
-- Система находит бизнес-объект по ``businessObjectId`` из mapping
-- Если объект найден и действие в mapping = ``skip``, статус
-  устанавливается в ``matched``
-- Если объект найден и действие в mapping ≠ ``skip``, статус
-  устанавливается в ``needs_matching``
+Step 2: look for an existing business object
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Шаг 2: Поиск существующего бизнес-объекта
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If there is no mapping entry or no object with that ``businessObjectId``, the object is searched in this
+order:
 
-Если запись в mapping отсутствует или объект по ``businessObjectId`` не
-найден, система пытается найти объект следующими способами (в порядке
-приоритета):
+1. **Exact name match** — a business object whose ``name.toLowerCase()`` equals the Prisma model name;
+2. **Normalised name** — "model" prefixes/suffixes are removed from the name and the search is repeated;
+3. **By id** — a business object whose ``id.toLowerCase()`` equals the Prisma model name.
 
-1. **Точное совпадение по имени**: поиск бизнес-объекта, у которого
-   ``name.toLowerCase()`` совпадает с именем модели Prisma
-2. **Нормализованное имя**: удаление префиксов/суффиксов "model" из
-   имени и повторный поиск
-3. **Поиск по ID**: поиск бизнес-объекта, у которого
-   ``id.toLowerCase()`` совпадает с именем модели Prisma
+Step 3: action for a found object
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Шаг 3: Определение действия для найденного объекта
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If the object is found:
 
-Если объект найден:
+- the **structure hash** of the Prisma model is computed (name, fields with types and optionality,
+  table name);
+- the **structure hash** of the business object is computed (id, fields with types, tables);
+- hashes **differ** → action ``update`` (status ``needs_matching``);
+- hashes **match** → action ``skip`` (status ``matched``).
 
-- Вычисляется **хеш структуры** Prisma модели (имя, поля с типами и
-  опциональностью, имя таблицы)
-- Вычисляется **хеш структуры** бизнес-объекта (id, поля с типами,
-  таблицы)
-- Если хеши **не совпадают** → действие = ``update`` (статус:
-  ``needs_matching``)
-- Если хеши **совпадают** → действие = ``skip`` (статус: ``matched``)
+Step 4: new object
+~~~~~~~~~~~~~~~~~~
 
-Шаг 4: Новый объект
-~~~~~~~~~~~~~~~~~~~
+If no object is found: action ``create`` (status ``new``).
 
-Если объект не найден ни одним из способов:
+Step 5: deleted objects
+~~~~~~~~~~~~~~~~~~~~~~~
 
-- Действие = ``create`` (статус: ``new``)
+After all Prisma models are processed, business objects are collected that are:
 
-Шаг 5: Удаление объектов
-~~~~~~~~~~~~~~~~~~~~~~~~
+- active (``active !== false``);
+- not matched with any Prisma model;
+- **synced before** (there is a mapping entry whose ``businessObjectId`` equals the object ``id``).
 
-После обработки всех моделей Prisma система находит бизнес-объекты,
-которые:
+For these objects the action is ``delete`` (status ``delete``).
 
-- Активны (``active !== false``)
-- Не были сопоставлены ни с одной моделью Prisma
-- **Были ранее синхронизированы** (есть запись в mapping, где
-  ``businessObjectId`` совпадает с ``id`` объекта)
+----
 
-Для таких объектов действие устанавливается = ``delete`` (статус:
-``delete``)
+2. Sync actions
+---------------
 
---------------
+``create``
+~~~~~~~~~~
 
-.. _2-описание-действий-синхронизации:
+**When:** the Prisma model exists in the schema and there is no matching business object.
 
-2. Описание действий синхронизации
-----------------------------------
+**What happens:**
 
-.. _create--создать:
+1. a new business object is created from the structure of the Prisma model;
+2. a unique business object id is generated (``model.name`` → ``model.name``);
+3. name, description, fields and tables are filled in;
+4. the object is saved to the file system;
+5. a mapping entry is added: ``{ modelName → { businessObjectId, action: 'create', lastSync } }``.
 
-``create`` — Создать
-~~~~~~~~~~~~~~~~~~~~
+**Result:** a new business object is ready to use.
 
-**Когда используется:**
+----
 
-- Модель Prisma найдена в схеме
-- Соответствующий бизнес-объект не существует
+``update``
+~~~~~~~~~~
 
-**Что происходит:**
+**When:** the Prisma model exists, the matching business object exists and the model structure has
+changed (hashes differ).
 
-1. Создается новый бизнес-объект на основе структуры Prisma модели
-2. Генерируется уникальный ID бизнес-объекта (формат: ``model.name`` →
-   ``model.name``)
-3. Заполняются поля: имя, описание, поля, таблицы
-4. Объект сохраняется в файловой системе
-5. В mapping добавляется запись:
-   ``{ modelName → { businessObjectId, action: 'create', lastSync } }``
+**What happens:**
 
-**Результат:**
+1. the business object is updated from the Prisma model:
 
-- Новый бизнес-объект создан и готов к использованию
+   - fields are updated (new ones added, existing ones changed);
+   - tables are updated (name, columns);
+   - user data (owner, lifecycle) is kept if it was edited manually;
 
---------------
+2. the object is saved back to the file system;
+3. the mapping entry is updated: ``action: 'update', lastSync``.
 
-.. _update--обновить:
+**Result:** the business object matches the current Prisma schema; user metadata (owner, lifecycle) is
+kept unless it changed in the Prisma model.
 
-``update`` — Обновить
-~~~~~~~~~~~~~~~~~~~~~
+**Change details:** the sync reports the concrete changes:
 
-**Когда используется:**
+- fields added;
+- fields removed;
+- field types changed;
+- table name changed.
 
-- Модель Prisma найдена в схеме
-- Соответствующий бизнес-объект существует
-- Структура модели изменилась (хеши не совпадают)
+----
 
-**Что происходит:**
+``skip``
+~~~~~~~~
 
-1. Бизнес-объект обновляется данными из Prisma модели:
+**When:** the Prisma model exists, the matching business object exists and the structure has **not**
+changed (hashes match).
 
-   - Обновляются поля (добавляются новые, изменяются существующие)
-   - Обновляются таблицы (имя, колонки)
-   - Сохраняются пользовательские данные (owner, lifecycle, если они
-     были изменены вручную)
+**What happens:**
 
-2. Объект сохраняется обратно в файловую систему
-3. В mapping обновляется запись: ``action: 'update', lastSync``
+1. the business object is **not changed**;
+2. only ``lastSync`` (timestamp of the last sync) is updated in the mapping;
+3. the action is stored as ``skip``.
 
-**Результат:**
+**Result:** the business object stays as is; the sync record shows that it was checked.
 
-- Существующий бизнес-объект обновлен в соответствии с текущей Prisma
-  схемой
-- Пользовательские метаданные (owner, lifecycle) сохраняются, если не
-  были изменены в Prisma модели
+----
 
-**Детали изменений:** Система определяет конкретные изменения:
+``delete``
+~~~~~~~~~~
 
-- Добавлены новые поля
-- Удалены поля
-- Изменены типы полей
-- Изменено имя таблицы
+**When:** the Prisma model was **removed from the schema** and the business object was synced from
+Prisma before (there is a mapping entry).
 
---------------
+**What happens:**
 
-.. _skip--пропустить:
+1. the business object is **not physically deleted**;
+2. the flag ``active: false`` is set (the object becomes inactive);
+3. the object is saved with the updated flag;
+4. the mapping entry is removed.
 
-``skip`` — Пропустить
-~~~~~~~~~~~~~~~~~~~~~
+**Result:**
 
-**Когда используется:**
+- the business object is inactive (``active: false``) and no longer listed among active objects;
+- the link between the Prisma model and the business object is removed from the mapping;
+- the data is kept for a possible restore.
 
-- Модель Prisma найдена в схеме
-- Соответствующий бизнес-объект существует
-- Структура модели **не изменилась** (хеши совпадают)
+**Important:** deletion is **not physical** — the object file stays on disk and can be restored by
+setting ``active: true``.
 
-**Что происходит:**
+----
 
-1. Бизнес-объект **не изменяется**
-2. В mapping обновляется только ``lastSync`` (timestamp последней
-   синхронизации)
-3. Действие сохраняется как ``skip``
+Additional information
+----------------------
 
-**Результат:**
-
-- Бизнес-объект остается без изменений
-- Запись о синхронизации обновлена (для отслеживания, что объект был
-  проверен)
-
---------------
-
-.. _delete--удалить:
-
-``delete`` — Удалить
-~~~~~~~~~~~~~~~~~~~~
-
-**Когда используется:**
-
-- Модель Prisma **удалена из схемы** (больше не существует)
-- Бизнес-объект ранее был синхронизирован из Prisma (есть запись в
-  mapping)
-
-**Что происходит:**
-
-1. Бизнес-объект **не удаляется физически** из файловой системы
-2. Устанавливается флаг ``active: false`` (объект помечается как
-   неактивный)
-3. Объект сохраняется с обновленным флагом
-4. Запись удаляется из mapping
-
-**Результат:**
-
-- Бизнес-объект становится неактивным (``active: false``)
-- Объект больше не отображается в списке активных объектов
-- Связь между Prisma моделью и бизнес-объектом удалена из mapping
-- Данные сохраняются для возможного восстановления
-
-**Важно:**
-
-- Удаление **не является физическим** — файл объекта остается в файловой
-  системе
-- Можно восстановить объект вручную, установив ``active: true``
-
---------------
-
-Дополнительная информация
--------------------------
-
-.. _mapping-файл-sync-mappingjson:
-
-Mapping файл (``.sync-mapping.json``)
+Mapping file (``.sync-mapping.json``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Система хранит mapping в файле ``.sync-mapping.json`` в директории
-бизнес-объектов:
+The mapping is stored in ``.sync-mapping.json`` in the business objects folder:
 
-.. code:: json
+.. code-block:: json
 
    {
      "User": {
@@ -228,42 +167,33 @@ Mapping файл (``.sync-mapping.json``)
      }
    }
 
-Mapping используется для:
+The mapping is used to:
 
-- Сохранения связи между Prisma моделями и бизнес-объектами
-- Определения действий по умолчанию при повторных синхронизациях
-- Отслеживания объектов, которые были синхронизированы из Prisma
+- keep the link between Prisma models and business objects;
+- determine default actions on repeated syncs;
+- track objects that were synced from Prisma.
 
-Определение изменений
-~~~~~~~~~~~~~~~~~~~~~
+Change detection
+~~~~~~~~~~~~~~~~
 
-Система использует SHA-256 хеш структуры для определения изменений:
+Changes are detected with a SHA-256 hash of the structure:
 
-- **Хеш Prisma модели**: имя + поля (имя, тип, опциональность) + имя
-  таблицы
-- **Хеш бизнес-объекта**: id + поля (имя, тип) + таблицы (имена)
+- **Prisma model hash**: name + fields (name, type, optionality) + table name;
+- **business object hash**: id + fields (name, type) + tables (names).
 
-Если хеши отличаются, это означает, что структура изменилась и требуется
-обновление.
+Different hashes mean the structure changed and an update is needed.
 
-Статусы сопоставления
-~~~~~~~~~~~~~~~~~~~~~
+Match statuses
+~~~~~~~~~~~~~~
 
-В таблице синхронизации отображаются статусы:
+The sync table shows these statuses:
 
-- **``new``** (Новый) — новый объект, требуется создать. Соответствует
-  действию ``create``
-- **``matched``** (Сопоставлен) — объект найден и не изменился.
-  Соответствует действию ``skip``
-- **``needs_matching``** (Нужно сопоставить) — объект найден, но
-  требуется проверка изменений или обновление. Обычно соответствует
-  действию ``update``
-- **``delete``** (Удалить) — объект должен быть удален (помечен как
-  неактивный). Соответствует действию ``delete``
+- ``new`` — a new object to create; corresponds to ``create``;
+- ``matched`` — the object was found and did not change; corresponds to ``skip``;
+- ``needs_matching`` — the object was found but changes must be checked or applied; usually ``update``;
+- ``delete`` — the object should be deleted (marked inactive); corresponds to ``delete``.
 
-**Важно:** Статус и действие — это разные понятия:
+**Status and action are different things:**
 
-- **Статус** показывает текущее состояние сопоставления (отображается в
-  таблице)
-- **Действие** показывает, что будет сделано при синхронизации (можно
-  изменить в выпадающем списке)
+- the **status** shows the current state of the match (shown in the table);
+- the **action** is what the sync will do (can be changed in the drop-down).

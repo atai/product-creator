@@ -7,6 +7,7 @@ How to install Product Creator, open your projects and keep their specification 
    :maxdepth: 2
 
    installation
+   distribution
    launching
    projects-and-services
    catalog

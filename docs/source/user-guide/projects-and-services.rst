@@ -1,55 +1,123 @@
-Projects and services
-=====================
+Projects, services and libraries
+================================
 
-A **project** is one repository. It consists of one or more **services** — for a monorepo these are the
-workspace packages (``frontend``, ``packages/*``, ``integrations/*`` in Emperor; ``apps/*`` and
-``packages/*`` in Product Creator itself). Every service has its own feature catalog and, optionally,
-a code base, a Prisma schema and OpenAPI specifications.
+A **project** is one repository. It consists of **components** of two kinds:
 
-Discovery
----------
+* **services** — deployable parts (``frontend``, ``integrations/*`` in Emperor, ``apps/desktop`` in
+  Product Creator);
+* **libraries** — shared packages used by services (``packages/*``).
 
-If the project has no ``product-creator.yml``, services are discovered automatically:
+Every component has its own feature catalog (functions, business objects, workflows, streams) and,
+optionally, a code base, a Prisma schema and OpenAPI specifications. Components can depend on each
+other (``dependsOn``), usually a service on libraries.
+
+YAML files are the database
+---------------------------
+
+Product Creator has no hidden database: everything is stored as YAML files in the project folder and
+can be committed together with the code.
+
+.. code-block:: text
+
+   <project>/
+     product-creator.yml                        # the project
+     docs/product/                              # catalogRoot
+       frontend/
+         service.pc.yml                         # the "frontend" service
+         functions/  business-objects/  workflows/  streams/
+       packages/shared/
+         library.pc.yml                         # the "shared" library
+         functions/ ...
+       integrations/youtrack/
+         service.pc.yml
+
+The folder that contains ``service.pc.yml`` / ``library.pc.yml`` *is* the catalog of the component.
+Component folders can be nested anywhere below ``catalogRoot``.
+
+First open: one-time import
+---------------------------
+
+When a folder without ``product-creator.yml`` is opened for the first time, the model is imported
+**once** from the repository layout and written to the files above:
 
 1. package globs are read from ``pnpm-workspace.yaml`` (or ``workspaces`` in ``package.json``);
-2. every matching folder with a ``package.json`` becomes a service (id derived from its path, name from
-   ``package.json``);
-3. ``prisma/schema.prisma`` is used as the DB schema of the service;
-4. OpenAPI files are detected: ``openapi.{yaml,yml,json}``, ``dist/openapi.json``, ``docs/openapi.*``,
-   ``api/openapi.*``, ``public/openapi.json``;
-5. the catalog folder is ``docs/product/<service path>``.
+2. every matching folder with a ``package.json`` becomes a component; folders under ``packages/``,
+   ``libs/``, ``shared/`` or ``common/`` become **libraries**, the others **services**;
+3. ``workspace:`` dependencies in ``package.json`` become ``dependsOn`` links;
+4. ``prisma/schema.prisma`` is used as the DB schema;
+5. OpenAPI files (``openapi.{yaml,yml,json}``, ``docs/openapi.*``, ``api/openapi.*``,
+   ``public/openapi.json``, ``dist/openapi.*``) are taken **only if committed to git** — generated
+   build output is ignored by default;
+6. the catalog folder is ``docs/product/<component path>`` (existing catalogs there are reused).
 
-A repository without workspaces is a single service (``.``).
+A repository without workspaces becomes a single service. After the import, the folder layout is no
+longer scanned on start: the YAML files are the source of truth and are edited in the app. New
+packages are added with **Import new from folder** (only folders that are not in the model yet).
 
-On the **Workspace** page press **Write product-creator.yml** to save the discovered model and adjust it.
+The home directory and the filesystem root are never imported.
 
-product-creator.yml
--------------------
+Editing in the app
+------------------
 
-All paths are relative to the project root.
+Open the **Workspace** page (gear icon in the header). For every project:
+
+* **Edit project** — name, slug, description, Sphinx docs folder, catalog root;
+* **Add service** / **Add library** — creates ``service.pc.yml`` / ``library.pc.yml`` in
+  ``<catalogRoot>/<path>`` (or the folder you enter);
+* **Edit** a component — name, slug, kind, source path, code base, Prisma schema, OpenAPI specs,
+  dependencies; changing the kind renames ``service.pc.yml`` ↔ ``library.pc.yml``;
+* **Remove** — deletes only the component file (the catalog content stays) and removes references
+  to it from other components;
+* **Import new from folder** — adds components found in the layout that are not in the model.
+
+Every save writes the YAML files first; the app then re-reads the workspace.
+
+Stable ids (UUID)
+-----------------
+
+Projects and components are identified by a **UUID** generated once (on import or creation). It never
+changes; ``name`` and ``slug`` can be renamed freely. All references use the UUID: ``dependsOn``, the
+**Apps** selector and URLs (``?app=<uuid>``), and interface references
+(``<componentId>#<METHOD> <path>``, see :doc:`interfaces`).
+
+File format
+-----------
+
+``product-creator.yml`` (paths relative to the project root):
 
 .. code-block:: yaml
 
-   id: emperor
+   version: 2
+   id: 6dcfe14b-038a-4485-b60f-bf3531d714df
+   slug: emperor
    name: Emperor
    description: ERP/CRM
-   docs: docs                    # Sphinx docs folder of the project
-   services:
-     - id: frontend
-       name: Web UI
-       path: frontend            # service folder
-       catalog: docs/product/frontend   # functions/, business-objects/, workflows/, streams/
-       codeBasePath: frontend    # analysed by "sync from code" (default: path)
-       dbSchemaPath: frontend/prisma/schema.prisma
-       openapi:
-         - frontend/public/openapi.json
-     - id: youtrack
-       path: integrations/youtrack
-       openapi: integrations/youtrack/dist/openapi.json
+   docs: docs                   # Sphinx docs folder of the project
+   catalogRoot: docs/product    # folder with component catalogs
 
-Omitted fields are filled in by discovery rules (``catalog``, ``codeBasePath``, ``dbSchemaPath``,
-``openapi``). If ``services`` is omitted, all services are discovered.
+``docs/product/frontend/service.pc.yml``:
 
-.. note::
-   In the desktop app projects and services are read-only in the UI: edit ``product-creator.yml``.
-   The legacy *Projects* page (project/app CRUD) only works in the web app.
+.. code-block:: yaml
+
+   id: 409c4b2b-cf45-4516-b363-ab66ef4e5b47
+   slug: frontend
+   name: Web UI
+   description: Next.js front end
+   path: frontend                         # source folder
+   codeBasePath: frontend/src             # analysed by "sync from code" (default: path)
+   dbSchemaPath: frontend/prisma/schema.prisma
+   openapi:
+     - frontend/openapi.yaml              # committed spec files
+   dependsOn:
+     - 8974bf01-4559-4951-98f3-94ee7dcd0013   # UUID of a library
+
+``library.pc.yml`` has the same fields.
+
+Migration from the first format
+-------------------------------
+
+A ``product-creator.yml`` without ``version: 2`` (inline ``services:`` list with slug ids) is migrated
+automatically on open: UUIDs are generated, the old id becomes the ``slug``, ``dependsOn`` is resolved
+to UUIDs, a component file is written into each catalog folder and the root file is rewritten.
+Catalogs outside ``catalogRoot`` are placed in ``<catalogRoot>/<slug>`` (shown as a note on the
+Workspace page). Review the result and commit it.

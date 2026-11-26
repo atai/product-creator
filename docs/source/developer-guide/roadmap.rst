@@ -21,11 +21,24 @@ version of Product Creator.
      - This documentation
    * - `PRODUCTCREATOR-11 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-11>`_
      - Root README with links only
+   * - `PRODUCTCREATOR-12 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-12>`_
+     - YAML-as-database persistence + UI editor for projects, services, libraries
+   * - `PRODUCTCREATOR-13 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-13>`_
+     - Stable UUID ids
+   * - `PRODUCTCREATOR-14 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-14>`_
+     - Library component kind and dependencies
+   * - `PRODUCTCREATOR-15 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-15>`_
+     - ``apps/pc`` deprecated
+   * - `PRODUCTCREATOR-16 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-16>`_
+     - Distributables: local + CI for macOS, Windows, Linux
+   * - `PRODUCTCREATOR-17 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-17>`_
+     - ESLint and unit tests
 
 Known gaps
 ----------
 
-* Desktop: projects/services are edited in ``product-creator.yml`` only (no UI editor yet).
-* No packaged installer (electron-builder) yet — run from source.
+* Builds are unsigned: macOS signing + notarization, Windows code signing, releases and auto-update are
+  a follow-up.
+* Catalog entities (functions, business objects) still use readable ids, not UUIDs.
 * Doc page (generated ТЗ) is still a placeholder.
-* No automated tests / CI.
+* Unit tests cover the core project model and OpenAPI loader only; no UI tests yet.

@@ -21,25 +21,27 @@ Model
      OP -- "declared in" --> SPEC["openapi.json<br/>(service B)"]
      FB["Function card<br/>(service B)"] -- "implements" --> OP
 
-* **Interface spec** — an OpenAPI 3.x / Swagger 2 document of a service (``openapi`` in
-  ``product-creator.yml``, or discovered).
+* **Interface spec** — an OpenAPI 3.x / Swagger 2 document of a component (``openapi`` in its
+  ``service.pc.yml``). Default source: **spec files committed in the repository** (import takes only
+  files tracked by git); generated files can be listed explicitly.
 * **Operation** — ``<METHOD> <path>`` (stable key) plus ``operationId``, summary, tags, deprecated.
-* **Operation ref** — ``<appId>#<METHOD> <path>``, e.g. ``emperor-web-ui.integrations-youtrack#POST /issues``.
-  ``appId`` is ``<projectId>.<serviceId>``, so refs work across projects of the workspace.
+* **Operation ref** — ``<componentId>#<METHOD> <path>``, e.g.
+  ``61f70fc3-558a-43e8-aea8-1946caf1d9a7#POST /issues``. The component id is a UUID, unique across
+  projects of the workspace and stable when the component is renamed.
 * **Link** — on a function card:
 
   .. code-block:: yaml
 
      interfaces:
-       implements: ["emperor-web-ui.integrations-youtrack#POST /issues"]
-       calls: ["emperor-web-ui.integrations-scm#GET /repos/{id}"]
+       implements: ["61f70fc3-558a-43e8-aea8-1946caf1d9a7#POST /issues"]
+       calls: ["1432afef-c4cd-4f46-9e15-534df62f7710#GET /repos/{id}"]
 
 Implemented (first step)
 ------------------------
 
 * ``@pc/core/interfaces/openapi``: ``loadOpenApiSpec(file)`` → operations; types ``InterfaceOperation``,
   ``InterfaceSpec``, ``InterfaceLink``, ``operationRef()``.
-* Service model carries ``openapi`` paths (manifest + discovery).
+* Component model carries ``openapi`` paths (``*.pc.yml``; import takes committed files).
 * ``GET /api/interfaces?app=`` and the **Interfaces** page.
 
 Next steps
@@ -56,6 +58,7 @@ Next steps
 Open questions
 --------------
 
-* Source of truth for specs: generated ``dist/openapi.json`` (needs build) vs. committed spec files.
+* Generated specs (e.g. Emperor builds ``dist/openapi.json`` from code): build them in CI and commit, or
+  add an optional "generate" command per component.
 * Non-HTTP interfaces (events, AsyncAPI, MCP tools) — same link model with another spec loader?
 * Versioning of operation refs across releases.

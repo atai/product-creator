@@ -21,10 +21,16 @@ JSON Schemas: ``packages/core/schema``.
    * - Stream
      - ``stream.schema.json``
      - ``stream: <name>``
-   * - Project (web config)
+   * - Project (desktop)
+     - ``product-creator.yml`` (``version: 2``)
+     - UUID
+   * - Service / library (desktop)
+     - ``service.pc.yml`` / ``library.pc.yml``
+     - UUID
+   * - Project (web config, deprecated)
      - ``project.schema.json``
      - 5 chars
-   * - App (web config)
+   * - App (web config, deprecated)
      - ``app.schema.json``
      - ``<projectId>-<suffix>``
 

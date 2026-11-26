@@ -21,8 +21,13 @@ Without the global launcher (from the Product Creator repository):
    pnpm desktop:build
    pnpm --filter desktop start -- --project ~/git/emperor-web-ui
 
-``--project <folder>`` can be repeated. When no folder is given, the folder where the command was run
-is used (``INIT_CWD`` for pnpm scripts, ``PC_PROJECT`` environment variable is also supported).
+``--project <folder>`` can be repeated. In development, when no folder is given and the workspace is
+empty, the folder where the command was run is used (``INIT_CWD`` for pnpm scripts; the ``PC_PROJECT``
+environment variable is also supported). The installed app accepts folders as plain arguments and
+otherwise starts with the remembered workspace.
+
+The first open of a folder imports its services and libraries once and writes
+``product-creator.yml`` and ``*.pc.yml`` files into it (see :doc:`projects-and-services`).
 
 Several projects at once (workspace)
 ------------------------------------
@@ -31,9 +36,10 @@ Opened folders form the **workspace**. It is remembered between runs (stored in 
 folder, e.g. ``~/Library/Application Support/Product Creator/workspace.json`` on macOS).
 
 * **File → Open Project Folder…** (``Cmd/Ctrl+O``) adds folders.
-* The **Workspace** page (gear icon in the header) lists projects and their services and lets you close a
-  project.
+* The **Workspace** page (gear icon in the header) lists projects with their services and libraries, is
+  the editor of the project model and lets you close a project.
 * Running ``product-creator <folder>`` while the app is open adds the folder to the running window.
 
-The **Apps** selector in the header lists all services of all opened projects as
-``<project>: <service>``; catalog pages are filtered by the selected service.
+The **Apps** selector in the header lists all components of all opened projects as
+``<project>: <name>`` (libraries are marked ``(lib)``); catalog pages are filtered by the selected
+component.
