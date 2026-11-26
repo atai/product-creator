@@ -9,7 +9,8 @@
     "./*": "./src/*.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@prisma/internals": "^6.0.0",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^20"
+    "@types/node": "^20",
+    "vitest": "^3.2.7"
   }
 }

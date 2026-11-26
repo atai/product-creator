@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import * as path from 'path';
-import { IPC, type ApiRequest, type ApiResponse } from '../shared/ipc';
+import { deleteComponent, importNewComponents, saveComponent, updateProject } from '@pc/core/project/model';
+import { IPC, type ApiRequest, type ApiResponse, type ComponentInput, type EditResult, type ProjectPatch } from '../shared/ipc';
 import { parseProjectArgs, defaultProjectFolder } from './args';
 import { Workspace } from './workspace';
 
@@ -33,7 +34,7 @@ async function notifyWorkspaceChanged() {
 }
 
 function updateTitle() {
-  const names = workspace.info().projects.map((p) => p.name ?? path.basename(p.root));
+  const names = workspace.info().projects.map((p) => p.project?.name ?? path.basename(p.root));
   mainWindow?.setTitle(`Product Creator — ${names.join(', ') || 'no project'}`);
 }
 
@@ -61,11 +62,27 @@ function registerIpc() {
     if (workspace.remove(root)) await notifyWorkspaceChanged();
     return workspace.info();
   });
-  ipcMain.handle(IPC.workspaceWriteManifest, async (_e, root: string) => {
-    workspace.writeManifest(root);
+
+  // Editor: every change is written to the YAML database first, then the workspace is re-read
+  const edit = (fn: () => void) => async (): Promise<EditResult> => {
+    try {
+      fn();
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error), info: workspace.info() };
+    }
     await notifyWorkspaceChanged();
-    return workspace.info();
-  });
+    return { ok: true, info: workspace.info() };
+  };
+  ipcMain.handle(IPC.editorUpdateProject, (_e, root: string, patch: ProjectPatch) =>
+    edit(() => updateProject(workspace.requireRoot(root), patch))()
+  );
+  ipcMain.handle(IPC.editorSaveComponent, (_e, root: string, component: ComponentInput) =>
+    edit(() => saveComponent(workspace.requireRoot(root), component))()
+  );
+  ipcMain.handle(IPC.editorDeleteComponent, (_e, root: string, id: string) =>
+    edit(() => deleteComponent(workspace.requireRoot(root), id))()
+  );
+  ipcMain.handle(IPC.editorImportNew, (_e, root: string) => edit(() => importNewComponents(workspace.requireRoot(root)))());
 }
 
 function buildMenu() {
@@ -116,7 +133,7 @@ function createWindow() {
  * render the window, save a screenshot (PC_SMOKE_SCREENSHOT) and exit. Used for local/CI verification.
  */
 async function runSmokeTest() {
-  const report: Record<string, unknown> = { projects: workspace.info().projects.map((p) => ({ root: p.root, services: p.services?.length, error: p.error })) };
+  const report: Record<string, unknown> = { projects: workspace.info().projects.map((p) => ({ root: p.root, origin: p.origin, notes: p.notes, components: p.project?.components.length, error: p.error })) };
   for (const url of ['/api/workspace', '/api/apps', '/api/index', '/api/business-objects', '/api/interfaces']) {
     const res = await handleApi({ method: 'GET', url });
     let size: unknown = res.body.length;
@@ -145,6 +162,16 @@ async function runSmokeTest() {
   const win = mainWindow;
   if (win) {
     if (win.webContents.isLoading()) await new Promise<void>((r) => win.webContents.once('did-finish-load', () => r()));
+    // PC_SMOKE_EDIT=<new name>: rename the first component through the renderer bridge (editor IPC → YAML)
+    if (process.env.PC_SMOKE_EDIT) {
+      report.edit = await win.webContents.executeJavaScript(`(async () => {
+        const info = await window.pc.workspace.get();
+        const c = info.projects[0].project.components[0];
+        const res = await window.pc.editor.saveComponent(info.projects[0].root, { ...c, name: ${JSON.stringify(process.env.PC_SMOKE_EDIT)} });
+        const after = res.info.projects[0].project.components.find((x) => x.id === c.id);
+        return { ok: res.ok, error: res.error, id: c.id, idKept: Boolean(after), name: after && after.name };
+      })()`);
+    }
     if (process.env.PC_SMOKE_ROUTE) {
       await win.webContents.executeJavaScript(`location.hash = ${JSON.stringify('#' + process.env.PC_SMOKE_ROUTE)}`);
     }

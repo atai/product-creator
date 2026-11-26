@@ -1,16 +1,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { configureStorage, resetStorage } from '@pc/core/storage';
-import { loadProject, toManifestYaml, toStorageEntities, MANIFEST_FILE, type ProjectManifest } from '@pc/core/project/manifest';
+import { openProject, toStorageEntities, PROJECT_FILE, type OpenResult } from '@pc/core/project/model';
 import type { WorkspaceInfo, WorkspaceProjectInfo } from '../shared/ipc';
 
 /**
  * Multi-project workspace: the list of opened project folders, persisted in the user data dir.
- * All services of all opened projects are exposed to the UI as "apps" (header selector).
+ * Each project is read from its YAML database (product-creator.yml + *.pc.yml); the first open of
+ * a folder imports the model from the layout once. All components of all projects are exposed to
+ * the UI as "apps" (header selector), keyed by component UUID.
  */
 export class Workspace {
   private roots: string[] = [];
-  private loaded = new Map<string, ProjectManifest>();
+  private loaded = new Map<string, OpenResult>();
   private errors = new Map<string, string>();
 
   constructor(private stateFile: string) {
@@ -51,47 +53,44 @@ export class Workspace {
     return this.roots.length !== before;
   }
 
-  /** (Re)load manifests of all projects and reconfigure the core storage */
+  /** Project root that is open in the workspace (guards editor calls) */
+  requireRoot(root: string): string {
+    const resolved = path.resolve(root);
+    if (!this.roots.includes(resolved)) throw new Error(`${resolved} is not open in the workspace`);
+    return resolved;
+  }
+
+  /** (Re)read the YAML databases of all projects and reconfigure the core storage */
   async reload(): Promise<void> {
-    this.loaded.clear();
+    const previous = this.loaded;
+    this.loaded = new Map();
     this.errors.clear();
     for (const root of this.roots) {
       try {
-        this.loaded.set(root, loadProject(root));
+        const result = openProject(root);
+        // keep import/migration notes of this session visible after edits
+        const before = previous.get(root);
+        if (result.origin === 'read' && before && before.origin !== 'read') {
+          result.origin = before.origin;
+          result.notes = before.notes;
+        }
+        this.loaded.set(root, result);
       } catch (error) {
         this.errors.set(root, error instanceof Error ? error.message : String(error));
       }
     }
     await resetStorage();
-    configureStorage({ manifest: { ...toStorageEntities([...this.loaded.values()]), source: MANIFEST_FILE } });
-  }
-
-  writeManifest(root: string): void {
-    const project = this.loaded.get(path.resolve(root)) ?? loadProject(root);
-    const file = path.join(project.root, MANIFEST_FILE);
-    if (fs.existsSync(file)) throw new Error(`${file} already exists`);
-    fs.writeFileSync(file, toManifestYaml(project));
+    configureStorage({
+      manifest: { ...toStorageEntities([...this.loaded.values()].map((r) => r.project)), source: PROJECT_FILE },
+    });
   }
 
   info(): WorkspaceInfo {
     return {
       projects: this.roots.map((root): WorkspaceProjectInfo => {
-        const p = this.loaded.get(root);
-        if (!p) return { root, error: this.errors.get(root) ?? 'Not loaded' };
-        return {
-          root,
-          id: p.id,
-          name: p.name,
-          source: p.source,
-          services: p.services.map((s) => ({
-            id: s.id,
-            name: s.name,
-            path: s.path,
-            catalog: s.catalog,
-            openapi: s.openapi,
-            dbSchemaPath: s.dbSchemaPath,
-          })),
-        };
+        const r = this.loaded.get(root);
+        if (!r) return { root, error: this.errors.get(root) ?? 'Not loaded' };
+        return { root, project: r.project, origin: r.origin, notes: r.notes };
       }),
     };
   }

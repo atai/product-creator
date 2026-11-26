@@ -1,4 +1,7 @@
 /** IPC contract between main, preload and renderer */
+import type { ComponentInput, ComponentModel, ProjectModel, ProjectPatch } from '@pc/core/project/model';
+
+export type { ComponentInput, ComponentModel, ProjectModel, ProjectPatch };
 
 export interface ApiRequest {
   method: string;
@@ -16,15 +19,23 @@ export interface ApiResponse {
 
 export interface WorkspaceProjectInfo {
   root: string;
-  id?: string;
-  name?: string;
-  source?: 'file' | 'discovered';
-  services?: { id: string; name: string; path: string; catalog: string; openapi?: string[]; dbSchemaPath?: string }[];
+  /** Loaded project model (YAML database) */
+  project?: ProjectModel;
+  /** How the project was obtained on this start: read, imported once from the layout, migrated from v1 */
+  origin?: 'read' | 'imported' | 'migrated';
+  notes?: string[];
   error?: string;
 }
 
 export interface WorkspaceInfo {
   projects: WorkspaceProjectInfo[];
+}
+
+/** Result of an editor call: updated workspace or an error message (nothing written) */
+export interface EditResult {
+  ok: boolean;
+  error?: string;
+  info: WorkspaceInfo;
 }
 
 export interface PcBridge {
@@ -34,8 +45,13 @@ export interface PcBridge {
     openDialog(): Promise<WorkspaceInfo>;
     add(root: string): Promise<WorkspaceInfo>;
     close(root: string): Promise<WorkspaceInfo>;
-    /** Write product-creator.yml for a discovered project */
-    writeManifest(root: string): Promise<WorkspaceInfo>;
+  };
+  /** Project / service / library editor — writes product-creator.yml and *.pc.yml */
+  editor: {
+    updateProject(root: string, patch: ProjectPatch): Promise<EditResult>;
+    saveComponent(root: string, component: ComponentInput): Promise<EditResult>;
+    deleteComponent(root: string, id: string): Promise<EditResult>;
+    importNew(root: string): Promise<EditResult>;
   };
   onWorkspaceChanged(callback: (info: WorkspaceInfo) => void): () => void;
 }
@@ -46,6 +62,9 @@ export const IPC = {
   workspaceOpenDialog: 'pc:workspace:open-dialog',
   workspaceAdd: 'pc:workspace:add',
   workspaceClose: 'pc:workspace:close',
-  workspaceWriteManifest: 'pc:workspace:write-manifest',
   workspaceChanged: 'pc:workspace:changed',
+  editorUpdateProject: 'pc:editor:update-project',
+  editorSaveComponent: 'pc:editor:save-component',
+  editorDeleteComponent: 'pc:editor:delete-component',
+  editorImportNew: 'pc:editor:import-new',
 } as const;

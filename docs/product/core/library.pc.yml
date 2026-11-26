@@ -1,0 +1,5 @@
+id: 65b1a710-428c-4e33-baf7-b6047999dfad
+slug: core
+name: Core package
+path: packages/core
+codeBasePath: packages/core/src

@@ -1,0 +1,7 @@
+id: ec457b8f-8d3a-4187-a38d-0e91adba0168
+slug: desktop
+name: Desktop app (Electron)
+path: apps/desktop
+codeBasePath: apps/desktop/src
+dependsOn:
+  - 65b1a710-428c-4e33-baf7-b6047999dfad

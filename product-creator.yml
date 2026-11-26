@@ -1,21 +1,9 @@
-# Product Creator project manifest (see docs: User Docs → Projects and services)
-id: product-creator
+# Product Creator project (https://github.com/atai/product-creator)
+# Components live in <catalogRoot>/**/service.pc.yml and library.pc.yml. Edit in the app.
+version: 2
+id: 18a59566-5bc8-43ac-b24f-8ab132b8f0ec
+slug: product-creator
 name: Product Creator
 description: Feature catalog and traceable product documentation (ТЗ) linked to code
 docs: docs
-services:
-  - id: desktop
-    name: Desktop app (Electron)
-    path: apps/desktop
-    catalog: docs/product/desktop
-    codeBasePath: apps/desktop/src
-  - id: core
-    name: Core package
-    path: packages/core
-    catalog: docs/product/core
-    codeBasePath: packages/core/src
-  - id: pc
-    name: Web app (legacy Next.js)
-    path: apps/pc
-    catalog: apps/pc/product
-    codeBasePath: apps/pc
+catalogRoot: docs/product
