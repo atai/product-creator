@@ -14,7 +14,7 @@
  * PC_REQUIRE_SIGNING=1 turns every fallback into an error (release builds that must be signed).
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,6 +25,7 @@ const truthy = (value) => ['1', 'true', 'yes'].includes(String(value ?? '').toLo
 const requireSigning = truthy(env.PC_REQUIRE_SIGNING);
 const args = process.argv.slice(2);
 const missing = [];
+let notarizeWith = null; // notarytool credential arguments for the DMG, when notarization is configured
 
 function note(level, message) {
   console.log(`[dist] ${level}: ${message}`);
@@ -69,10 +70,13 @@ if (process.platform === 'darwin') {
     note('warning', 'macOS: building UNSIGNED and not notarized');
   } else if (has('APPLE_API_KEY', 'APPLE_API_KEY_ID', 'APPLE_API_ISSUER')) {
     note('notice', 'macOS notarization: App Store Connect API key');
+    notarizeWith = ['--key', env.APPLE_API_KEY, '--key-id', env.APPLE_API_KEY_ID, '--issuer', env.APPLE_API_ISSUER];
   } else if (has('APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID')) {
     note('notice', 'macOS notarization: Apple ID + app-specific password');
+    notarizeWith = ['--apple-id', env.APPLE_ID, '--password', env.APPLE_APP_SPECIFIC_PASSWORD, '--team-id', env.APPLE_TEAM_ID];
   } else if (has('APPLE_KEYCHAIN_PROFILE')) {
     note('notice', `macOS notarization: notarytool keychain profile "${env.APPLE_KEYCHAIN_PROFILE}"`);
+    notarizeWith = ['--keychain-profile', env.APPLE_KEYCHAIN_PROFILE, ...(env.APPLE_KEYCHAIN ? ['--keychain', env.APPLE_KEYCHAIN] : [])];
   } else {
     args.push('-c.mac.notarize=false');
     missing.push('APPLE_API_KEY + APPLE_API_KEY_ID + APPLE_API_ISSUER (or APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD + APPLE_TEAM_ID, or APPLE_KEYCHAIN_PROFILE)');
@@ -100,4 +104,32 @@ if (missing.length) {
 if (!args.some((arg) => arg.startsWith('--publish') || arg === '-p')) args.push('--publish', 'never');
 const bin = process.platform === 'win32' ? 'electron-builder.cmd' : 'electron-builder';
 const result = spawnSync(bin, args, { cwd: appDir, stdio: 'inherit', env, shell: process.platform === 'win32' });
-process.exit(result.status ?? 1);
+if (result.status !== 0) process.exit(result.status ?? 1);
+
+// electron-builder notarizes and staples the .app only; the DMG container needs its own ticket so that
+// `spctl -a -t install` accepts the download itself (not only the app inside it)
+if (notarizeWith && !args.includes('--dir')) {
+  const distDir = join(appDir, 'dist');
+  for (const dmg of readdirSync(distDir).filter((name) => name.endsWith('.dmg'))) {
+    const file = join(distDir, dmg);
+    console.log(`[dist] notarizing ${dmg}`);
+    const submit = spawnSync('xcrun', ['notarytool', 'submit', file, ...notarizeWith, '--wait', '--output-format', 'json'], { encoding: 'utf8' });
+    let status = null;
+    try {
+      const out = JSON.parse(submit.stdout);
+      status = out.status;
+      console.log(`[dist] notarytool: id=${out.id} status=${out.status}`);
+    } catch {
+      console.error(submit.stdout, submit.stderr);
+    }
+    if (status !== 'Accepted') {
+      console.error(`[dist] DMG notarization failed (${status ?? 'no result'}); see: xcrun notarytool log <id>`);
+      process.exit(1);
+    }
+    for (const cmd of [['stapler', 'staple', file], ['stapler', 'validate', file]]) {
+      const r = spawnSync('xcrun', cmd, { stdio: 'inherit' });
+      if (r.status !== 0) process.exit(r.status ?? 1);
+    }
+    note('notice', `macOS: ${dmg} signed, notarized and stapled`);
+  }
+}

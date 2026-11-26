@@ -67,7 +67,6 @@ jobs:
             target: mac
             artifacts: |
               apps/desktop/dist/*.dmg
-              apps/desktop/dist/*.dmg.blockmap
               apps/desktop/dist/*-mac-*.zip
               apps/desktop/dist/*-mac-*.zip.blockmap
               apps/desktop/dist/latest-mac.yml
@@ -168,7 +167,11 @@ jobs:
           APP="$(ls -d apps/desktop/dist/mac*/*.app | head -1)"
           codesign -dv --verbose=2 "$APP" 2>&1 | grep -E 'Authority|TeamIdentifier|flags' || true
           spctl -a -vvv -t exec "$APP" || echo "::warning::Gatekeeper does not accept the app (unsigned or not notarized)"
-          xcrun stapler validate "$APP" || echo "::warning::No notarization ticket stapled"
+          xcrun stapler validate "$APP" || echo "::warning::No notarization ticket stapled to the app"
+          for DMG in apps/desktop/dist/*.dmg; do
+            spctl -a -vv -t install "$DMG" || echo "::warning::Gatekeeper does not accept $DMG"
+            xcrun stapler validate "$DMG" || echo "::warning::No notarization ticket stapled to $DMG"
+          done
 
       - uses: actions/upload-artifact@v5
         with:
@@ -201,7 +204,6 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             dist-artifacts/*.dmg
-            dist-artifacts/*.dmg.blockmap
             dist-artifacts/*.zip
             dist-artifacts/*.zip.blockmap
             dist-artifacts/*.exe

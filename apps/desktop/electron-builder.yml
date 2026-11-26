@@ -42,6 +42,12 @@ mac:
   # notarytool via APPLE_API_KEY(+_ID, _ISSUER), APPLE_ID(+APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID)
   # or APPLE_KEYCHAIN_PROFILE; scripts/dist.mjs turns it off when none is set
   notarize: true
+# The DMG container is signed here and notarized + stapled by scripts/dist.mjs after the build
+# (electron-builder only notarizes the .app). Auto-update uses the zip, so the DMG has no update info
+# (stapling changes the file and would invalidate its sha512 / blockmap).
+dmg:
+  sign: true
+  writeUpdateInfo: false
 win:
   target: [nsis, zip]
   # unsigned by decision; would be signed only if WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD were ever set

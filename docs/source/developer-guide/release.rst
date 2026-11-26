@@ -102,8 +102,9 @@ A release can be re-run for an existing tag with *Run workflow* (input ``tag``).
 
 Release assets:
 
-* macOS: ``product-creator-<v>-mac-arm64.dmg``, ``.zip`` (the zip is what auto-update downloads),
-  ``latest-mac.yml``;
+* macOS: ``product-creator-<v>-mac-arm64.dmg`` (the DMG itself is signed, notarized and stapled by
+  ``scripts/dist.mjs`` after electron-builder, which only notarizes the ``.app``), ``.zip`` (what
+  auto-update downloads), ``latest-mac.yml``;
 * Windows: ``product-creator-<v>-win-x64.exe`` (NSIS), ``.zip``, ``latest.yml`` — unsigned, the release
   notes tell users how to get past SmartScreen;
 * Linux: ``.AppImage``, ``.tar.gz``, ``latest-linux.yml``.
