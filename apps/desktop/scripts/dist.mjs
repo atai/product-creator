@@ -9,7 +9,8 @@
  *                  PC_UNSIGNED=1 forces an unsigned build.
  * notarization:    APPLE_API_KEY (path to .p8) + APPLE_API_KEY_ID + APPLE_API_ISSUER, or
  *                  APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD + APPLE_TEAM_ID, or APPLE_KEYCHAIN_PROFILE.
- * Windows signing: WIN_CSC_LINK + WIN_CSC_KEY_PASSWORD (or CSC_LINK + CSC_KEY_PASSWORD).
+ * Windows:         unsigned by decision (no code-signing certificate is bought); WIN_CSC_LINK +
+ *                  WIN_CSC_KEY_PASSWORD would still be used if ever set.
  * PC_REQUIRE_SIGNING=1 turns every fallback into an error (release builds that must be signed).
  */
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -83,8 +84,8 @@ if (process.platform === 'darwin') {
   } else if (has('WIN_CSC_LINK') || has('CSC_LINK')) {
     note('notice', 'Windows: signing with the certificate from WIN_CSC_LINK / CSC_LINK');
   } else {
-    missing.push('WIN_CSC_LINK + WIN_CSC_KEY_PASSWORD (code signing .pfx)');
-    note('warning', 'Windows: building UNSIGNED (SmartScreen will warn)');
+    // unsigned by design: not a missing credential, PC_REQUIRE_SIGNING does not apply to Windows
+    note('notice', 'Windows: unsigned build (no code-signing certificate by decision; SmartScreen will warn)');
   }
 }
 

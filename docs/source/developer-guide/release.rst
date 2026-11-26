@@ -4,7 +4,7 @@ Releases, signing and notarization
 Product Creator reuses the signing and notarization setup that already works in Consolieri
 (``atai/consolieri-desktop``): electron-builder with hardened runtime and the same entitlements,
 electron-builder's built-in notarization (``notarytool``) driven by ``APPLE_*`` environment variables,
-certificates passed as base64 ``.p12`` / ``.pfx`` in ``CSC_LINK`` / ``WIN_CSC_LINK`` and a tag-triggered
+the Developer ID certificate passed as a base64 ``.p12`` in ``CSC_LINK`` and a tag-triggered
 **Release** workflow that uploads the installers to a GitHub Release
 (`PRODUCTCREATOR-21 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-21>`_).
 
@@ -55,8 +55,9 @@ How ``pnpm desktop:dist`` signs
        ``APPLE_KEYCHAIN_PROFILE`` (a ``notarytool store-credentials`` profile)
      - signed only (``mac.notarize=false``); Gatekeeper warns after a download
    * - Windows
-     - ``WIN_CSC_LINK`` + ``WIN_CSC_KEY_PASSWORD`` (or ``CSC_LINK`` / ``CSC_KEY_PASSWORD``)
-     - unsigned; SmartScreen warns
+     - never: Windows builds are **unsigned by decision** (no code-signing certificate). ``WIN_CSC_LINK``
+       + ``WIN_CSC_KEY_PASSWORD`` would still be honoured if a certificate is ever added
+     - unsigned; SmartScreen warns (not counted as missing, ``PC_REQUIRE_SIGNING`` ignores Windows)
    * - Linux
      - not signed (AppImage / tar.gz)
      -
@@ -103,7 +104,8 @@ Release assets:
 
 * macOS: ``product-creator-<v>-mac-arm64.dmg``, ``.zip`` (the zip is what auto-update downloads),
   ``latest-mac.yml``;
-* Windows: ``product-creator-<v>-win-x64.exe`` (NSIS), ``.zip``, ``latest.yml``;
+* Windows: ``product-creator-<v>-win-x64.exe`` (NSIS), ``.zip``, ``latest.yml`` — unsigned, the release
+  notes tell users how to get past SmartScreen;
 * Linux: ``.AppImage``, ``.tar.gz``, ``latest-linux.yml``.
 
 Auto-update
@@ -146,12 +148,8 @@ names and formats as in Consolieri, so the values can be copied from there):
      - macOS notarization (alternative)
      - Apple ID, app-specific password, 10-character Team ID; used only when the API key set is
        incomplete
-   * - ``WIN_CSC_LINK``
-     - Windows
-     - base64 of the code-signing ``.pfx``
-   * - ``WIN_CSC_KEY_PASSWORD``
-     - Windows
-     - ``.pfx`` password
+
+No Windows secrets are needed: Windows builds are published unsigned.
 
 Optional repository **variable** ``PC_REQUIRE_SIGNING=true`` makes the Release workflow fail instead of
 publishing unsigned installers. ``GITHUB_TOKEN`` is provided by Actions (``contents: write``).

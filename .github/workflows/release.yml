@@ -1,4 +1,5 @@
-# Release (PRODUCTCREATOR-21): on a v* tag build signed installers for macOS, Windows and Linux and
+# Release (PRODUCTCREATOR-21): on a v* tag build installers for macOS (signed + notarized), Windows
+# (unsigned by decision, no code-signing certificate) and Linux and
 # publish them with the electron-updater feeds (latest*.yml) to a GitHub Release.
 # Mirrors the proven Consolieri release workflow (atai/consolieri-desktop). Signing is optional:
 # without secrets the build falls back to unsigned and the run shows warnings listing what is missing
@@ -156,7 +157,7 @@ jobs:
 
       - name: Build installers
         env:
-          # Windows: electron-builder reads WIN_CSC_* itself; empty values mean an unsigned build
+          # Windows stays unsigned by decision; WIN_CSC_* is only passed through in case a cert is ever added
           WIN_CSC_LINK: ${{ matrix.target == 'win' && secrets.WIN_CSC_LINK || '' }}
           WIN_CSC_KEY_PASSWORD: ${{ matrix.target == 'win' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
         run: pnpm desktop:dist
@@ -192,6 +193,10 @@ jobs:
           tag_name: ${{ needs.validate.outputs.tag }}
           name: Product Creator ${{ needs.validate.outputs.tag }}
           generate_release_notes: true
+          body: |
+            **Install:** macOS — `.dmg` (Apple silicon, signed and notarized); Windows — `.exe` installer; Linux — `.AppImage`.
+
+            **Windows builds are not code-signed.** SmartScreen shows *Windows protected your PC* on the first start: click **More info → Run anyway**.
           prerelease: ${{ contains(needs.validate.outputs.tag, '-') }}
           fail_on_unmatched_files: true
           files: |

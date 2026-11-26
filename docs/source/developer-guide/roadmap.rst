@@ -41,8 +41,8 @@ version of Product Creator.
 Known gaps
 ----------
 
-* Signed releases need the GitHub secrets from :doc:`release`; there is no Windows code-signing
-  certificate yet. The app icon is a placeholder.
+* Signed releases need the GitHub secrets from :doc:`release`; Windows builds stay unsigned by
+  decision (no code-signing certificate). The app icon is a placeholder.
 * Catalog entities (functions, business objects) still use readable ids, not UUIDs.
 * Doc page (generated ТЗ) is still a placeholder.
 * Unit tests cover the core project model and OpenAPI loader only; no UI tests yet.

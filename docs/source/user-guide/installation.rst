@@ -30,13 +30,13 @@ Download the installer for your OS from https://github.com/atai/product-creator/
      - ``chmod +x product-creator-*.AppImage`` and run it
 
 Release builds for macOS are signed with a Developer ID and notarized by Apple, so they open without
-warnings. If a build is not signed (CI check builds, or a release made before the signing secrets were
-configured):
+warnings. **Windows builds are not code-signed** (by decision), and CI check builds are not signed on
+any OS:
 
 * **macOS** — right-click the app → **Open**, or run
   ``xattr -dr com.apple.quarantine "/Applications/Product Creator.app"``;
 * **Windows** — SmartScreen shows *Windows protected your PC*: **More info** → **Run anyway**
-  (Windows builds are not code-signed yet).
+  this happens on the first start of every Windows build.
 
 Updates
 ~~~~~~~

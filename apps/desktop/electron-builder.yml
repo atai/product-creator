@@ -3,7 +3,8 @@
 # credentials are available and falls back to an unsigned build otherwise (see Dev Docs → Releases).
 # CI: .github/workflows/ci.yml (unsigned check builds), .github/workflows/release.yml (v* tags, signed).
 # Signing/notarization follow Consolieri (atai/consolieri-desktop): hardened runtime + entitlements,
-# electron-builder's built-in notarize (notarytool) driven by APPLE_* env vars, CSC_LINK / WIN_CSC_LINK certs.
+# electron-builder's built-in notarize (notarytool) driven by APPLE_* env vars, CSC_LINK cert.
+# Windows builds are unsigned by decision (no code-signing certificate).
 appId: cloud.ecooz.productcreator
 productName: Product Creator
 artifactName: product-creator-${version}-${os}-${arch}.${ext}
@@ -43,7 +44,7 @@ mac:
   notarize: true
 win:
   target: [nsis, zip]
-  # signed when WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD (or CSC_LINK) are set
+  # unsigned by decision; would be signed only if WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD were ever set
   signAndEditExecutable: true
 nsis:
   oneClick: false
