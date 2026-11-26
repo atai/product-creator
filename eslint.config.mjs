@@ -1,0 +1,28 @@
+// ESLint for the desktop app and the core package (apps/pc is deprecated and keeps its own config)
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import globals from 'globals';
+
+export default tseslint.config(
+  { ignores: ['**/node_modules/**', '**/out/**', '**/dist/**', 'apps/pc/**', 'docs/**'] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['apps/desktop/**/*.{ts,tsx}', 'packages/core/**/*.ts'],
+    languageOptions: { globals: { ...globals.node } },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    files: ['apps/desktop/src/renderer/**/*.{ts,tsx}'],
+    languageOptions: { globals: { ...globals.browser } },
+    plugins: { 'react-hooks': reactHooks },
+    rules: reactHooks.configs.recommended.rules,
+  },
+  {
+    files: ['**/*.mjs', '**/*.js'],
+    languageOptions: { globals: { ...globals.node } },
+  }
+);

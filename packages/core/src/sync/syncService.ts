@@ -47,7 +47,6 @@ interface SyncState {
 // In-memory storage for sync states
 // Use global object to survive HMR (Hot Module Reload) in Next.js dev mode
 declare global {
-  // eslint-disable-next-line no-var
   var __syncStates: Map<string, SyncState> | undefined;
 }
 
@@ -190,7 +189,7 @@ export class SchemaSyncService {
     progressCallback?: ProgressCallback
   ): Promise<void> {
     try {
-      const storage = await getStorage();
+      await getStorage();
       const total = matchedObjects.length;
       let current = 0;
 
@@ -487,7 +486,7 @@ export class SchemaSyncService {
    * Map Prisma type to business object type
    */
   private mapPrismaTypeToBusinessType(prismaType: string): string {
-    const cleanType = prismaType.replace(/[!\[\]]/g, '').trim();
+    const cleanType = prismaType.replace(/[![\]]/g, '').trim();
     const typeMap: Record<string, string> = {
       String: 'string',
       Int: 'integer',
@@ -513,7 +512,7 @@ export class SchemaSyncService {
    * Map Prisma type to database column type
    */
   private mapPrismaTypeToDatabaseType(prismaType: string): string {
-    const cleanType = prismaType.replace(/[!\[\]]/g, '').trim();
+    const cleanType = prismaType.replace(/[![\]]/g, '').trim();
     const typeMap: Record<string, string> = {
       String: 'varchar(255)',
       Int: 'integer',
@@ -535,8 +534,8 @@ export class SchemaSyncService {
  */
 export function createSyncState(
   appId: string,
-  dbSchemaPath: string,
-  businessObjectsDirectory: string
+  _dbSchemaPath: string,
+  _businessObjectsDirectory: string
 ): string {
   const syncId = `sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const state: SyncState = {

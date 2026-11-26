@@ -325,9 +325,6 @@ export function analyzeCode(codeBasePath: string): CodeAnalysisResult {
     functionNameMap.get(func.name)!.push(func);
   });
 
-  // Build import resolution map (module path -> exported names)
-  const importMap = new Map<string, Map<string, string>>(); // file -> (importedName -> actualModulePath)
-
   // Resolve dependencies
   const functionDependencies = new Map<string, string[]>();
 

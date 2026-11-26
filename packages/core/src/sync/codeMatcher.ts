@@ -1,6 +1,6 @@
 import { ExportedFunction } from '../code/types';
 import { FunctionCard } from '../types';
-import { loadSyncMapping, SyncMapping } from './mappingStorage';
+import { SyncMapping } from './mappingStorage';
 import logger from '../logger';
 
 /**
@@ -32,7 +32,7 @@ export function matchCodeToFunctions(
   exportedFunctions: ExportedFunction[],
   existingFunctions: FunctionCard[],
   mapping: SyncMapping,
-  functionsDirectory: string
+  _functionsDirectory: string
 ): MatchedFunction[] {
   const matched: MatchedFunction[] = [];
   const usedFunctionIds = new Set<string>();
@@ -236,7 +236,6 @@ function generateFunctionId(exportedFunc: ExportedFunction): string | null {
   }
 
   // Fallback: use function name and try to infer
-  const funcName = exportedFunc.name.toLowerCase();
   // Try camelCase to dot notation: createUser -> create.user (if entity can be inferred)
   // For now, return null and let the system generate a default
   return null;

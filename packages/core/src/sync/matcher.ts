@@ -1,6 +1,6 @@
 import { PrismaModel } from '../prisma/types';
 import { BusinessObject } from '../types';
-import { loadSyncMapping, SyncMapping } from './mappingStorage';
+import { SyncMapping } from './mappingStorage';
 import * as crypto from 'crypto';
 
 /**
@@ -32,7 +32,7 @@ export function matchPrismaToBusinessObjects(
   prismaModels: PrismaModel[],
   existingObjects: BusinessObject[],
   mapping: SyncMapping,
-  businessObjectsDirectory: string
+  _businessObjectsDirectory: string
 ): MatchedObject[] {
   const matched: MatchedObject[] = [];
   const usedObjectIds = new Set<string>();
@@ -296,7 +296,7 @@ function mapPrismaTypeToBusinessType(prismaType: string): string {
   };
 
   // Remove optional markers and array brackets
-  const cleanType = prismaType.replace(/[!\[\]]/g, '').trim();
+  const cleanType = prismaType.replace(/[![\]]/g, '').trim();
   return typeMap[cleanType] || cleanType.toLowerCase();
 }
 

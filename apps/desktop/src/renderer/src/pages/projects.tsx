@@ -298,7 +298,7 @@ export default function ProjectsManagementPage() {
       let data: SyncApiResponse;
       try {
         data = await response.json();
-      } catch (e) {
+      } catch {
         throw new Error(`Failed to start sync: ${response.statusText || 'Unknown error'}`);
       }
       
@@ -350,7 +350,7 @@ export default function ProjectsManagementPage() {
       let data: SyncApiResponse;
       try {
         data = await response.json();
-      } catch (e) {
+      } catch {
         // If response is not JSON, use the status text
         throw new Error(`Failed to start sync: ${response.statusText || 'Unknown error'}`);
       }

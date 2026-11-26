@@ -63,7 +63,6 @@ export function groupObjectsByParent(
   objects: BusinessObject[]
 ): Map<string, BusinessObject[]> {
   const grouped = new Map<string, BusinessObject[]>();
-  const objectIds = new Set(objects.map((obj) => obj.id));
 
   for (const obj of objects) {
     if (!isChildObject(obj.id)) {
@@ -87,7 +86,6 @@ export function groupObjectsByParent(
  */
 export function getRootObjects(objects: BusinessObject[]): BusinessObject[] {
   const childIds = new Set<string>();
-  const objectIds = new Set(objects.map((obj) => obj.id));
 
   // Mark all child objects
   for (const obj of objects) {

@@ -4,7 +4,6 @@ import {
   SchemaSyncService,
   getSyncState,
   updateSyncState,
-  deleteSyncState,
 } from '../../../../../../sync/syncService';
 
 export async function POST(

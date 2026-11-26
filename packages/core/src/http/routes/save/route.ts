@@ -1,8 +1,6 @@
 import { getStorage } from '../../../storage';
 import Ajv from 'ajv';
 import functionSchema from '../../../../schema/function.schema.json';
-import * as fs from 'fs';
-import * as path from 'path';
 import logger from '../../../logger';
 import { FunctionCard } from '../../../types';
 

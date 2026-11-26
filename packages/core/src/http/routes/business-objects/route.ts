@@ -2,7 +2,6 @@ import { getStorage } from '../../../storage';
 import type { BusinessObject } from '../../../types';
 import {
   getRootObjects,
-  getChildObjects,
   groupObjectsByParent,
 } from '../../../businessObjects/hierarchy';
 

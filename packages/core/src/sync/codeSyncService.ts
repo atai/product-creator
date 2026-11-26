@@ -43,7 +43,6 @@ interface CodeSyncState {
 // In-memory storage for code sync states
 // Use global object to survive HMR (Hot Module Reload) in Next.js dev mode
 declare global {
-  // eslint-disable-next-line no-var
   var __codeSyncStates: Map<string, CodeSyncState> | undefined;
 }
 
@@ -60,8 +59,8 @@ const getCodeSyncStatesMap = (): Map<string, CodeSyncState> => {
  */
 export function createCodeSyncState(
   appId: string,
-  codeBasePath: string,
-  functionsDirectory: string
+  _codeBasePath: string,
+  _functionsDirectory: string
 ): string {
   const syncId = `code-sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const state: CodeSyncState = {
@@ -322,7 +321,7 @@ export class CodeSyncService {
     progressCallback?: ProgressCallback
   ): Promise<void> {
     try {
-      const storage = await getStorage();
+      await getStorage();
       const total = matchedFunctions.length;
       let current = 0;
 

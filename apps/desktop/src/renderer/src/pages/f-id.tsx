@@ -26,7 +26,7 @@ export default function FunctionDetail() {
         setFunctionCard(data);
         setLoading(false);
       })
-      .catch((err) => {
+      .catch(() => {
         setError('Function not found');
         setLoading(false);
       });

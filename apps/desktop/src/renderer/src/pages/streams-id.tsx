@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { Stream, StreamStage } from '@pc/core/types';
+import { Stream } from '@pc/core/types';
 import FormHelpHint from '@/components/FormHelpHint';
 
 type StreamFormData = {
@@ -39,7 +39,6 @@ export default function StreamEditPage() {
     control,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<StreamFormData>({
     defaultValues: {

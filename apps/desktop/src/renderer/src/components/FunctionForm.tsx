@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { FunctionCard } from '@pc/core/types';
 import * as yaml from 'js-yaml';
-import Link from 'next/link';
 import FormHelpHint from './FormHelpHint';
 
 interface FunctionFormProps {
@@ -164,7 +163,7 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
 
       const result = await response.json();
       router.push(`/f/${result.id}`);
-    } catch (err) {
+    } catch {
       setError('Network error');
       setSaving(false);
     }

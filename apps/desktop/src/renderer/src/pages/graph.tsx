@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import cytoscape from 'cytoscape';
 import { GraphNode, GraphEdge, FunctionCard } from '@pc/core/types';
 

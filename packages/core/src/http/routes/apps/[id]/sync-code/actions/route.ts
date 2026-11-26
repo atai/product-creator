@@ -1,4 +1,4 @@
-import { getCodeSyncState, updateCodeSyncState, getCodeSyncState as getState } from '../../../../../../sync/codeSyncService';
+import { getCodeSyncState, updateCodeSyncState } from '../../../../../../sync/codeSyncService';
 import { SyncAction } from '../../../../../../sync/codeMatcher';
 import logger from '../../../../../../logger';
 

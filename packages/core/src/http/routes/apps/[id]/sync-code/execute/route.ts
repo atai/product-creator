@@ -4,7 +4,6 @@ import {
   CodeSyncService,
   getCodeSyncState,
   updateCodeSyncState,
-  deleteCodeSyncState,
 } from '../../../../../../sync/codeSyncService';
 import { analyzeCode } from '../../../../../../code/parser';
 import * as path from 'path';
