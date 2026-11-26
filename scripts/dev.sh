@@ -9,4 +9,4 @@ echo "Starting Product Creator in development mode..."
 cd "$(dirname "$0")/.."
 
 # Run development server
-pnpm dev
+pnpm pc:dev

@@ -37,5 +37,7 @@
     "eslint-config-next": "15.5.4",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "description": "DEPRECATED legacy Next.js web app of Product Creator (static, not developed; use apps/desktop)",
+  "deprecated": true
 }

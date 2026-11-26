@@ -10,9 +10,9 @@ cd "$(dirname "$0")/.."
 
 # Check if build exists
 if [ ! -d "apps/pc/.next" ]; then
-  echo "Error: Build not found. Please run 'pnpm build' first."
+  echo "Error: Build not found. Please run 'pnpm pc:build' first."
   exit 1
 fi
 
 # Start production server
-pnpm start
+pnpm --filter pc start

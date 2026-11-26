@@ -9,7 +9,7 @@ echo "Building Product Creator for production..."
 cd "$(dirname "$0")/.."
 
 # Build the application
-pnpm build
+pnpm pc:build
 
 echo "Build completed successfully!"
-echo "To start the production server, run: pnpm start"
+echo "To start the production server, run: pnpm --filter pc start"
