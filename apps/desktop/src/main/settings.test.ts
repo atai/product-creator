@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_MCP_PORT, SettingsStore } from './settings';
+import { DEFAULT_MCP_PORT, DEFAULT_RELAY_URL, SettingsStore, validateRelayUrl, type SecretCodec } from './settings';
 
 let dir: string;
 let file: string;
@@ -40,5 +40,48 @@ describe('SettingsStore', () => {
     expect(() => store.updateMcp({ port: 80 })).toThrow();
     fs.writeFileSync(file, '{ not json');
     expect(new SettingsStore(file, { mcpPort: DEFAULT_MCP_PORT }).get().mcp.enabled).toBe(false);
+  });
+});
+
+const codec = (available = true): SecretCodec => ({
+  available: () => available,
+  encrypt: (plain) => Buffer.from(plain.split('').reverse().join('')).toString('base64'),
+  decrypt: (enc) => Buffer.from(enc, 'base64').toString().split('').reverse().join(''),
+});
+
+describe('relay settings (PRODUCTCREATOR-20)', () => {
+  it('is off by default with the production endpoint and no key', () => {
+    const s = new SettingsStore(file, { mcpPort: DEFAULT_MCP_PORT }, codec()).get();
+    expect(s.relay).toEqual({ enabled: false, url: DEFAULT_RELAY_URL });
+    expect(DEFAULT_RELAY_URL).toBe('wss://relay.emperor.ecooz.net/tunnel');
+  });
+
+  it('stores the device key only encrypted and returns it to the main process', () => {
+    const store = new SettingsStore(file, { mcpPort: DEFAULT_MCP_PORT }, codec());
+    store.setRelayKey('  rld_dev-1.s3cret_Value  ');
+    expect(fs.readFileSync(file, 'utf-8')).not.toContain('s3cret');
+    expect(fs.readFileSync(file, 'utf-8')).not.toContain('rld_dev-1');
+    expect(store.getRelayKey()).toBe('rld_dev-1.s3cret_Value');
+    expect(new SettingsStore(file, { mcpPort: DEFAULT_MCP_PORT }, codec()).getRelayKey()).toBe('rld_dev-1.s3cret_Value');
+    store.clearRelayKey();
+    expect(store.getRelayKey()).toBeUndefined();
+    expect(store.get().relay.keyEnc).toBeUndefined();
+  });
+
+  it('refuses a malformed key and refuses to save without OS secure storage', () => {
+    const store = new SettingsStore(file, { mcpPort: DEFAULT_MCP_PORT }, codec());
+    expect(() => store.setRelayKey('rly_bot.token')).toThrow(/device key/);
+    expect(() => store.setRelayKey('rld_nodot')).toThrow(/device key/);
+    const noKeychain = new SettingsStore(file, { mcpPort: DEFAULT_MCP_PORT }, codec(false));
+    expect(() => noKeychain.setRelayKey('rld_a.b')).toThrow(/Secure storage/);
+    expect(noKeychain.get().relay.keyEnc).toBeUndefined();
+  });
+
+  it('validates the relay URL (wss only, ws for loopback)', () => {
+    expect(validateRelayUrl('wss://relay.emperor.ecooz.net/tunnel')).toBe('wss://relay.emperor.ecooz.net/tunnel');
+    expect(validateRelayUrl('ws://127.0.0.1:4479/tunnel')).toContain('ws://127.0.0.1:4479');
+    expect(() => validateRelayUrl('ws://example.com/tunnel')).toThrow(/wss/);
+    expect(() => validateRelayUrl('https://relay.emperor.ecooz.net/tunnel')).toThrow(/wss/);
+    expect(() => validateRelayUrl('nonsense')).toThrow();
   });
 });

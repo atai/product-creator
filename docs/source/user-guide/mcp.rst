@@ -7,7 +7,7 @@ change catalog entries, run code sync and generate OpenAPI.
 
 The server is **off by default**. It runs inside the desktop app: it starts with the app (only if you
 switched it on) and stops when you quit. It listens on ``127.0.0.1`` only, so other computers cannot
-reach it (remote access through a relay is a separate step).
+reach it unless you also turn on :ref:`remote access <mcp-remote-access>`.
 
 Turn it on
 ----------
@@ -57,7 +57,7 @@ Claude Code:
 
 Grok Bot, ChatGPT and other clients: add a custom MCP server / connector with the same URL and
 bearer token. A client that runs on the same computer uses the ``127.0.0.1`` URL; a client on another
-machine cannot connect yet.
+machine needs :ref:`remote access <mcp-remote-access>`.
 
 Quick check without a client — the settings screen offers **Copy curl check**; a successful answer is a
 JSON ``initialize`` result with ``"serverInfo":{"name":"product-creator"}``.
@@ -120,6 +120,38 @@ Write tools are not even listed for a read-only token.
 
 Not available yet: the trace report and the ТЗ export (they do not exist in the app yet).
 
+.. _mcp-remote-access:
+
+Remote access (ChatGPT, servers)
+--------------------------------
+
+Agents that cannot reach ``127.0.0.1`` (ChatGPT developer-mode connectors, an agent on a server) connect
+through the **Emperor MCP relay**. Product Creator opens one outgoing connection to
+``relay.emperor.ecooz.net``; the relay hands every request of a remote agent to your app. Nothing is
+opened on your computer, and it works only while Product Creator **and** its MCP server are running.
+
+#. Sign in to Emperor and open **Profile → Remote access**.
+#. **Create device** — copy the device key ``rld_…`` (it is shown once).
+#. In Product Creator → **Settings → Expose remotely**: paste the key and press **Save key**. The key
+   is stored encrypted with the keychain of your operating system (macOS Keychain, Windows DPAPI,
+   libsecret); if that is unavailable the key is not saved.
+#. Tick **Expose remotely** and make sure **Run MCP server** is on. The status becomes *online* and the
+   **Public URL** appears: ``https://relay.emperor.ecooz.net/d/<slug>/mcp``.
+#. In Emperor create a **bot token** (``rly_…``) for that device with scope *READ* or *READ_WRITE* and
+   give the remote agent the public URL plus ``Authorization: Bearer rly_…``.
+
+Remote agents use the scope of their bot token (the *scope* setting above belongs to the local token).
+They see the same tools and the same projects, and every call appears in the action log with the bot
+token id and the agent's User-Agent. Revoke a bot token or the whole device in Emperor to cut access;
+**Rotate key** in Emperor needs the new key pasted here.
+
+Status values: *connecting*, *online*, *reconnecting* (the app retries with a growing delay up to one
+minute), *key rejected* (wrong key), *key revoked* (revoked or rotated in Emperor — paste a new key),
+*replaced by another instance* (the same key is used by a second Product Creator).
+
+Limits of the relay: 5 devices per user, 25 active bot tokens per device, 120 requests per minute per
+token; bodies up to 4 MiB. If the app is closed, agents get ``503 device_offline``.
+
 Action log
 ----------
 
@@ -134,4 +166,5 @@ Troubleshooting
 * ``401`` — wrong or outdated token (it changes on **Regenerate**).
 * *Project is not open in Product Creator* — open the folder in the app first (File → Open Project
   Folder…); the error lists the open projects.
-* After you quit the app, agents get *connection refused* — the server lives only while the app runs.
+* After you quit the app, agents get *connection refused* (remote agents: ``503 device_offline``) — the server lives only while the app runs.
+* *Turn on "Run MCP server" first* — the relay forwards to the local server, which must be running.

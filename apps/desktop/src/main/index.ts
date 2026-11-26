@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, safeStorage, shell } from 'electron';
 import { mkdirSync } from 'fs';
 import * as path from 'path';
 import { deleteComponent, importNewComponents, readProject, saveComponent, updateProject, type ProjectModel } from '@pc/core/project/model';
@@ -10,6 +10,7 @@ import { checkForUpdatesInteractive, startAutoUpdates } from './updater';
 import { resolveUserDataDir } from './userData';
 import { DEFAULT_MCP_PORT, DEFAULT_MCP_PORT_DEV, SettingsStore } from './settings';
 import { McpController } from './mcp';
+import { RelayController } from './relay';
 
 // Settings and data folder. Must run before anything reads userData and before the single-instance lock:
 // a development run (not packaged) uses '<appData>/Product Creator Dev' and never touches the installed
@@ -34,9 +35,16 @@ const generation = new OpenApiGenerationManager({ env: () => (shellPath ? { PATH
 generation.onEvent((event) => mainWindow?.webContents.send(IPC.openapiEvent, event));
 
 // MCP server for agents (PRODUCTCREATOR-18): off unless enabled in the settings; reachable projects = open workspace
-const settings = new SettingsStore(path.join(app.getPath('userData'), 'settings.json'), {
-  mcpPort: app.isPackaged ? DEFAULT_MCP_PORT : DEFAULT_MCP_PORT_DEV,
-});
+const settings = new SettingsStore(
+  path.join(app.getPath('userData'), 'settings.json'),
+  { mcpPort: app.isPackaged ? DEFAULT_MCP_PORT : DEFAULT_MCP_PORT_DEV },
+  // the relay device key is encrypted with the OS keychain (safeStorage); never stored in plain text
+  {
+    available: () => app.isReady() && safeStorage.isEncryptionAvailable(),
+    encrypt: (plain) => safeStorage.encryptString(plain).toString('base64'),
+    decrypt: (encrypted) => safeStorage.decryptString(Buffer.from(encrypted, 'base64')),
+  }
+);
 let workspaceChangedTimer: NodeJS.Timeout | undefined;
 const mcp = new McpController(
   settings,
@@ -54,6 +62,9 @@ const mcp = new McpController(
   path.join(app.getPath('userData'), 'mcp-actions.log')
 );
 mcp.onChange(() => mainWindow?.webContents.send(IPC.mcpChanged, mcp.status()));
+// "Expose remotely": tunnel to the Emperor MCP relay (PRODUCTCREATOR-20)
+const relay = new RelayController(settings, mcp, app.getVersion(), (message) => console.log(message));
+relay.onChange(() => mainWindow?.webContents.send(IPC.relayChanged, relay.status()));
 
 function projectAt(root: string): ProjectModel {
   const project = readProject(workspace.requireRoot(root));
@@ -126,6 +137,24 @@ function registerIpc() {
     return mcp.status();
   });
   ipcMain.handle(IPC.mcpLog, () => mcp.audit.recent(100));
+
+  // Remote access through the relay
+  ipcMain.handle(IPC.relayStatus, () => relay.status());
+  ipcMain.handle(IPC.relayUpdate, (_e, patch: { enabled?: boolean; url?: string }) => {
+    settings.updateRelay(patch);
+    relay.apply();
+    return relay.status();
+  });
+  ipcMain.handle(IPC.relaySetKey, (_e, key: string) => {
+    settings.setRelayKey(key);
+    relay.apply();
+    return relay.status();
+  });
+  ipcMain.handle(IPC.relayClearKey, () => {
+    settings.clearRelayKey();
+    relay.apply();
+    return relay.status();
+  });
 
   // OpenAPI generation (runs the commands configured in *.pc.yml)
   ipcMain.handle(IPC.openapiInfo, (_e, root: string) => generation.info(projectAt(root)));
@@ -330,7 +359,10 @@ if (!app.requestSingleInstanceLock()) {
     });
   });
 
-  app.on('will-quit', () => void mcp.stop());
+  app.on('will-quit', () => {
+    relay.stop();
+    void mcp.stop();
+  });
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

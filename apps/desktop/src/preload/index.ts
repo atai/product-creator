@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC, type GenerateEvent, type McpStatus, type PcBridge, type WorkspaceInfo } from '../shared/ipc';
+import { IPC, type GenerateEvent, type McpStatus, type PcBridge, type RelayView, type WorkspaceInfo } from '../shared/ipc';
 
 const bridge: PcBridge = {
   api: (request) => ipcRenderer.invoke(IPC.api, request),
@@ -31,6 +31,17 @@ const bridge: PcBridge = {
     const listener = (_e: Electron.IpcRendererEvent, status: McpStatus) => callback(status);
     ipcRenderer.on(IPC.mcpChanged, listener);
     return () => ipcRenderer.removeListener(IPC.mcpChanged, listener);
+  },
+  relay: {
+    status: () => ipcRenderer.invoke(IPC.relayStatus),
+    update: (patch) => ipcRenderer.invoke(IPC.relayUpdate, patch),
+    setKey: (key) => ipcRenderer.invoke(IPC.relaySetKey, key),
+    clearKey: () => ipcRenderer.invoke(IPC.relayClearKey),
+  },
+  onRelayChanged: (callback) => {
+    const listener = (_e: Electron.IpcRendererEvent, status: RelayView) => callback(status);
+    ipcRenderer.on(IPC.relayChanged, listener);
+    return () => ipcRenderer.removeListener(IPC.relayChanged, listener);
   },
   onOpenApiEvent: (callback) => {
     const listener = (_e: Electron.IpcRendererEvent, event: GenerateEvent) => callback(event);

@@ -53,6 +53,20 @@ export interface McpStatus {
   error?: string;
 }
 
+/** State of the remote access through the Emperor relay (PRODUCTCREATOR-20) */
+export interface RelayView {
+  enabled: boolean;
+  url: string;
+  hasKey: boolean;
+  /** `rld_<deviceId>.••••` — the secret part never reaches the UI */
+  keyHint?: string;
+  state: 'off' | 'connecting' | 'online' | 'reconnecting' | 'invalid_key' | 'revoked' | 'replaced';
+  /** Public MCP URL for bots, while online */
+  publicUrl?: string;
+  error?: string;
+  requests: number;
+}
+
 /** One agent call from the action log */
 export interface McpActionEntry {
   ts: string;
@@ -97,6 +111,14 @@ export interface PcBridge {
     log(): Promise<McpActionEntry[]>;
   };
   onMcpChanged(callback: (status: McpStatus) => void): () => void;
+  /** Remote access through the relay (PRODUCTCREATOR-20) */
+  relay: {
+    status(): Promise<RelayView>;
+    update(patch: { enabled?: boolean; url?: string }): Promise<RelayView>;
+    setKey(key: string): Promise<RelayView>;
+    clearKey(): Promise<RelayView>;
+  };
+  onRelayChanged(callback: (status: RelayView) => void): () => void;
   onOpenApiEvent(callback: (event: GenerateEvent) => void): () => void;
   onWorkspaceChanged(callback: (info: WorkspaceInfo) => void): () => void;
 }
@@ -122,4 +144,9 @@ export const IPC = {
   mcpRegenerate: 'pc:mcp:regenerate',
   mcpLog: 'pc:mcp:log',
   mcpChanged: 'pc:mcp:changed',
+  relayStatus: 'pc:relay:status',
+  relayUpdate: 'pc:relay:update',
+  relaySetKey: 'pc:relay:set-key',
+  relayClearKey: 'pc:relay:clear-key',
+  relayChanged: 'pc:relay:changed',
 } as const;

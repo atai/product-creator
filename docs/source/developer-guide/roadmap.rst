@@ -39,6 +39,8 @@ version of Product Creator.
      - OpenAPI generation command per component
    * - `PRODUCTCREATOR-18 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-18>`_
      - MCP server for local agents (:doc:`mcp`)
+   * - `PRODUCTCREATOR-20 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-20>`_
+     - Remote access: client of the Emperor MCP relay (:doc:`mcp`)
 
 Known gaps
 ----------

@@ -15,8 +15,42 @@ export interface McpSettings {
   token: string;
 }
 
+/** Remote access through the Emperor MCP relay (PRODUCTCREATOR-20) */
+export interface RelaySettings {
+  /** "Expose remotely" — default off */
+  enabled: boolean;
+  /** Tunnel endpoint */
+  url: string;
+  /** Device key `rld_…` encrypted with the OS keychain (Electron safeStorage), base64 */
+  keyEnc?: string;
+}
+
 export interface AppSettings {
   mcp: McpSettings;
+  relay: RelaySettings;
+}
+
+export const DEFAULT_RELAY_URL = 'wss://relay.emperor.ecooz.net/tunnel';
+const DEVICE_KEY_RE = /^rld_[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+
+/** Encrypts secrets with the OS keychain (safeStorage in the app, a fake in tests) */
+export interface SecretCodec {
+  available(): boolean;
+  encrypt(plain: string): string;
+  decrypt(encrypted: string): string;
+}
+
+/** wss:// only; plain ws:// is allowed for loopback (local relay for testing) */
+export function validateRelayUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('Relay URL is not a valid URL');
+  }
+  const loopback = ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname);
+  if (url.protocol !== 'wss:' && !(url.protocol === 'ws:' && loopback)) throw new Error('Relay URL must start with wss://');
+  return url.toString();
 }
 
 /** Dev and packaged builds use different default ports so that both can run at the same time */
@@ -34,7 +68,8 @@ export class SettingsStore {
 
   constructor(
     private file: string,
-    private defaults: { mcpPort: number }
+    private defaults: { mcpPort: number },
+    private codec?: SecretCodec
   ) {
     this.data = this.read();
   }
@@ -48,12 +83,19 @@ export class SettingsStore {
     }
     const mcp: Partial<McpSettings> = raw.mcp ?? {};
     const settings: AppSettings = {
+      relay: { enabled: false, url: DEFAULT_RELAY_URL },
       mcp: {
         enabled: mcp.enabled === true,
         scope: mcp.scope === 'write' ? 'write' : 'read',
         port: Number.isInteger(mcp.port) && (mcp.port as number) >= 1024 && (mcp.port as number) <= 65535 ? (mcp.port as number) : this.defaults.mcpPort,
         token: typeof mcp.token === 'string' && mcp.token.length >= 24 ? mcp.token : newToken(),
       },
+    };
+    const relay: Partial<RelaySettings> = raw.relay ?? {};
+    settings.relay = {
+      enabled: relay.enabled === true,
+      url: typeof relay.url === 'string' && relay.url ? relay.url : DEFAULT_RELAY_URL,
+      ...(typeof relay.keyEnc === 'string' && relay.keyEnc ? { keyEnc: relay.keyEnc } : {}),
     };
     if (settings.mcp.token !== mcp.token) this.write(settings);
     return settings;
@@ -85,5 +127,45 @@ export class SettingsStore {
     this.data = { ...this.data, mcp: { ...this.data.mcp, token: newToken() } };
     this.write(this.data);
     return this.get();
+  }
+
+  // ───────── relay (PRODUCTCREATOR-20) ─────────
+
+  updateRelay(patch: Partial<Pick<RelaySettings, 'enabled' | 'url'>>): AppSettings {
+    const next = { ...this.data.relay };
+    if (patch.enabled !== undefined) next.enabled = patch.enabled === true;
+    if (patch.url !== undefined) next.url = validateRelayUrl(patch.url);
+    this.data = { ...this.data, relay: next };
+    this.write(this.data);
+    return this.get();
+  }
+
+  /** Store the device key encrypted; refuses when the OS keychain is not available (never plain text) */
+  setRelayKey(key: string): AppSettings {
+    const trimmed = key.trim();
+    if (!DEVICE_KEY_RE.test(trimmed)) throw new Error('This is not a device key: it looks like rld_<id>.<secret> (Emperor → Profile → Remote access)');
+    if (!this.codec?.available()) throw new Error('Secure storage of the operating system is not available, the key cannot be saved safely');
+    this.data = { ...this.data, relay: { ...this.data.relay, keyEnc: this.codec.encrypt(trimmed) } };
+    this.write(this.data);
+    return this.get();
+  }
+
+  clearRelayKey(): AppSettings {
+    const { keyEnc: _drop, ...rest } = this.data.relay;
+    void _drop;
+    this.data = { ...this.data, relay: rest };
+    this.write(this.data);
+    return this.get();
+  }
+
+  /** Decrypted device key for the relay client (main process only) */
+  getRelayKey(): string | undefined {
+    const enc = this.data.relay.keyEnc;
+    if (!enc || !this.codec?.available()) return undefined;
+    try {
+      return this.codec.decrypt(enc);
+    } catch {
+      return undefined;
+    }
   }
 }
