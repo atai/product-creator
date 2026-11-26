@@ -5,6 +5,7 @@ import { loginShellPath, OpenApiGenerationManager } from '@pc/core/interfaces/ge
 import { IPC, type ApiRequest, type ApiResponse, type ComponentInput, type EditResult, type ProjectPatch } from '../shared/ipc';
 import { parseProjectArgs, defaultProjectFolder } from './args';
 import { Workspace } from './workspace';
+import { checkForUpdatesInteractive, startAutoUpdates } from './updater';
 
 // File logs of @pc/core go to the user data dir, never into the opened project
 process.env.PC_LOG_DIR ??= path.join(app.getPath('userData'), 'logs');
@@ -116,6 +117,8 @@ function buildMenu() {
       label: 'File',
       submenu: [
         { label: 'Open Project Folder…', accelerator: 'CmdOrCtrl+O', click: () => void openFolderDialog() },
+        { type: 'separator' },
+        { label: 'Check for Updates…', click: () => void checkForUpdatesInteractive() },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },
       ],
@@ -269,6 +272,7 @@ if (!app.requestSingleInstanceLock()) {
     buildMenu();
     createWindow();
     if (process.env.PC_SMOKE_TEST) void runSmokeTest();
+    else startAutoUpdates();
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });

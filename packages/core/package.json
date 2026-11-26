@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@prisma/internals": "^6.0.0",
+    "@prisma/prisma-schema-wasm": "6.19.0-26.2ba551f319ab1df4bc874a89965d8b3641056773",
     "ajv": "^8.17.1",
     "chokidar": "^4.0.3",
     "js-yaml": "^4.3.2",

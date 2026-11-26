@@ -33,14 +33,16 @@ version of Product Creator.
      - Distributables: local + CI for macOS, Windows, Linux
    * - `PRODUCTCREATOR-17 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-17>`_
      - ESLint and unit tests
+   * - `PRODUCTCREATOR-21 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-21>`_
+     - Signing, notarization, GitHub Releases, auto-update, app icon, smaller package (:doc:`release`)
    * - `PRODUCTCREATOR-23 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-23>`_
      - OpenAPI generation command per component
 
 Known gaps
 ----------
 
-* Builds are unsigned: macOS signing + notarization, Windows code signing, releases and auto-update are
-  a follow-up.
+* Signed releases need the GitHub secrets from :doc:`release`; there is no Windows code-signing
+  certificate yet. The app icon is a placeholder.
 * Catalog entities (functions, business objects) still use readable ids, not UUIDs.
 * Doc page (generated ТЗ) is still a placeholder.
 * Unit tests cover the core project model and OpenAPI loader only; no UI tests yet.

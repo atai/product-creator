@@ -2,9 +2,10 @@ import * as fs from 'fs';
 import '../server-only';
 import { PrismaModel, PrismaField, PrismaAttribute } from './types';
 
-// Dynamic import path to avoid Turbopack static analysis
-// Using a variable prevents Turbopack from trying to resolve the module path at build time
-const PRISMA_INTERNALS_MODULE = '@prisma/internals';
+// Only the Prisma schema parser (WASM, ~3 MB) is needed to get the DMMF. @prisma/internals also shipped
+// the query/schema engines and their deps (~70 MB of the desktop package), see PRODUCTCREATOR-21.
+// Dynamic import path to avoid Turbopack static analysis (deprecated apps/pc)
+const PRISMA_SCHEMA_WASM_MODULE = '@prisma/prisma-schema-wasm';
 
 /**
  * Prisma 7 schemas keep the connection URL in prisma.config.ts, but the Prisma 6 parser
@@ -37,22 +38,37 @@ interface DmmfModel {
   documentation?: string;
 }
 
+/** Error thrown by the WASM parser: a JSON string with `error_code` and `message` */
+function prismaErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  try {
+    const parsed = JSON.parse(raw) as { message?: string };
+    // eslint-disable-next-line no-control-regex
+    return (parsed.message ?? raw).replace(/\u001b\[[0-9;]*m/g, '');
+  } catch {
+    return raw;
+  }
+}
+
 /**
  * Parse Prisma schema file and extract models
- * Uses @prisma/internals for parsing (loaded dynamically to avoid WASM issues in Turbopack)
+ * Uses @prisma/prisma-schema-wasm (get_dmmf) for parsing, loaded lazily on first use
  */
 export async function parsePrismaSchema(schemaPath: string): Promise<PrismaModel[]> {
-  // Dynamic import using a variable path to prevent Turbopack from statically analyzing
-  // This ensures WASM files are only loaded at runtime, not during module evaluation
-  type GetDMMF = (options: { datamodel: string }) => Promise<{ datamodel?: { models?: DmmfModel[] } }>;
-  const internals = (await import(PRISMA_INTERNALS_MODULE)) as { getDMMF?: GetDMMF; default?: { getDMMF?: GetDMMF } };
+  type GetDmmf = (params: string) => string;
+  const wasm = (await import(PRISMA_SCHEMA_WASM_MODULE)) as { get_dmmf?: GetDmmf; default?: { get_dmmf?: GetDmmf } };
   // ESM import of the CommonJS package exposes it either directly or under `default` (Electron main bundle)
-  const getDMMF = internals.getDMMF ?? internals.default?.getDMMF;
-  if (!getDMMF) throw new Error('@prisma/internals: getDMMF not found');
-  
+  const getDmmf = wasm.get_dmmf ?? wasm.default?.get_dmmf;
+  if (!getDmmf) throw new Error('@prisma/prisma-schema-wasm: get_dmmf not found');
+
   const schemaContent = fs.readFileSync(schemaPath, 'utf-8');
-  const dmmf = await getDMMF({ datamodel: withDatasourceUrl(schemaContent) });
-  
+  let dmmf: { datamodel?: { models?: DmmfModel[] } };
+  try {
+    dmmf = JSON.parse(getDmmf(JSON.stringify({ prismaSchema: withDatasourceUrl(schemaContent) })));
+  } catch (error) {
+    throw new Error(`Failed to parse Prisma schema ${schemaPath}: ${prismaErrorMessage(error)}`);
+  }
+
   if (!dmmf || !dmmf.datamodel || !dmmf.datamodel.models) {
     throw new Error('Failed to parse Prisma schema: invalid DMMF structure');
   }

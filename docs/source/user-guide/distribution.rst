@@ -40,8 +40,10 @@ manually (*Run workflow*):
 2. **dist** (matrix macOS / Windows / Linux): ``pnpm desktop:dist``; the installers are uploaded as
    artifacts ``product-creator-macOS``, ``-Windows``, ``-Linux`` (kept 14 days).
 
-Signing
--------
+Signing and releases
+--------------------
 
-Builds are **unsigned** for now (``mac.identity: null``). Planned follow-up: macOS Developer ID signing
-and notarization, Windows code signing, publishing releases and auto-update.
+``pnpm desktop:dist`` signs the macOS app when a *Developer ID Application* certificate is available
+(keychain or ``CSC_LINK``) and notarizes it when Apple credentials are set; otherwise it builds
+unsigned and prints what is missing. CI check builds are always unsigned. Signed installers are
+published by the **Release** workflow on ``v*`` tags, see :doc:`/developer-guide/release`.

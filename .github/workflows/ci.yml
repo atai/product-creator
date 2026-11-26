@@ -1,4 +1,5 @@
 # CI (PRODUCTCREATOR-16): checks + unsigned desktop distributables for macOS, Windows and Linux.
+# Signed and notarized installers are built by release.yml on v* tags (PRODUCTCREATOR-21).
 name: CI
 
 on:
@@ -56,10 +57,11 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build distributables (unsigned)
+      - name: Build distributables (unsigned check build)
         run: pnpm desktop:dist
         env:
-          # no code signing yet (follow-up: signing + notarization)
+          # check builds stay unsigned (fast, no secrets on pull requests); see release.yml
+          PC_UNSIGNED: '1'
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - uses: actions/upload-artifact@v5
         with:

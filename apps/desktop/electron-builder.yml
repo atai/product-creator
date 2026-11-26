@@ -1,26 +1,50 @@
-# Desktop distributables (PRODUCTCREATOR-16). Local: `pnpm desktop:dist` builds for the current OS.
-# CI: .github/workflows/ci.yml builds macOS, Windows and Linux. Builds are unsigned for now.
+# Desktop distributables (PRODUCTCREATOR-16), signing, notarization and releases (PRODUCTCREATOR-21).
+# Local: `pnpm desktop:dist` builds for the current OS via scripts/dist.mjs, which signs/notarizes when
+# credentials are available and falls back to an unsigned build otherwise (see Dev Docs → Releases).
+# CI: .github/workflows/ci.yml (unsigned check builds), .github/workflows/release.yml (v* tags, signed).
+# Signing/notarization follow Consolieri (atai/consolieri-desktop): hardened runtime + entitlements,
+# electron-builder's built-in notarize (notarytool) driven by APPLE_* env vars, CSC_LINK / WIN_CSC_LINK certs.
 appId: cloud.ecooz.productcreator
 productName: Product Creator
 artifactName: product-creator-${version}-${os}-${arch}.${ext}
 directories:
   output: dist
+  # icon.icns / icon.ico / icon.png (regenerate: pnpm --filter desktop icons:build) and entitlements
   buildResources: resources
 files:
   - out/**/*
   - package.json
   - '!**/*.map'
+  # typescript is only used for ts.createSourceFile(): ship lib/typescript.js, drop tsserver, tsc,
+  # lib .d.ts files and localized diagnostics (~14 MB)
+  - '!**/node_modules/typescript/lib/{tsc,tsserver,tsserverlibrary,typingsInstaller,watchGuard,_tsc,_tsserver,_typingsInstaller}.js'
+  - '!**/node_modules/typescript/lib/*.d.ts'
+  - '!**/node_modules/typescript/lib/*/diagnosticMessages.generated.json'
+  - '!**/node_modules/typescript/bin/**'
+  - '!**/node_modules/**/{README,CHANGELOG,HISTORY}.md'
 # Renderer and @pc/core are bundled by electron-vite; only main-process runtime deps are packaged
 asar: true
 npmRebuild: false
-publish: null
+# Generates app-update.yml / latest*.yml for electron-updater; uploading is done by the Release workflow
+publish:
+  provider: github
+  owner: atai
+  repo: product-creator
+  releaseType: release
 mac:
   category: public.app-category.developer-tools
   target: [dmg, zip]
-  # unsigned until signing/notarization is set up (follow-up)
-  identity: null
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+  # notarytool via APPLE_API_KEY(+_ID, _ISSUER), APPLE_ID(+APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID)
+  # or APPLE_KEYCHAIN_PROFILE; scripts/dist.mjs turns it off when none is set
+  notarize: true
 win:
   target: [nsis, zip]
+  # signed when WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD (or CSC_LINK) are set
+  signAndEditExecutable: true
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

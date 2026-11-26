@@ -13,13 +13,15 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "dist": "electron-vite build && electron-builder --publish never",
-    "dist:dir": "electron-vite build && electron-builder --dir --publish never"
+    "dist": "electron-vite build && node scripts/dist.mjs",
+    "dist:dir": "electron-vite build && node scripts/dist.mjs --dir",
+    "icons:build": "png2icons resources/icon.png resources/icon -allwe -bc"
   },
   "dependencies": {
-    "@prisma/internals": "^6.19.0",
+    "@prisma/prisma-schema-wasm": "6.19.0-26.2ba551f319ab1df4bc874a89965d8b3641056773",
     "ajv": "^8.17.1",
     "chokidar": "^4.0.3",
+    "electron-updater": "^6.8.11",
     "js-yaml": "^4.3.2",
     "tinybase": "^6.7.1",
     "typescript": "^5.9.3",
@@ -39,6 +41,7 @@
     "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
     "fuse.js": "^7.1.0",
+    "png2icons": "^2.0.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.65.0",

@@ -13,4 +13,5 @@ Documentation for developers of Product Creator.
    data-model
    sync-algorithm
    openapi-sync-design
+   release
    roadmap
