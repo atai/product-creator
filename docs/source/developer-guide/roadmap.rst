@@ -37,6 +37,8 @@ version of Product Creator.
      - Signing, notarization, GitHub Releases, auto-update, app icon, smaller package (:doc:`release`)
    * - `PRODUCTCREATOR-23 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-23>`_
      - OpenAPI generation command per component
+   * - `PRODUCTCREATOR-18 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-18>`_
+     - MCP server for local agents (:doc:`mcp`)
 
 Known gaps
 ----------

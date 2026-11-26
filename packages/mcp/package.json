@@ -1,0 +1,25 @@
+{
+  "name": "@pc/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Product Creator MCP server (Streamable HTTP, bearer token, scopes) and the client of the Emperor MCP relay (pc-relay.v1)",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "ws": "^8.23.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@pc/core": "workspace:*",
+    "@types/node": "^20",
+    "@types/ws": "^8.18.1",
+    "vitest": "^3.2.7"
+  }
+}

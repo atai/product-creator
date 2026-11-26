@@ -40,6 +40,33 @@ export interface EditResult {
   info: WorkspaceInfo;
 }
 
+/** State of the MCP server (settings + runtime) shown on the Settings screen */
+export interface McpStatus {
+  enabled: boolean;
+  scope: 'read' | 'write';
+  port: number;
+  /** Bearer token of local clients */
+  token: string;
+  /** URL of the local MCP endpoint (valid while running) */
+  url: string;
+  running: boolean;
+  error?: string;
+}
+
+/** One agent call from the action log */
+export interface McpActionEntry {
+  ts: string;
+  principal: string;
+  scope?: 'read' | 'write';
+  userAgent?: string;
+  action: string;
+  write?: boolean;
+  outcome: 'ok' | 'error' | 'denied';
+  durationMs?: number;
+  args?: Record<string, unknown>;
+  message?: string;
+}
+
 export interface PcBridge {
   api(request: ApiRequest): Promise<ApiResponse>;
   workspace: {
@@ -62,6 +89,14 @@ export interface PcBridge {
     generateAll(root: string): Promise<GenerateStatus[]>;
     cancel(componentId: string): Promise<boolean>;
   };
+  /** MCP server settings (PRODUCTCREATOR-18) */
+  mcp: {
+    status(): Promise<McpStatus>;
+    update(patch: { enabled?: boolean; scope?: 'read' | 'write'; port?: number }): Promise<McpStatus>;
+    regenerateToken(): Promise<McpStatus>;
+    log(): Promise<McpActionEntry[]>;
+  };
+  onMcpChanged(callback: (status: McpStatus) => void): () => void;
   onOpenApiEvent(callback: (event: GenerateEvent) => void): () => void;
   onWorkspaceChanged(callback: (info: WorkspaceInfo) => void): () => void;
 }
@@ -82,4 +117,9 @@ export const IPC = {
   openapiGenerateAll: 'pc:openapi:generate-all',
   openapiCancel: 'pc:openapi:cancel',
   openapiEvent: 'pc:openapi:event',
+  mcpStatus: 'pc:mcp:status',
+  mcpUpdate: 'pc:mcp:update',
+  mcpRegenerate: 'pc:mcp:regenerate',
+  mcpLog: 'pc:mcp:log',
+  mcpChanged: 'pc:mcp:changed',
 } as const;

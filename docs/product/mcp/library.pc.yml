@@ -1,0 +1,7 @@
+id: 5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64
+slug: mcp
+name: MCP server package
+path: packages/mcp
+codeBasePath: packages/mcp/src
+dependsOn:
+  - 65b1a710-428c-4e33-baf7-b6047999dfad

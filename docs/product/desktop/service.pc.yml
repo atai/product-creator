@@ -5,3 +5,4 @@ path: apps/desktop
 codeBasePath: apps/desktop/src
 dependsOn:
   - 65b1a710-428c-4e33-baf7-b6047999dfad
+  - 5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64

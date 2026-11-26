@@ -20,6 +20,7 @@ import Doc from '@/pages/doc';
 import Projects from '@/pages/projects';
 import WorkspacePage from '@/pages/workspace';
 import InterfacesPage from '@/pages/interfaces';
+import SettingsPage from '@/pages/settings';
 
 // Header and pages read apps/projects once; reload when the set of opened projects changes
 window.pc.onWorkspaceChanged(() => window.location.reload());
@@ -47,6 +48,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/projects" element={<Projects />} />
             <Route path="/workspace" element={<WorkspacePage />} />
             <Route path="/interfaces" element={<InterfacesPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </main>

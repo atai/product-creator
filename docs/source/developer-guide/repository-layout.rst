@@ -27,10 +27,13 @@ Repository layout
          src/code/, src/prisma/, src/sync/  # code & Prisma sync
          src/http/routes/**     # API handlers, src/http/router.ts — route table
          test/                  # vitest unit tests
+       mcp/                     # @pc/mcp — MCP server (Streamable HTTP, tools, action log)
+         src/server.ts, tools.ts, audit.ts, host.ts
+         test/                  # vitest: real server + core on a temp project
      docs/                      # this Sphinx documentation
        product/<component>/     # Product Creator's own component catalogs (*.pc.yml)
      product-creator.yml        # Product Creator's own project file
-     eslint.config.mjs          # ESLint for desktop and core
+     eslint.config.mjs          # ESLint for desktop, core and mcp
      .github/workflows/ci.yml   # checks + distributables for macOS/Windows/Linux
      pnpm-workspace.yaml        # apps/*, packages/*
 

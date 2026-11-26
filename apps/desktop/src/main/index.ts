@@ -8,6 +8,8 @@ import { parseProjectArgs, defaultProjectFolder } from './args';
 import { Workspace } from './workspace';
 import { checkForUpdatesInteractive, startAutoUpdates } from './updater';
 import { resolveUserDataDir } from './userData';
+import { DEFAULT_MCP_PORT, DEFAULT_MCP_PORT_DEV, SettingsStore } from './settings';
+import { McpController } from './mcp';
 
 // Settings and data folder. Must run before anything reads userData and before the single-instance lock:
 // a development run (not packaged) uses '<appData>/Product Creator Dev' and never touches the installed
@@ -30,6 +32,28 @@ const workspace = new Workspace(path.join(app.getPath('userData'), 'workspace.js
 let shellPath: string | undefined;
 const generation = new OpenApiGenerationManager({ env: () => (shellPath ? { PATH: shellPath } : undefined) });
 generation.onEvent((event) => mainWindow?.webContents.send(IPC.openapiEvent, event));
+
+// MCP server for agents (PRODUCTCREATOR-18): off unless enabled in the settings; reachable projects = open workspace
+const settings = new SettingsStore(path.join(app.getPath('userData'), 'settings.json'), {
+  mcpPort: app.isPackaged ? DEFAULT_MCP_PORT : DEFAULT_MCP_PORT_DEV,
+});
+let workspaceChangedTimer: NodeJS.Timeout | undefined;
+const mcp = new McpController(
+  settings,
+  {
+    projects: () => workspace.info().projects.flatMap((p) => (p.project ? [p.project] : [])),
+    api: (request) => handleApi({ method: request.method, url: request.url, body: request.body, headers: { 'content-type': 'application/json' } }),
+    generation,
+    // data was written by an agent: let the UI re-read (debounced, a sync may report several writes)
+    changed: () => {
+      clearTimeout(workspaceChangedTimer);
+      workspaceChangedTimer = setTimeout(() => void notifyWorkspaceChanged(), 400);
+    },
+  },
+  app.getVersion(),
+  path.join(app.getPath('userData'), 'mcp-actions.log')
+);
+mcp.onChange(() => mainWindow?.webContents.send(IPC.mcpChanged, mcp.status()));
 
 function projectAt(root: string): ProjectModel {
   const project = readProject(workspace.requireRoot(root));
@@ -88,6 +112,20 @@ function registerIpc() {
     if (workspace.remove(root)) await notifyWorkspaceChanged();
     return workspace.info();
   });
+
+  // MCP server settings
+  ipcMain.handle(IPC.mcpStatus, () => mcp.status());
+  ipcMain.handle(IPC.mcpUpdate, async (_e, patch: { enabled?: boolean; scope?: 'read' | 'write'; port?: number }) => {
+    settings.updateMcp(patch);
+    await mcp.apply();
+    return mcp.status();
+  });
+  ipcMain.handle(IPC.mcpRegenerate, async () => {
+    settings.regenerateMcpToken();
+    await mcp.apply();
+    return mcp.status();
+  });
+  ipcMain.handle(IPC.mcpLog, () => mcp.audit.recent(100));
 
   // OpenAPI generation (runs the commands configured in *.pc.yml)
   ipcMain.handle(IPC.openapiInfo, (_e, root: string) => generation.info(projectAt(root)));
@@ -279,6 +317,7 @@ if (!app.requestSingleInstanceLock()) {
     else if (workspace.getRoots().length === 0 && !app.isPackaged) workspace.add(defaultProjectFolder());
     await workspace.reload();
     registerIpc();
+    await mcp.apply();
     void loginShellPath().then((p) => {
       shellPath = p;
     });
@@ -290,6 +329,8 @@ if (!app.requestSingleInstanceLock()) {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
   });
+
+  app.on('will-quit', () => void mcp.stop());
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

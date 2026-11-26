@@ -6,8 +6,8 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   main: {
     build: {
-      // @pc/core is TypeScript source in the workspace: bundle it, keep its npm deps external
-      externalizeDeps: { exclude: ['@pc/core'] },
+      // @pc/core and @pc/mcp are TypeScript sources in the workspace: bundle them, keep their npm deps external
+      externalizeDeps: { exclude: ['@pc/core', '@pc/mcp'] },
     },
   },
   preload: {},

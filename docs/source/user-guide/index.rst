@@ -13,4 +13,5 @@ How to install Product Creator, open your projects and keep their specification 
    catalog
    sync
    interfaces
+   mcp
    web-app

@@ -41,7 +41,8 @@ Commands (from the repository root)
 Settings and data folders (dev vs. production)
 ----------------------------------------------
 
-The app keeps ``workspace.json`` (the list of opened projects), logs (``logs/``) and the update cache in
+The app keeps ``workspace.json`` (the list of opened projects), ``settings.json`` (MCP server on/off,
+scope, port and token — see :doc:`mcp`), ``mcp-actions.log``, logs (``logs/``) and the update cache in
 Electron's ``userData`` folder. A development run must never share it with an installed build, so the
 folder depends on how the app was started (``apps/desktop/src/main/userData.ts``, applied first thing in
 ``src/main/index.ts``, before the single-instance lock — a dev and an installed instance can run at

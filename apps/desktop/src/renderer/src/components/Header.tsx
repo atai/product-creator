@@ -222,6 +222,13 @@ export default function Header() {
                 />
               </svg>
             </Link>
+            <Link
+              href="/settings"
+              className="inline-flex items-center justify-center rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+              title="Settings: MCP server for AI agents"
+            >
+              Settings
+            </Link>
           </div>
         </div>
       </div>

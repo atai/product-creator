@@ -46,6 +46,9 @@ export const functionConfig: EntityConfig<FunctionCard> = {
     consumes: JSON.stringify(entity.consumes || []),
     apis: JSON.stringify(entity.apis || []),
     description: entity.description || '',
+    // optional link fields: kept in the row so that reading a card and saving it back does not drop them
+    ...(entity.source_file ? { source_file: entity.source_file } : {}),
+    ...(entity.calls?.length ? { calls: JSON.stringify(entity.calls) } : {}),
     filePath,
   }),
 
@@ -62,6 +65,8 @@ export const functionConfig: EntityConfig<FunctionCard> = {
     consumes: JSON.parse((row.consumes as string) || '[]'),
     apis: JSON.parse((row.apis as string) || '[]'),
     description: row.description as string,
+    ...(row.source_file ? { source_file: row.source_file as string } : {}),
+    ...(row.calls ? { calls: JSON.parse(row.calls as string) as string[] } : {}),
   }),
 };
 

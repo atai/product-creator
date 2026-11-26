@@ -14,7 +14,7 @@
     "docs": "make -C docs html SPHINXOPTS=-W",
     "pc:dev": "pnpm --filter pc dev",
     "pc:build": "pnpm --filter pc build",
-    "lint": "eslint apps/desktop packages/core",
+    "lint": "eslint apps/desktop packages/core packages/mcp",
     "desktop:dist": "pnpm --filter desktop dist"
   },
   "devDependencies": {

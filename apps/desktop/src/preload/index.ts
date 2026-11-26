@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC, type GenerateEvent, type PcBridge, type WorkspaceInfo } from '../shared/ipc';
+import { IPC, type GenerateEvent, type McpStatus, type PcBridge, type WorkspaceInfo } from '../shared/ipc';
 
 const bridge: PcBridge = {
   api: (request) => ipcRenderer.invoke(IPC.api, request),
@@ -20,6 +20,17 @@ const bridge: PcBridge = {
     generate: (root, id) => ipcRenderer.invoke(IPC.openapiGenerate, root, id),
     generateAll: (root) => ipcRenderer.invoke(IPC.openapiGenerateAll, root),
     cancel: (id) => ipcRenderer.invoke(IPC.openapiCancel, id),
+  },
+  mcp: {
+    status: () => ipcRenderer.invoke(IPC.mcpStatus),
+    update: (patch) => ipcRenderer.invoke(IPC.mcpUpdate, patch),
+    regenerateToken: () => ipcRenderer.invoke(IPC.mcpRegenerate),
+    log: () => ipcRenderer.invoke(IPC.mcpLog),
+  },
+  onMcpChanged: (callback) => {
+    const listener = (_e: Electron.IpcRendererEvent, status: McpStatus) => callback(status);
+    ipcRenderer.on(IPC.mcpChanged, listener);
+    return () => ipcRenderer.removeListener(IPC.mcpChanged, listener);
   },
   onOpenApiEvent: (callback) => {
     const listener = (_e: Electron.IpcRendererEvent, event: GenerateEvent) => callback(event);
