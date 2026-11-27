@@ -91,12 +91,39 @@ Check the result:
 Cutting a release
 -----------------
 
-1. Bump ``version`` in ``apps/desktop/package.json`` (the auto-update feeds use it) and commit to
-   ``main``.
-2. Tag and push: ``git tag v0.2.0 && git push origin v0.2.0``.
-3. The **Release** workflow checks that the tag matches the package version, builds the three platforms,
-   verifies the macOS signature (``codesign``, ``spctl``, ``stapler``) and publishes a GitHub Release with
-   generated notes. Tags with a suffix (``v0.2.0-beta.1``) become pre-releases.
+A release version bump is done **only** through ``pnpm version:*``
+(``scripts/version-manager.mjs``). Do not edit ``version`` in any ``package.json`` by hand, invent a
+``CHANGELOG.md`` version header, or create a ``v*`` tag outside the script.
+
+1. Commit all product work so the working tree is **clean**.
+2. Run one of:
+
+   .. code-block:: bash
+
+      pnpm version:patch       # 0.1.3 → 0.1.4
+      pnpm version:minor       # 0.1.3 → 0.2.0
+      pnpm version:major       # 0.1.3 → 1.0.0
+      pnpm version:prerelease  # 0.1.3 → 0.1.4-0
+      pnpm version:set -- 0.2.0
+
+3. The script refuses a dirty tree or a bump with no commits since the last release. It then:
+
+   * sets **one** version on every workspace ``package.json`` (root, ``apps/*``, ``packages/*``,
+     ``design-system``) — the next version is calculated from the root; packages that had drifted are
+     synced on the same bump;
+   * updates ``CHANGELOG.md`` (Keep a Changelog; moves ``## [Unreleased]`` into the new version section);
+   * creates commit ``chore(release): X.Y.Z`` and annotated tag ``vX.Y.Z``.
+
+   It does **not** push. Flags: ``--skip-commit`` (files only, no tag), ``--skip-tag``,
+   ``--no-changelog`` (pass after ``--``, e.g. ``pnpm version:patch -- --skip-tag``).
+   ``pnpm version:status`` shows drift across packages; ``pnpm version:current`` prints the root version.
+
+4. Push yourself: ``git push && git push --tags``.
+
+5. The **Release** workflow checks that the tag matches ``apps/desktop/package.json`` (electron-updater
+   feeds use that version), builds the three platforms, verifies the macOS signature (``codesign``,
+   ``spctl``, ``stapler``) and publishes a GitHub Release with generated notes. Tags with a suffix
+   (``v0.2.0-beta.1`` or a ``version:prerelease`` tag) become pre-releases.
 
 A release can be re-run for an existing tag with *Run workflow* (input ``tag``).
 

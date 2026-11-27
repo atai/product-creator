@@ -32,6 +32,11 @@ Commands (from the repository root)
      - Unit tests (vitest, ``packages/core/test``)
    * - ``pnpm docs``
      - Build this documentation with warnings as errors (``make -C docs html SPHINXOPTS=-W``)
+   * - ``pnpm version:patch`` / ``version:minor`` / ``version:major`` / ``version:prerelease``
+     - Release bump: sync every workspace ``package.json``, update ``CHANGELOG.md``, commit and tag
+       (see :doc:`release`). Do not raise the release version by hand.
+   * - ``pnpm version:status`` / ``version:current`` / ``version:set``
+     - Show drift / root version / set an explicit version (same release flow)
    * - ``pnpm pc:dev`` / ``pnpm pc:build``
      - Deprecated web app (port 3067)
 
@@ -118,7 +123,9 @@ Conventions
 -----------
 
 * Work is tracked in YouTrack project ``PRODUCTCREATOR`` (https://ecooz.youtrack.cloud). Every commit
-  message starts with the ticket id, e.g. ``PRODUCTCREATOR-6 Electron scaffold``.
+  message starts with the ticket id, e.g. ``PRODUCTCREATOR-6 Electron scaffold``. The release commit
+  produced by ``pnpm version:*`` is the exception: ``chore(release): X.Y.Z`` (the version script uses
+  that subject to find the previous release).
 * Branch ``main``; no force pushes.
 * No ``any`` / ``ts-ignore`` — type the data (see ``DmmfModel``, ``SyncApiResponse``).
 * New API route: add ``packages/core/src/http/routes/<path>/route.ts`` (Web ``Request``/``Response``)

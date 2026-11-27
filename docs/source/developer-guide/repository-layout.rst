@@ -32,10 +32,12 @@ Repository layout
          test/                  # vitest: real server + core on a temp project
      docs/                      # this Sphinx documentation
        product/<component>/     # Product Creator's own component catalogs (*.pc.yml)
+     scripts/
+       version-manager.mjs      # pnpm version:* — sync versions, CHANGELOG, release commit + tag
      product-creator.yml        # Product Creator's own project file
      eslint.config.mjs          # ESLint for desktop, core and mcp
      .github/workflows/ci.yml   # checks + distributables for macOS/Windows/Linux
-     pnpm-workspace.yaml        # apps/*, packages/*
+     pnpm-workspace.yaml        # apps/*, packages/*, design-system
 
 Product Creator documents itself: ``product-creator.yml`` plus ``docs/product/desktop/service.pc.yml``
 and ``docs/product/core/library.pc.yml``. The deprecated web app is not part of the model.
