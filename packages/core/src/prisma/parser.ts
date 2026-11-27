@@ -4,7 +4,7 @@ import { PrismaModel, PrismaField, PrismaAttribute } from './types';
 
 // Only the Prisma schema parser (WASM, ~3 MB) is needed to get the DMMF. @prisma/internals also shipped
 // the query/schema engines and their deps (~70 MB of the desktop package), see PRODUCTCREATOR-21.
-// Dynamic import path to avoid Turbopack static analysis (deprecated apps/pc)
+// Dynamic import so the WASM package is loaded only when a schema is parsed
 const PRISMA_SCHEMA_WASM_MODULE = '@prisma/prisma-schema-wasm';
 
 /**

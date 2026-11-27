@@ -9,11 +9,10 @@ business capability in the YAML catalog.
 
    flowchart LR
      subgraph Desktop["apps/desktop (Electron)"]
-       R["Renderer<br/>React pages<br/>(ported from apps/pc)"] -- "fetch('/api/*')<br/>→ window.pc.api (IPC)" --> P[Preload bridge]
+       R["Renderer<br/>React pages"] -- "fetch('/api/*')<br/>→ window.pc.api (IPC)" --> P[Preload bridge]
        P --> M["Main process<br/>Workspace, editor IPC,<br/>menu, CLI args"]
      end
      M -- "dispatch(Request)" --> C
-     W["apps/pc (Next.js, deprecated)"] -- "route.ts re-exports" --> C
      subgraph C["packages/core (@pc/core)"]
        H["http/routes + router<br/>(Web Request/Response)"] --> S["storage<br/>TinyBase + chokidar"]
        H --> Y["sync: code parser,<br/>Prisma DMMF, OpenAPI"]
@@ -26,12 +25,12 @@ business capability in the YAML catalog.
 Key decisions
 -------------
 
-* **One core, two shells.** All domain logic and the API handlers live in ``@pc/core``. Handlers use
-  only the Web ``Request``/``Response`` API, so the same code runs as Next.js route handlers (web) and is
-  dispatched in the Electron main process (desktop) via ``http/router.ts``.
-* **Pages reused as-is.** The renderer contains the pages of the web app; ``next/navigation`` and
-  ``next/link`` are aliased to small shims over ``react-router`` (``HashRouter``) and ``fetch('/api/*')``
-  is redirected to IPC (``src/renderer/src/api-bridge.ts``).
+* **One core, one shell.** All domain logic and the API handlers live in ``@pc/core``. Handlers use
+  only the Web ``Request``/``Response`` API and are dispatched in the Electron main process via
+  ``http/router.ts``.
+* **Renderer over IPC.** ``fetch('/api/*')`` is redirected to IPC (``src/renderer/src/api-bridge.ts``);
+  navigation uses ``react-router`` (``HashRouter``) with small shims where pages still import
+  ``next/navigation`` / ``next/link`` paths.
 * **Files are the database.** Catalog entities are YAML files inside the documented project, versioned
   with its code. TinyBase is an in-memory index, chokidar keeps it in sync with the disk.
 * **Files are the database for the project model too.** ``product-creator.yml`` (project) and
@@ -41,6 +40,5 @@ Key decisions
 * **Stable ids.** Projects and components are identified by UUIDs; slugs and names are editable.
 * **Project = folder.** The desktop workspace is just a list of folders (``userData/workspace.json``).
   Storage runs in *manifest mode* (projects/apps come from the project models).
-* **apps/pc is deprecated.** It keeps compiling against ``@pc/core`` but gets no new features.
 * **Security.** ``contextIsolation`` is on; the renderer has no Node access, only the typed ``window.pc``
   bridge (``src/shared/ipc.ts``).

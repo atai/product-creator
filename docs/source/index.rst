@@ -10,10 +10,6 @@ PC is a **desktop application** (Electron) that is launched from a project folde
 projects open at once, and every project may consist of several services (monorepo ``apps/*``,
 ``packages/*``, ``integrations/*`` ...).
 
-.. note::
-   The previous Next.js web application (``apps/pc``) still works and shares the same core, but it is
-   deprecated in favour of the desktop app (``apps/desktop``).
-
 Documentation is organized into two sections:
 
 * **User Docs** — how to install and use Product Creator.

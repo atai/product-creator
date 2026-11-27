@@ -13,9 +13,6 @@ Repository layout
          src/shared/ipc.ts      # IPC contract
          src/renderer/          # index.html, src/main.tsx (routes), pages/, components/, shims/
        desktop/electron-builder.yml  # distributables (dmg/zip, nsis/zip, AppImage/tar.gz)
-       pc/                      # DEPRECATED Next.js web app (static; thin API route re-exports)
-         config/                # projects/apps YAML of the web mode
-         product/               # example catalog
      packages/
        core/                    # @pc/core — shared domain core
          schema/                # JSON Schemas of catalog entities
@@ -40,4 +37,4 @@ Repository layout
      pnpm-workspace.yaml        # apps/*, packages/*, design-system
 
 Product Creator documents itself: ``product-creator.yml`` plus ``docs/product/desktop/service.pc.yml``
-and ``docs/product/core/library.pc.yml``. The deprecated web app is not part of the model.
+and ``docs/product/core/library.pc.yml``.

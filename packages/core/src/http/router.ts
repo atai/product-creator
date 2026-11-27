@@ -1,6 +1,5 @@
 // Generated route table: maps /api/* paths to framework-agnostic handlers (Web Request/Response).
-// Used by apps/desktop (IPC) — apps/pc re-exports the same handlers as Next.js route files.
-// When adding a route: create routes/<path>/route.ts, add an import + compile() entry here and a re-export stub in apps/pc/app/api.
+// Used by apps/desktop (IPC). When adding a route: create routes/<path>/route.ts and register it here.
 
 import * as r_apps__id_ from './routes/apps/[id]/route';
 import * as r_apps__id__sync_code_actions from './routes/apps/[id]/sync-code/actions/route';

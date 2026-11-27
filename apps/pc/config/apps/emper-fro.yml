@@ -1,6 +1,0 @@
-id: emper-fro
-name: Frontend
-projectId: emper
-directory: /Users/ra/git/emperor-web-ui/docs/product/frontend
-codeBasePath: /Users/ra/git/emperor-web-ui/frontend
-dbSchemaPath: /Users/ra/git/emperor-web-ui/frontend/prisma/schema.prisma

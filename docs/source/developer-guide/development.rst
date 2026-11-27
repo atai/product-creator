@@ -25,9 +25,9 @@ Commands (from the repository root)
    * - ``pnpm desktop:dist``
      - Installers for the current OS in ``apps/desktop/dist`` (see :doc:`/user-guide/distribution`)
    * - ``pnpm typecheck``
-     - TypeScript checks of all packages (core, desktop, pc)
+     - TypeScript checks of all packages (core, desktop, mcp)
    * - ``pnpm lint``
-     - ESLint (``eslint.config.mjs``) for ``apps/desktop`` and ``packages/core``
+     - ESLint (``eslint.config.mjs``) for ``apps/desktop``, ``packages/core`` and ``packages/mcp``
    * - ``pnpm test``
      - Unit tests (vitest, ``packages/core/test``)
    * - ``pnpm docs``
@@ -37,11 +37,6 @@ Commands (from the repository root)
        (see :doc:`release`). Do not raise the release version by hand.
    * - ``pnpm version:status`` / ``version:current`` / ``version:set``
      - Show drift / root version / set an explicit version (same release flow)
-   * - ``pnpm pc:dev`` / ``pnpm pc:build``
-     - Deprecated web app (port 3067)
-
-.. warning::
-   Do not run ``pnpm pc:build`` while ``pnpm pc:dev`` is running — both write to ``apps/pc/.next``.
 
 Settings and data folders (dev vs. production)
 ----------------------------------------------
@@ -129,6 +124,6 @@ Conventions
 * Branch ``main``; no force pushes.
 * No ``any`` / ``ts-ignore`` — type the data (see ``DmmfModel``, ``SyncApiResponse``).
 * New API route: add ``packages/core/src/http/routes/<path>/route.ts`` (Web ``Request``/``Response``)
-  and register it in ``packages/core/src/http/router.ts``. No new stubs in the deprecated ``apps/pc``.
+  and register it in ``packages/core/src/http/router.ts``.
 * Never commit ``node_modules``, ``apps/desktop/out`` or ``apps/desktop/dist``; never commit with a
   failing ``pnpm typecheck``.

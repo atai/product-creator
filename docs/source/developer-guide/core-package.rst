@@ -1,9 +1,8 @@
 Core package (@pc/core)
 =======================
 
-TypeScript sources consumed directly by both apps (``transpilePackages`` in Next.js, bundled by
-electron-vite in the main process). Modules are imported by path: ``@pc/core/storage``,
-``@pc/core/project/model`` ...
+TypeScript sources bundled by electron-vite in the desktop main process. Modules are imported by path:
+``@pc/core/storage``, ``@pc/core/project/model`` ...
 
 Storage
 -------
@@ -14,11 +13,12 @@ features, workflows, streams, business_objects, projects, apps, events, edges). 
 ``getAll``/``getById``/``save`` remain as deprecated aliases. ``modelSnapshot()`` feeds validation;
 ``configureStorage({ watch: false })`` disables the watcher (CLI).
 
-* **Config mode** (web): ``configureStorage({ configRoot })`` — projects/apps are YAML files in
-  ``<configRoot>/projects`` and ``<configRoot>/apps`` (default ``<cwd>/config``).
 * **Manifest mode** (desktop): ``configureStorage({ manifest: toStorageEntities(projects) })`` — projects
   and components come from the project models; project/app CRUD over HTTP returns an error (the
   desktop editor uses ``project/model`` directly via IPC).
+* **Config mode** (legacy ``configRoot``): ``configureStorage({ configRoot })`` — projects/apps are YAML
+  files in ``<configRoot>/projects`` and ``<configRoot>/apps`` (default ``<cwd>/config``). Kept for
+  callers that do not pass a manifest.
 * ``resetStorage()`` closes watchers; the desktop calls it when the workspace changes.
 
 Every app (service) has a ``directory`` with the catalog; ``features/`` (and the legacy ``functions/``),

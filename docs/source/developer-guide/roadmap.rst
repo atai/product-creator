@@ -28,7 +28,7 @@ version of Product Creator.
    * - `PRODUCTCREATOR-14 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-14>`_
      - Library component kind and dependencies
    * - `PRODUCTCREATOR-15 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-15>`_
-     - ``apps/pc`` deprecated
+     - Legacy Next.js ``apps/pc`` removed (was deprecated)
    * - `PRODUCTCREATOR-16 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-16>`_
      - Distributables: local + CI for macOS, Windows, Linux
    * - `PRODUCTCREATOR-17 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-17>`_

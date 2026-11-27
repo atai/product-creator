@@ -1,11 +1,11 @@
-// ESLint for the desktop app and the core package (apps/pc is deprecated and keeps its own config)
+// ESLint for the desktop app, core and mcp packages
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['**/node_modules/**', '**/out/**', '**/dist/**', 'apps/pc/**', 'docs/**'] },
+  { ignores: ['**/node_modules/**', '**/out/**', '**/dist/**', 'docs/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

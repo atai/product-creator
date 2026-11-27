@@ -1,6 +1,5 @@
 /**
  * Minimal `next/navigation` replacement on top of react-router (HashRouter).
- * Lets the pages ported from apps/pc run unchanged in the Electron renderer.
  */
 import { useMemo } from 'react';
 import { useLocation, useNavigate, useParams as useRouterParams } from 'react-router-dom';

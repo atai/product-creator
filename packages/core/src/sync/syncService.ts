@@ -45,7 +45,7 @@ interface SyncState {
 }
 
 // In-memory storage for sync states
-// Use global object to survive HMR (Hot Module Reload) in Next.js dev mode
+// Use global object so in-flight sync state survives module reloads in tests/dev
 declare global {
   var __syncStates: Map<string, SyncState> | undefined;
 }

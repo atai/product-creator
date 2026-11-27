@@ -42,7 +42,7 @@ For a service with ``dbSchemaPath`` the Prisma models are matched with business 
 name or id; structure hash decides between *update* and *skip*). Prisma 7 schemas (connection URL in
 ``prisma.config.ts``) are supported. The mapping is stored in ``.sync-mapping.json`` of the catalog.
 
-Both syncs are started from the service card on the *Projects* page: in the desktop app open
-**Workspace → Sync code / schema…** (in the web app: the gear icon). The page shows progress, the matched
-items with proposed actions, and executes the sync after confirmation.
+Both syncs are started from the service card on the *Projects* page via
+**Workspace → Sync code / schema…**. The page shows progress, the matched items with proposed actions,
+and executes the sync after confirmation.
 Details: :doc:`/developer-guide/sync-algorithm`.

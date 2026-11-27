@@ -22,9 +22,9 @@ import {
 /**
  * Storage options.
  *
- * - Web mode (apps/pc): projects/apps are YAML files in `configRoot` (default: `<cwd>/config`).
- * - Desktop mode (apps/desktop): projects/apps (services) come from project manifests
+ * - Manifest mode (desktop): projects/apps (services) come from project manifests
  *   (`product-creator.yml` or repo discovery) and are passed in `manifest`.
+ * - Config mode (legacy): projects/apps are YAML files in `configRoot` (default: `<cwd>/config`).
  */
 export interface StorageOptions {
   configRoot?: string;

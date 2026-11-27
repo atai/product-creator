@@ -17,7 +17,7 @@ export default defineConfig({
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src/renderer/src'),
-        // Pages were ported from the Next.js app (apps/pc); these shims map Next APIs to react-router
+        // Shims map next/navigation and next/link import paths to react-router
         'next/navigation': resolve(__dirname, 'src/renderer/src/shims/navigation.ts'),
         'next/link': resolve(__dirname, 'src/renderer/src/shims/link.tsx'),
       },

@@ -15,4 +15,3 @@ Agents that cannot reach this computer use :ref:`remote access <mcp-remote-acces
    sync
    interfaces
    mcp
-   web-app

@@ -21,7 +21,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@prisma/prisma-schema-wasm": "6.19.0-26.2ba551f319ab1df4bc874a89965d8b3641056773",
-    "ajv": "^8.17.1",
+    "ajv": "^8.20.0",
     "chokidar": "^4.0.3",
     "electron-updater": "^6.8.11",
     "js-yaml": "^4.3.2",
@@ -40,8 +40,8 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.19.21",
     "@types/react": "^19.2.2",
-    "@types/ws": "^8.18.1",
     "@types/react-dom": "^19.2.1",
+    "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^6.3.0",
     "cytoscape": "^3.33.1",
     "electron": "^45.5.0",
@@ -55,7 +55,7 @@
     "react-router-dom": "^7.18.7",
     "tailwindcss": "^4.1.14",
     "vite": "^8.3.8",
-    "vitest": "^3.2.7"
+    "vitest": "^4.1.12"
   },
   "author": "Rustam Atai",
   "homepage": "https://github.com/atai/product-creator"
