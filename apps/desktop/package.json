@@ -1,7 +1,7 @@
 {
   "name": "desktop",
   "productName": "Product Creator",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "Product Creator desktop app (Electron). Opens a project folder and manages its feature catalog.",
   "main": "out/main/index.js",
