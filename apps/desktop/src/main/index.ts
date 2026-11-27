@@ -31,10 +31,22 @@ process.env.PC_LOG_DIR ??= path.join(app.getPath('userData'), 'logs');
 let mainWindow: BrowserWindow | null = null;
 const workspace = new Workspace(path.join(app.getPath('userData'), 'workspace.json'));
 
+/** BrowserWindow after `closed` is still a JS object; reading webContents throws. */
+function liveWindow(): BrowserWindow | null {
+  if (!mainWindow || mainWindow.isDestroyed()) return null;
+  return mainWindow;
+}
+
+function send(channel: string, payload: unknown) {
+  const win = liveWindow();
+  if (!win) return;
+  win.webContents.send(channel, payload);
+}
+
 // GUI-launched apps (Dock/Finder) miss the shell PATH (pnpm, node): resolve it once from the login shell
 let shellPath: string | undefined;
 const generation = new OpenApiGenerationManager({ env: () => (shellPath ? { PATH: shellPath } : undefined) });
-generation.onEvent((event) => mainWindow?.webContents.send(IPC.openapiEvent, event));
+generation.onEvent((event) => send(IPC.openapiEvent, event));
 
 // MCP server for agents (PRODUCTCREATOR-18): off unless enabled in the settings; reachable projects = open workspace
 const settings = new SettingsStore(
@@ -63,10 +75,17 @@ const mcp = new McpController(
   app.getVersion(),
   path.join(app.getPath('userData'), 'mcp-actions.log')
 );
-mcp.onChange(() => mainWindow?.webContents.send(IPC.mcpChanged, mcp.status()));
+mcp.onChange(() => send(IPC.mcpChanged, mcp.status()));
 // "Expose remotely": tunnel to the Emperor MCP relay (PRODUCTCREATOR-20)
 const relay = new RelayController(settings, mcp, app.getVersion(), (message) => console.log(message));
-relay.onChange(() => mainWindow?.webContents.send(IPC.relayChanged, relay.status()));
+relay.onChange(() => send(IPC.relayChanged, relay.status()));
+
+async function shutdown() {
+  clearTimeout(workspaceChangedTimer);
+  generation.cancelAll();
+  relay.stop();
+  await mcp.stop();
+}
 
 function projectAt(root: string): ProjectModel {
   const project = readProject(workspace.requireRoot(root));
@@ -92,21 +111,24 @@ async function handleApi(request: ApiRequest): Promise<ApiResponse> {
 
 async function notifyWorkspaceChanged() {
   await workspace.reload();
-  mainWindow?.webContents.send(IPC.workspaceChanged, workspace.info());
+  send(IPC.workspaceChanged, workspace.info());
   updateTitle();
 }
 
 function updateTitle() {
+  const win = liveWindow();
+  if (!win) return;
   const names = workspace.info().projects.map((p) => p.project?.name ?? path.basename(p.root));
-  mainWindow?.setTitle(`Product Creator — ${names.join(', ') || 'no project'}`);
+  win.setTitle(`Product Creator — ${names.join(', ') || 'no project'}`);
 }
 
 async function openFolderDialog() {
-  if (!mainWindow) return;
-  const result = await dialog.showOpenDialog(mainWindow, {
+  const options: Electron.OpenDialogOptions = {
     title: 'Open project folder',
     properties: ['openDirectory', 'multiSelections'],
-  });
+  };
+  const win = liveWindow();
+  const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options);
   if (!result.canceled && workspace.add(...result.filePaths)) await notifyWorkspaceChanged();
 }
 
@@ -237,7 +259,7 @@ function buildMenu() {
 }
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     width: 1400,
     height: 900,
     show: false,
@@ -248,16 +270,22 @@ function createWindow() {
       sandbox: false,
     },
   });
-  attachMacMultiDisplayResizeGuard(mainWindow, screen);
-  mainWindow.on('ready-to-show', () => mainWindow?.show());
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+  mainWindow = win;
+  attachMacMultiDisplayResizeGuard(win, screen);
+  win.on('ready-to-show', () => {
+    if (!win.isDestroyed()) win.show();
+  });
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null;
+  });
+  win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);
     return { action: 'deny' };
   });
   if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
-    void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+    void win.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
-    void mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    void win.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
   updateTitle();
 }
@@ -315,7 +343,7 @@ async function runSmokeTest() {
       report[kind] = { start: start.error ?? 'ok', stage: state.stage, matched: (state.matchedFunctions ?? state.matchedObjects)?.length, error: state.progress?.error };
     }
   }
-  const win = mainWindow;
+  const win = liveWindow();
   if (win) {
     if (win.webContents.isLoading()) await new Promise<void>((r) => win.webContents.once('did-finish-load', () => r()));
     // PC_SMOKE_EDIT=<new name>: rename the first component through the renderer bridge (editor IPC → YAML)
@@ -351,6 +379,8 @@ async function runSmokeTest() {
     }
   }
   console.log('PC_SMOKE_RESULT ' + JSON.stringify(report, null, 2));
+  // app.exit skips before-quit / will-quit
+  await shutdown();
   app.exit(0);
 }
 
@@ -361,9 +391,12 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', async (_e, argv, workingDirectory) => {
     const folders = parseProjectArgs(argv, { ...process.env, INIT_CWD: workingDirectory }, workingDirectory, { packaged: app.isPackaged });
     if (folders.length && workspace.add(...folders)) await notifyWorkspaceChanged();
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
+    const win = liveWindow();
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    } else if (app.isReady()) {
+      createWindow();
     }
   });
 
@@ -392,9 +425,14 @@ if (!app.requestSingleInstanceLock()) {
     });
   });
 
-  app.on('will-quit', () => {
-    relay.stop();
-    void mcp.stop();
+  // Windows already closed; await stop so MCP server.close finishes before process exit.
+  // Second app.quit() reaches will-quit with the flag set and does not preventDefault again.
+  let shutdownStarted = false;
+  app.on('will-quit', (event) => {
+    if (shutdownStarted) return;
+    event.preventDefault();
+    shutdownStarted = true;
+    void shutdown().finally(() => app.quit());
   });
 
   app.on('window-all-closed', () => {

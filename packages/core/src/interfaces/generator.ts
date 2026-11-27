@@ -254,6 +254,11 @@ export class OpenApiGenerationManager {
     return Boolean(controller);
   }
 
+  /** Abort every running generate (app quit): killTree in runOpenApiGenerate sends SIGTERM. */
+  cancelAll(): void {
+    for (const controller of this.controllers.values()) controller.abort();
+  }
+
   async generate(project: ProjectModel, component: ComponentModel): Promise<GenerateStatus> {
     if (this.controllers.has(component.id)) throw new Error(`${component.name}: generation is already running`);
     const controller = new AbortController();

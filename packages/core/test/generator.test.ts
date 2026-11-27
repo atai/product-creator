@@ -176,4 +176,12 @@ describe('manager', () => {
     const all = await manager.generateAll(project);
     expect(all.map((r) => r.state)).toEqual(['ok']);
   });
+
+  it('cancelAll aborts every running generate', async () => {
+    const { project, component } = setup('node -e "setInterval(()=>{},1000)"');
+    const manager = new OpenApiGenerationManager();
+    const pending = manager.generate(project, component);
+    manager.cancelAll();
+    expect((await pending).state).toBe('cancelled');
+  });
 });
