@@ -190,6 +190,14 @@ function registerIpc() {
   ipcMain.handle(IPC.editorImportNew, (_e, root: string) => edit(() => importNewComponents(workspace.requireRoot(root)))());
 }
 
+const COPYRIGHT_START_YEAR = 2022;
+const SITE_URL = 'https://ecooz.net';
+const REPO_URL = 'https://github.com/atai/product-creator';
+
+function copyrightNotice(): string {
+  return `Copyright © ${COPYRIGHT_START_YEAR}-${new Date().getFullYear()} Rustam Atai`;
+}
+
 function buildMenu() {
   const isMac = process.platform === 'darwin';
   const template: Electron.MenuItemConstructorOptions[] = [
@@ -207,6 +215,13 @@ function buildMenu() {
     { role: 'editMenu' },
     { role: 'viewMenu' },
     { role: 'windowMenu' },
+    {
+      role: 'help',
+      submenu: [
+        { label: 'ecooz.net', click: () => void shell.openExternal(SITE_URL) },
+        { label: 'GitHub Repository', click: () => void shell.openExternal(REPO_URL) },
+      ],
+    },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
@@ -352,6 +367,11 @@ if (!app.requestSingleInstanceLock()) {
     await mcp.apply();
     void loginShellPath().then((p) => {
       shellPath = p;
+    });
+    app.setAboutPanelOptions({
+      copyright: copyrightNotice(),
+      credits: `${REPO_URL}\n${SITE_URL}`,
+      website: SITE_URL,
     });
     buildMenu();
     createWindow();

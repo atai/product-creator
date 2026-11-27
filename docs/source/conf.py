@@ -3,11 +3,13 @@
 
 import json
 import os
+from datetime import date
 
 # -- Project information -----------------------------------------------------
 
 project = 'Product Creator'
-copyright = '2025-2026, Rustam Atai'
+# Repo created 2022 (GitHub createdAt 2022-01-07); end year is the docs build year
+copyright = f'2022-{date.today().year}, Rustam Atai'
 author = 'Rustam Atai'
 
 _root_package = os.path.join(os.path.dirname(__file__), '..', '..', 'package.json')
