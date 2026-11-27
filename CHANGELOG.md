@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-27
+
+### Removed
+- Refactor project structure and dependencies: removed deprecated 'apps/pc' directory and updated related configurations ([16057c0](https://github.com/atai/product-creator/commit/16057c0d2228ef2d34081a78214b77074cd20623))
+
 ## [0.1.4] - 2026-11-27
 
 ### Added
