@@ -108,7 +108,7 @@ describe('tools (read-write token)', () => {
   it('lists the tools including write tools', async () => {
     const { client } = await connect(bearer());
     const names = (await client.listTools()).tools.map((t) => t.name);
-    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'sync_code_preview', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
+    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'get_object', 'find_duplicates', 'impact_of_change', 'validate_plan', 'validate_catalog', 'sync_code_preview', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
     await client.close();
   });
 
@@ -147,6 +147,47 @@ describe('tools (read-write token)', () => {
     expect(renamed.isError).toBe(true);
     const invalid = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id, patch: { lifecycle: 'bogus' } } });
     expect(invalid.isError).toBe(true);
+    await client.close();
+  });
+
+  it('checks plans against the model and rejects writes that break it (PRODUCTCREATOR-29)', async () => {
+    const { client } = await connect(bearer());
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    const invoice = { id: 'invoice', name: 'Invoice', owner: 'team-a', lifecycle: 'draft', fields: [{ name: 'id', type: 'string' }, { name: 'total', type: 'decimal' }] };
+
+    const plan = json(await call('validate_plan', { changes: [{ kind: 'workflow', data: { workflow: 'billing.close', steps: ['billing.invoice.create', 'billing.invoice.send'] }, component: 'svc' }] }));
+    expect(plan.ok).toBe(false);
+    expect(plan.introduced).toEqual([expect.objectContaining({ code: 'unknown_feature', field: 'steps[1]', component: 'svc' })]);
+
+    const rejected = await call('create_catalog_entry', { component: 'svc', kind: 'workflow', data: { workflow: 'billing.close', steps: ['billing.invoice.send'] } });
+    expect(rejected.isError).toBe(true);
+    expect(text(rejected)).toContain('unknown_feature');
+
+    const badLink = await call('update_catalog_entry', { kind: 'feature', id: FN.id, patch: { objects: [{ id: 'invoice', access: 'write' }] } });
+    expect(badLink.isError).toBe(true);
+    expect(text(badLink)).toContain('unknown_object');
+
+    expect((await call('create_catalog_entry', { component: 'svc', kind: 'business_object', data: invoice })).isError).toBeFalsy();
+    expect((await call('update_catalog_entry', { kind: 'feature', id: FN.id, patch: { objects: [{ id: 'invoice', access: 'write' }] } })).isError).toBeFalsy();
+    expect((await call('create_catalog_entry', { component: 'svc', kind: 'workflow', data: { workflow: 'billing.close', steps: [FN.id] } })).isError).toBeFalsy();
+
+    const object = json(await call('get_object', { id: 'invoice' }));
+    expect(object.object.fields.map((f: { name: string }) => f.name)).toEqual(['id', 'total']);
+    expect(object.usedBy).toEqual([expect.objectContaining({ id: FN.id, via: 'objects: write', component: 'svc' })]);
+
+    const impact = json(await call('impact_of_change', { kind: 'business_object', id: 'invoice' }));
+    expect(impact.features.map((f: { id: string }) => f.id)).toEqual([FN.id]);
+    expect(impact.workflows.map((w: { id: string }) => w.id)).toEqual(['billing.close']);
+
+    const dups = json(await call('find_duplicates', { kind: 'feature', name: 'create invoice', id: 'sales.invoice.create' }));
+    expect(dups.matches).toEqual([expect.objectContaining({ id: FN.id, via: 'same entity.action, same name' })]);
+
+    const deletion = json(await call('validate_plan', { changes: [{ kind: 'function', op: 'delete', id: FN.id }] }));
+    expect(deletion.ok).toBe(false);
+    expect(deletion.introduced.map((i: { id: string }) => i.id)).toContain('billing.close');
+
+    const catalog = json(await call('validate_catalog', {}));
+    expect(catalog.errors).toBe(0);
     await client.close();
   });
 

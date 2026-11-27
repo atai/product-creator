@@ -85,9 +85,11 @@ async function api(host: McpHost, method: string, url: string, body?: unknown): 
     json = res.body;
   }
   if (res.status >= 400) {
-    const err = json as { error?: string; details?: unknown } | undefined;
+    const err = json as { error?: string; details?: unknown; issues?: unknown[] } | undefined;
     const details = err?.details ? ` ${JSON.stringify(err.details)}` : '';
-    throw new ToolError(`${err?.error ?? `HTTP ${res.status}`}${details}`);
+    // model validation of the save handlers (PRODUCTCREATOR-29): the write was rejected, nothing changed
+    const issues = err?.issues?.length ? `\nissues: ${JSON.stringify(err.issues)}` : '';
+    throw new ToolError(`${err?.error ?? `HTTP ${res.status}`}${details}${issues}`);
   }
   return json;
 }
@@ -186,6 +188,23 @@ async function syncApply(host: McpHost, component: ComponentModel, kind: 'sync-c
   const applied = items.filter((i) => overrides[i.key] === undefined);
   return { syncId: start.syncId, applied: countBy(applied), skippedDeletes, note: skippedDeletes ? 'delete actions were skipped; pass allow_delete=true to apply them' : undefined };
 }
+
+/** Model checks are global; tools report the entries of one project, with component slugs instead of ids */
+type Issue = { severity: string; code: string; kind: string; id: string; field?: string; message: string; file?: string; component?: string };
+function projectView<T extends { component?: string; file?: string }>(project: ProjectModel, items: T[], keepOthers = false): (T & { component?: string })[] {
+  const slugs = new Map(project.components.map((c) => [c.id, c.slug]));
+  return items
+    .filter((i) => keepOthers || (i.component !== undefined && slugs.has(i.component)))
+    .map((i) => ({ ...i, component: i.component ? slugs.get(i.component) ?? i.component : undefined, ...(i.file ? { file: relativeSpec(project, i.file) } : {}) }));
+}
+
+const planChangeSchema = z.object({
+  kind: z.enum(['feature', 'business_object', 'workflow', 'function']).describe("Entry type ('function' = old name of 'feature')"),
+  op: z.enum(['upsert', 'delete']).optional().describe('upsert (default): create or replace the entry with data; delete: remove entry `id`'),
+  data: z.record(z.string(), z.unknown()).optional().describe('Full proposed entry (for upsert)'),
+  id: z.string().optional().describe('Entry id (for delete)'),
+  component: componentArg.optional().describe('Component the entry goes to (default: where it is now)'),
+});
 
 /** All tools. `write: true` tools exist only for read-write principals. */
 export function registerTools(server: McpServer, ctx: ToolContext): void {
@@ -286,6 +305,103 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
   );
 
   define(
+    'validate_catalog',
+    {
+      title: 'Validate the catalog',
+      description:
+        'Model problems of a project: workflow steps/compensations and feature calls that are not features, feature objects that are not business objects, business-object field types that are neither scalars nor objects, duplicate ids and names, id patterns, schemas. Streams are not checked.',
+      input: { project: projectArg, component: componentArg.optional(), severity: z.enum(['error', 'warning']).optional(), limit: z.number().int().min(1).max(MAX_LIST).optional() },
+    },
+    async ({ project, component, severity, limit }) => {
+      const p = resolveProject(host, project);
+      const c = component ? resolveComponent(p, component) : undefined;
+      const res = (await api(host, 'GET', `/api/validation${c ? `?app=${encodeURIComponent(c.id)}` : ''}`)) as { issues: Issue[] };
+      const issues = projectView(p, res.issues).filter((i) => !severity || i.severity === severity);
+      return {
+        errors: issues.filter((i) => i.severity === 'error').length,
+        warnings: issues.filter((i) => i.severity === 'warning').length,
+        issues: issues.slice(0, limit ?? DEFAULT_LIST),
+      };
+    }
+  );
+
+  define(
+    'validate_plan',
+    {
+      title: 'Check a plan before writing',
+      description:
+        'Check proposed catalog changes (new or changed features, workflows, business objects; deletions) against the model without writing anything. Returns ok=false and the errors the plan would add (unknown features/objects/types, duplicates, schema), plus problems the touched entries already have. Write tools run the same check and reject changes that add errors.',
+      input: { project: projectArg, changes: z.array(planChangeSchema).min(1).max(200) },
+    },
+    async ({ project, changes }) => {
+      const p = resolveProject(host, project);
+      const body = changes.map((ch) => ({ ...ch, component: ch.component ? resolveComponent(p, ch.component).id : undefined }));
+      const res = (await api(host, 'POST', '/api/validate-plan', { changes: body })) as { ok: boolean; introduced: Issue[]; existing: Issue[] };
+      return { ok: res.ok, introduced: projectView(p, res.introduced, true), existing: projectView(p, res.existing, true) };
+    }
+  );
+
+  define(
+    'impact_of_change',
+    {
+      title: 'Impact of changing a feature or object',
+      description:
+        'What a change of a business object or a feature affects: features that use the object (read/write) or call the feature, their callers (one level), workflows that contain them, objects whose fields reference the object; for a feature also the features it calls and the objects it uses.',
+      input: { project: projectArg, kind: z.enum(['business_object', 'feature', 'function']), id: z.string() },
+    },
+    async ({ project, kind, id }) => {
+      const p = resolveProject(host, project);
+      const res = (await api(host, 'GET', `/api/impact?kind=${kind === 'function' ? 'feature' : kind}&id=${encodeURIComponent(id)}`)) as Record<string, unknown> & {
+        features: { component?: string }[];
+        workflows: { component?: string }[];
+        objects: { component?: string }[];
+        calls: { component?: string }[];
+      };
+      return { ...res, features: projectView(p, res.features, true), workflows: projectView(p, res.workflows, true), objects: projectView(p, res.objects, true), calls: projectView(p, res.calls, true) };
+    }
+  );
+
+  define(
+    'find_duplicates',
+    {
+      title: 'Find duplicates',
+      description:
+        'Before creating an entry: pass the proposed name and/or id to get existing entries with the same name (ignoring case, spaces, punctuation), the same id, or (features) the same <entity>.<action> in another bounded context. Without name/id: duplicate ids and names already in the catalog.',
+      input: { project: projectArg, kind: z.enum(['feature', 'business_object', 'workflow', 'function']).optional(), name: z.string().optional(), id: z.string().optional() },
+    },
+    async ({ project, kind, name, id }) => {
+      const p = resolveProject(host, project);
+      const q = new URLSearchParams();
+      if (kind) q.set('kind', kind === 'function' ? 'feature' : kind);
+      if (name) q.set('name', name);
+      if (id) q.set('id', id);
+      const res = (await api(host, 'GET', `/api/duplicates?${q}`)) as { issues: Issue[]; matches: { component?: string }[] };
+      return { matches: projectView(p, res.matches, true), issues: projectView(p, res.issues) };
+    }
+  );
+
+  define(
+    'get_object',
+    {
+      title: 'Get a business object',
+      description: 'A business object with its fields (name, type, description) and tables, and the features that read or write it. Use it to check which fields exist before planning a change.',
+      input: { project: projectArg, id: z.string().describe('Business object id'), component: componentArg.optional() },
+    },
+    async ({ project, id, component }) => {
+      const p = resolveProject(host, project);
+      for (const c of component ? [resolveComponent(p, component)] : p.components) {
+        const hit = (await listEntries(host, 'business_object', c)).find((e) => e.id === id);
+        if (!hit) continue;
+        const { childObjects: _children, ...object } = hit;
+        const impact = (await api(host, 'GET', `/api/impact?kind=business_object&id=${encodeURIComponent(id)}`)) as { features: { id: string; via: string; component?: string }[] };
+        const usedBy = projectView(p, impact.features, true).filter((f) => f.via.startsWith('objects:'));
+        return { component: c.slug, object, usedBy };
+      }
+      throw new ToolError(`business_object "${id}" not found in project ${p.slug}`);
+    }
+  );
+
+  define(
     'list_interfaces',
     {
       title: 'List API operations',
@@ -348,7 +464,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Create a catalog entry',
       write: true,
-      description: 'Create a feature (id = <bounded_context>.<entity>.<action>), business object, workflow or stream in a component catalog. `data` is the full card; it is validated before writing.',
+      description: 'Create a feature (id = <bounded_context>.<entity>.<action>), business object, workflow or stream in a component catalog. `data` is the full card. It is validated before writing (schema and model: references to features/objects, field types, duplicates); a change that adds errors is rejected with the issues. Use validate_plan / find_duplicates first.',
       input: { project: projectArg, component: componentArg, kind: kindSchema, data: z.record(z.string(), z.unknown()) },
     },
     async ({ project, component, kind: kindArg, data }) => {
@@ -371,7 +487,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Update a catalog entry',
       write: true,
-      description: 'Change fields of an existing entry. `patch` is merged into the stored card at the top level (a null value removes a field); the id cannot change. The result is validated before writing.',
+      description: 'Change fields of an existing entry. `patch` is merged into the stored card at the top level (a null value removes a field); the id cannot change. The result is validated before writing; a change that adds model errors is rejected with the issues.',
       input: { project: projectArg, kind: kindSchema, id: z.string(), patch: z.record(z.string(), z.unknown()), component: componentArg.optional() },
     },
     async ({ project, kind: kindArg, id, patch, component }) => {
@@ -387,6 +503,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       }
       if (!found) throw new ToolError(`${kind} "${id}" not found in project ${p.slug}`);
       const merged: Rec = { ...found.entry };
+      delete merged.childObjects; // grouping of the business-object list, not part of the card
       const changed: string[] = [];
       for (const [k, v] of Object.entries(patch)) {
         if (v === null) delete merged[k];
