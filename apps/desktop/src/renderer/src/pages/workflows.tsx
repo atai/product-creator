@@ -35,7 +35,7 @@ export default function WorkflowsPage() {
       actions={
         <Link
           href={`/workflows/new${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+          className="px-4 py-2 bg-accent text-on rounded hover:bg-accent-hover text-sm font-medium"
         >
           New Workflow
         </Link>
@@ -46,58 +46,58 @@ export default function WorkflowsPage() {
           placeholder="Search workflows..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
         />
       }
     >
       {loading ? (
         <div className="text-center py-12">
-          <p className="text-gray-600">Loading workflows...</p>
+          <p className="text-muted">Loading workflows...</p>
         </div>
       ) : filteredWorkflows.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600">
+          <p className="text-muted">
             {workflows.length === 0 ? 'No workflows found. Create your first workflow!' : 'No matching workflows found.'}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="bg-surface rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-bg">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
                   Workflow ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
                   Steps
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
                   Events Emitted
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-surface divide-y divide-border">
               {filteredWorkflows.map((workflow) => (
-                <tr key={workflow.workflow} className="hover:bg-gray-50">
+                <tr key={workflow.workflow} className="hover:bg-bg">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
                       href={`/workflows/${workflow.workflow}${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
-                      className="text-blue-600 hover:text-blue-900 font-medium"
+                      className="text-accent hover:text-accent-fg-strong font-medium"
                     >
                       {workflow.workflow}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-fg">
                     {workflow.name || '-'}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted">
                       {workflow.steps.length} step{workflow.steps.length !== 1 ? 's' : ''}
                     </div>
                   </td>
@@ -107,20 +107,20 @@ export default function WorkflowsPage() {
                         workflow.emits.map((event) => (
                           <span
                             key={event}
-                            className="inline-block px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded"
+                            className="inline-block px-2 py-1 text-xs font-medium bg-secondary-muted text-secondary-fg rounded"
                           >
                             {event}
                           </span>
                         ))
                       ) : (
-                        <span className="text-sm text-gray-400">None</span>
+                        <span className="text-sm text-meta">None</span>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <Link
                       href={`/workflows/${workflow.workflow}${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-accent hover:text-accent-fg-strong"
                     >
                       Edit
                     </Link>

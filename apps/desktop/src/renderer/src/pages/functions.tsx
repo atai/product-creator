@@ -69,8 +69,8 @@ export default function FunctionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8">
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-full p-8">
+        <p className="text-muted">Loading...</p>
       </div>
     );
   }
@@ -83,7 +83,7 @@ export default function FunctionsPage() {
       actions={
         <Link
           href="/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium whitespace-nowrap"
+          className="px-4 py-2 bg-accent text-on rounded hover:bg-accent-hover text-sm font-medium whitespace-nowrap"
         >
           New Function
         </Link>
@@ -95,14 +95,14 @@ export default function FunctionsPage() {
             placeholder="Search functions..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded bg-white text-gray-900 placeholder-gray-500"
+            className="w-full px-4 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta"
           />
 
           <div className="flex flex-wrap gap-4">
             <select
               value={filters.bounded_context}
               onChange={(e) => setFilters({ ...filters, bounded_context: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded bg-white text-gray-900"
+              className="px-4 py-2 border border-border-strong rounded bg-surface text-fg"
             >
               <option value="">All Contexts</option>
               {uniqueContexts.map((c) => (
@@ -115,7 +115,7 @@ export default function FunctionsPage() {
             <select
               value={filters.owner}
               onChange={(e) => setFilters({ ...filters, owner: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded bg-white text-gray-900"
+              className="px-4 py-2 border border-border-strong rounded bg-surface text-fg"
             >
               <option value="">All Owners</option>
               {uniqueOwners.map((o) => (
@@ -128,7 +128,7 @@ export default function FunctionsPage() {
             <select
               value={filters.lifecycle}
               onChange={(e) => setFilters({ ...filters, lifecycle: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded bg-white text-gray-900"
+              className="px-4 py-2 border border-border-strong rounded bg-surface text-fg"
             >
               <option value="">All Lifecycles</option>
               {lifecycles.map((l) => (
@@ -141,32 +141,32 @@ export default function FunctionsPage() {
         </div>
       }
     >
-      <div className="bg-white rounded shadow">
+      <div className="bg-surface rounded shadow">
         {filteredFunctions.length === 0 ? (
-          <p className="p-8 text-gray-600">No functions found</p>
+          <p className="p-8 text-muted">No functions found</p>
         ) : (
           <div className="divide-y">
             {filteredFunctions.map((func) => (
               <Link
                 key={func.id}
                 href={`/f/${func.id}`}
-                className="block p-4 hover:bg-gray-50"
+                className="block p-4 hover:bg-bg"
               >
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-semibold text-lg">{func.name}</h3>
-                    <p className="text-sm text-gray-600">{func.id}</p>
-                    <p className="text-sm text-gray-500 mt-1">{func.description}</p>
+                    <p className="text-sm text-muted">{func.id}</p>
+                    <p className="text-sm text-meta mt-1">{func.description}</p>
                   </div>
                   <span
                     className={`px-2 py-1 text-xs rounded ${
                       func.lifecycle === 'active'
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-success-muted text-success-fg'
                         : func.lifecycle === 'draft'
-                        ? 'bg-yellow-100 text-yellow-800'
+                        ? 'bg-warn-muted text-warn-fg'
                         : func.lifecycle === 'deprecated'
-                        ? 'bg-orange-100 text-orange-800'
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-secondary-soft text-secondary-soft-fg'
+                        : 'bg-surface-muted text-fg'
                     }`}
                   >
                     {func.lifecycle}

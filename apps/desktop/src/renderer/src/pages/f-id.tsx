@@ -34,17 +34,17 @@ export default function FunctionDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8">
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-full p-8">
+        <p className="text-muted">Loading...</p>
       </div>
     );
   }
 
   if (error && !functionCard) {
     return (
-      <div className="min-h-screen p-8">
-        <p className="text-red-600">{error}</p>
-        <Link href="/" className="text-blue-600 hover:underline">
+      <div className="min-h-full p-8">
+        <p className="text-danger">{error}</p>
+        <Link href="/" className="text-accent hover:underline">
           ← Back to list
         </Link>
       </div>
@@ -60,7 +60,7 @@ export default function FunctionDetail() {
       {editMode ? (
         <FunctionForm mode="edit" existingCard={functionCard} />
       ) : (
-        <div className="min-h-screen p-8">
+        <div className="min-h-full p-8">
           <div className="max-w-7xl mx-auto">
             <div className="mb-8 flex justify-between items-center">
               <div>
@@ -68,45 +68,45 @@ export default function FunctionDetail() {
                   <h1 className="text-2xl font-bold">{functionCard.name}</h1>
                   <FormHelpHint hintKey="functionDetail" />
                 </div>
-                <p className="text-gray-600 mt-1">{functionCard.id}</p>
+                <p className="text-muted mt-1">{functionCard.id}</p>
               </div>
               <button
                 onClick={() => setEditMode(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-accent text-on rounded hover:bg-accent-hover"
               >
                 Edit
               </button>
             </div>
 
-            <div className="bg-white p-6 rounded shadow">
+            <div className="bg-surface p-6 rounded shadow">
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Bounded Context</h3>
+                  <h3 className="text-sm font-medium text-meta">Bounded Context</h3>
                   <p>{functionCard.bounded_context}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Entity</h3>
+                  <h3 className="text-sm font-medium text-meta">Entity</h3>
                   <p>{functionCard.entity}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Action</h3>
+                  <h3 className="text-sm font-medium text-meta">Action</h3>
                   <p>{functionCard.action}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Owner</h3>
+                  <h3 className="text-sm font-medium text-meta">Owner</h3>
                   <p>{functionCard.owner}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Lifecycle</h3>
+                  <h3 className="text-sm font-medium text-meta">Lifecycle</h3>
                   <span
                     className={`inline-block px-2 py-1 text-xs rounded ${
                       functionCard.lifecycle === 'active'
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-success-muted text-success-fg'
                         : functionCard.lifecycle === 'draft'
-                        ? 'bg-yellow-100 text-yellow-800'
+                        ? 'bg-warn-muted text-warn-fg'
                         : functionCard.lifecycle === 'deprecated'
-                        ? 'bg-orange-100 text-orange-800'
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-secondary-soft text-secondary-soft-fg'
+                        : 'bg-surface-muted text-fg'
                     }`}
                   >
                     {functionCard.lifecycle}
@@ -116,17 +116,17 @@ export default function FunctionDetail() {
 
               {functionCard.description && (
                 <div className="mt-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Description</h3>
-                  <p className="text-gray-700">{functionCard.description}</p>
+                  <h3 className="text-sm font-medium text-meta mb-2">Description</h3>
+                  <p className="text-fg-2">{functionCard.description}</p>
                 </div>
               )}
 
               {functionCard.tags && functionCard.tags.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Tags</h3>
+                  <h3 className="text-sm font-medium text-meta mb-2">Tags</h3>
                   <div className="flex gap-2">
                     {functionCard.tags.map((tag, i) => (
-                      <span key={i} className="px-2 py-1 bg-gray-100 text-sm rounded">
+                      <span key={i} className="px-2 py-1 bg-surface-muted text-sm rounded">
                         {tag}
                       </span>
                     ))}
@@ -136,7 +136,7 @@ export default function FunctionDetail() {
 
               {functionCard.emits && functionCard.emits.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Emits Events</h3>
+                  <h3 className="text-sm font-medium text-meta mb-2">Emits Events</h3>
                   <ul className="list-disc list-inside">
                     {functionCard.emits.map((event, i) => (
                       <li key={i}>{event}</li>
@@ -147,7 +147,7 @@ export default function FunctionDetail() {
 
               {functionCard.consumes && functionCard.consumes.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Consumes Events</h3>
+                  <h3 className="text-sm font-medium text-meta mb-2">Consumes Events</h3>
                   <ul className="list-disc list-inside">
                     {functionCard.consumes.map((event, i) => (
                       <li key={i}>{event}</li>
@@ -158,11 +158,11 @@ export default function FunctionDetail() {
 
               {functionCard.apis && functionCard.apis.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">APIs</h3>
+                  <h3 className="text-sm font-medium text-meta mb-2">APIs</h3>
                   <div className="space-y-2">
                     {functionCard.apis.map((api, i) => (
                       <div key={i} className="flex gap-2 items-center">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-mono rounded">
+                        <span className="px-2 py-1 bg-accent-muted text-accent-fg text-xs font-mono rounded">
                           {api.method}
                         </span>
                         <span className="font-mono text-sm">{api.path}</span>

@@ -1,0 +1,13 @@
+id: main.args.defaultprojectfolder
+name: defaultProjectFolder
+bounded_context: main
+entity: args
+action: defaultprojectfolder
+owner: System
+lifecycle: draft
+description: Function extracted from main/args.ts
+tags: []
+emits: []
+consumes: []
+apis: []
+source_file: main/args.ts

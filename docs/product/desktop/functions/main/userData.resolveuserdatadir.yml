@@ -1,0 +1,13 @@
+id: main.userData.resolveuserdatadir
+name: resolveUserDataDir
+bounded_context: main
+entity: userData
+action: resolveuserdatadir
+owner: System
+lifecycle: draft
+description: Function extracted from main/userData.ts
+tags: []
+emits: []
+consumes: []
+apis: []
+source_file: main/userData.ts

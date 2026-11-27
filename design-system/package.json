@@ -1,0 +1,20 @@
+{
+  "name": "@pc/design-system",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Product Creator design tokens and Tailwind v4 bridge",
+  "exports": {
+    "./tokens": "./tokens.css",
+    "./tokens.css": "./tokens.css",
+    "./tailwind": "./tailwind-v4.css",
+    "./tailwind-v4.css": "./tailwind-v4.css",
+    "./chrome": "./chrome.css",
+    "./chrome.css": "./chrome.css"
+  },
+  "files": [
+    "tokens.css",
+    "tailwind-v4.css",
+    "chrome.css",
+    "USAGE.md"
+  ]
+}

@@ -1,0 +1,105 @@
+/* Window chrome: shell layout, sticky header, nav states. */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.app-header {
+  flex: none;
+  z-index: 40;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--elev-sm);
+}
+
+.app-main {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.app-header__brand {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.app-header__brand:hover {
+  color: var(--fg-2);
+}
+
+.app-nav-link {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.app-nav-link:hover {
+  background: var(--surface-muted);
+  color: var(--fg);
+}
+
+.app-nav-link--active {
+  background: var(--accent-muted);
+  color: var(--accent-fg);
+}
+
+.app-nav-link--active:hover {
+  background: var(--accent-muted);
+  color: var(--accent-fg);
+}
+
+.app-nav-menu {
+  position: absolute;
+  left: 0;
+  margin-top: 0.5rem;
+  width: 12rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-lg);
+  z-index: 50;
+}
+
+.app-nav-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--fg-2);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.app-nav-menu__item:hover {
+  background: var(--surface-muted);
+}
+
+.app-nav-menu__item--active {
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+}

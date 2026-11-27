@@ -57,7 +57,7 @@ export default function FormHelpHint({ hintKey, title, description, className }:
         type="button"
         ref={buttonRef}
         onClick={toggleOpen}
-        className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full border border-border-strong bg-surface text-xs font-semibold text-muted hover:bg-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         aria-expanded={open}
         aria-controls={open ? dialogId : undefined}
       >
@@ -70,14 +70,14 @@ export default function FormHelpHint({ hintKey, title, description, className }:
           id={dialogId}
           role="dialog"
           aria-modal="false"
-          className="absolute z-20 mt-2 w-64 rounded-md border border-gray-200 bg-white p-3 shadow-lg"
+          className="absolute z-20 mt-2 w-64 rounded-md border border-border bg-surface p-3 shadow-lg"
         >
-          <div className="mb-2 text-sm font-semibold text-gray-900">{hint.title}</div>
-          <p className="text-sm text-gray-600">{hint.description}</p>
+          <div className="mb-2 text-sm font-semibold text-fg">{hint.title}</div>
+          <p className="text-sm text-muted">{hint.description}</p>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="mt-3 text-xs font-medium text-blue-600 hover:text-blue-800"
+            className="mt-3 text-xs font-medium text-accent hover:text-accent-fg"
           >
             Понятно
           </button>

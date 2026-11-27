@@ -1,0 +1,82 @@
+{
+  "main/args.ts:parseProjectArgs": {
+    "businessObjectId": "main.args.parseprojectargs",
+    "action": "create",
+    "lastSync": 1795766335077
+  },
+  "main/args.ts:defaultProjectFolder": {
+    "businessObjectId": "main.args.defaultprojectfolder",
+    "action": "create",
+    "lastSync": 1795766335077
+  },
+  "main/settings.ts:validateRelayUrl": {
+    "businessObjectId": "main.settings.validaterelayurl",
+    "action": "create",
+    "lastSync": 1795766335078
+  },
+  "main/settings.ts:newToken": {
+    "businessObjectId": "main.settings.newtoken",
+    "action": "create",
+    "lastSync": 1795766335078
+  },
+  "main/updater.ts:canAutoUpdate": {
+    "businessObjectId": "main.updater.canautoupdate",
+    "action": "create",
+    "lastSync": 1795766335079
+  },
+  "main/updater.ts:startAutoUpdates": {
+    "businessObjectId": "main.updater.startautoupdates",
+    "action": "create",
+    "lastSync": 1795766335079
+  },
+  "main/updater.ts:checkForUpdatesInteractive": {
+    "businessObjectId": "main.updater.checkforupdatesinteractive",
+    "action": "create",
+    "lastSync": 1795766335079
+  },
+  "main/userData.ts:resolveUserDataDir": {
+    "businessObjectId": "main.userData.resolveuserdatadir",
+    "action": "create",
+    "lastSync": 1795766335080
+  },
+  "renderer/src/hooks/useEntityForm.ts:useEntityForm": {
+    "businessObjectId": "renderer.hooks.useEntityForm",
+    "action": "create",
+    "lastSync": 1795766335080
+  },
+  "renderer/src/hooks/useEntityList.ts:useEntityList": {
+    "businessObjectId": "renderer.hooks.useEntityList",
+    "action": "create",
+    "lastSync": 1795766335081
+  },
+  "renderer/src/hooks/useRoots.ts:useRoots": {
+    "businessObjectId": "renderer.hooks.useRoots",
+    "action": "create",
+    "lastSync": 1795766335081
+  },
+  "renderer/src/shims/navigation.ts:useRouter": {
+    "businessObjectId": "renderer.shims.navigation",
+    "action": "create",
+    "lastSync": 1795766335082
+  },
+  "renderer/src/shims/navigation.ts:usePathname": {
+    "businessObjectId": "renderer.shims.navigation",
+    "action": "create",
+    "lastSync": 1795766335082
+  },
+  "renderer/src/shims/navigation.ts:useSearchParams": {
+    "businessObjectId": "renderer.shims.navigation",
+    "action": "create",
+    "lastSync": 1795766335083
+  },
+  "renderer/src/shims/navigation.ts:useParams": {
+    "businessObjectId": "renderer.shims.navigation",
+    "action": "create",
+    "lastSync": 1795766335084
+  },
+  "renderer/src/shims/navigation.ts:notFound": {
+    "businessObjectId": "renderer.shims.navigation",
+    "action": "create",
+    "lastSync": 1795766335084
+  }
+}

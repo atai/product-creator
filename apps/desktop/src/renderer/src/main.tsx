@@ -29,29 +29,31 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HashRouter>
       <Suspense fallback={null}>
-        <Header />
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/functions" element={<Functions />} />
-            <Route path="/f/:id" element={<FunctionView />} />
-            <Route path="/new" element={<NewFunction />} />
-            <Route path="/business-objects" element={<BusinessObjects />} />
-            <Route path="/business-objects/new" element={<NewBusinessObject />} />
-            <Route path="/workflows" element={<Workflows />} />
-            <Route path="/workflows/:id" element={<WorkflowView />} />
-            <Route path="/streams" element={<Streams />} />
-            <Route path="/streams/:id" element={<StreamView />} />
-            <Route path="/graph" element={<Graph />} />
-            <Route path="/matrix" element={<Matrix />} />
-            <Route path="/doc" element={<Doc />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/workspace" element={<WorkspacePage />} />
-            <Route path="/interfaces" element={<InterfacesPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </main>
+        <div className="app-shell">
+          <Header />
+          <main className="app-main">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/functions" element={<Functions />} />
+              <Route path="/f/:id" element={<FunctionView />} />
+              <Route path="/new" element={<NewFunction />} />
+              <Route path="/business-objects" element={<BusinessObjects />} />
+              <Route path="/business-objects/new" element={<NewBusinessObject />} />
+              <Route path="/workflows" element={<Workflows />} />
+              <Route path="/workflows/:id" element={<WorkflowView />} />
+              <Route path="/streams" element={<Streams />} />
+              <Route path="/streams/:id" element={<StreamView />} />
+              <Route path="/graph" element={<Graph />} />
+              <Route path="/matrix" element={<Matrix />} />
+              <Route path="/doc" element={<Doc />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/workspace" element={<WorkspacePage />} />
+              <Route path="/interfaces" element={<InterfacesPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Home />} />
+            </Routes>
+          </main>
+        </div>
       </Suspense>
     </HashRouter>
   </StrictMode>

@@ -1,0 +1,15 @@
+id: renderer.hooks.useRoots
+name: useRoots
+bounded_context: src
+entity: hooks
+action: useRoots
+owner: System
+lifecycle: draft
+description: Function extracted from renderer/src/hooks/useRoots.ts
+tags: []
+emits: []
+consumes: []
+apis: []
+calls:
+  - renderer.shims.navigation
+source_file: renderer/src/hooks/useRoots.ts

@@ -158,86 +158,86 @@ export default function StreamEditPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-full bg-bg">
         <div className="max-w-7xl mx-auto px-8 py-8">
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-muted">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-full bg-bg">
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="mb-6 flex items-center">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-fg">
             {isNew ? 'New Stream' : 'Edit Stream'}
           </h1>
           <FormHelpHint hintKey="streamDetail" />
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-700">
+          <div className="mb-6 p-4 bg-danger-muted border border-danger-border-soft rounded text-danger-fg">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
+          <div className="bg-surface p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold text-fg mb-4">Basic Information</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg-2 mb-1">
                   Stream ID *
                 </label>
                 <input
                   {...register('stream', { required: 'Stream ID is required' })}
                   disabled={!isNew}
                   placeholder="stream_name (lowercase, underscores only)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent disabled:bg-surface-muted"
                 />
                 {errors.stream && (
-                  <p className="mt-1 text-sm text-red-600">{errors.stream.message}</p>
+                  <p className="mt-1 text-sm text-danger">{errors.stream.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg-2 mb-1">
                   Name
                 </label>
                 <input
                   {...register('name')}
                   placeholder="Human-readable name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg-2 mb-1">
                   Goal *
                 </label>
                 <textarea
                   {...register('goal', { required: 'Goal is required' })}
                   placeholder="What is the goal/purpose of this stream?"
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                 />
                 {errors.goal && (
-                  <p className="mt-1 text-sm text-red-600">{errors.goal.message}</p>
+                  <p className="mt-1 text-sm text-danger">{errors.goal.message}</p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-surface p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">KPIs</h2>
+              <h2 className="text-xl font-semibold text-fg">KPIs</h2>
               <button
                 type="button"
                 onClick={() => appendKpi({ value: '' })}
-                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-3 py-1 text-sm bg-accent text-on rounded hover:bg-accent-hover"
               >
                 Add KPI
               </button>
@@ -250,13 +250,13 @@ export default function StreamEditPage() {
                     <input
                       {...register(`kpis.${index}.value` as const)}
                       placeholder="KPI metric name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => removeKpi(index)}
-                    className="px-3 py-2 text-red-600 hover:text-red-800"
+                    className="px-3 py-2 text-danger hover:text-danger-fg-strong"
                   >
                     Remove
                   </button>
@@ -264,14 +264,14 @@ export default function StreamEditPage() {
               ))}
 
               {kpiFields.length === 0 && (
-                <p className="text-sm text-gray-500 italic">No KPIs defined</p>
+                <p className="text-sm text-meta italic">No KPIs defined</p>
               )}
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-surface p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Stages *</h2>
+              <h2 className="text-xl font-semibold text-fg">Stages *</h2>
               <button
                 type="button"
                 onClick={() =>
@@ -282,7 +282,7 @@ export default function StreamEditPage() {
                     workflows: [],
                   })
                 }
-                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-3 py-1 text-sm bg-accent text-on rounded hover:bg-accent-hover"
               >
                 Add Stage
               </button>
@@ -300,21 +300,21 @@ export default function StreamEditPage() {
               ))}
 
               {stageFields.length === 0 && (
-                <p className="text-sm text-gray-500 italic">No stages added yet</p>
+                <p className="text-sm text-meta italic">No stages added yet</p>
               )}
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Rules</h2>
+          <div className="bg-surface p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold text-fg mb-4">Rules</h2>
 
             <div className="flex items-center">
               <input
                 {...register('rules.unique_function_per_stage')}
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                className="h-4 w-4 text-accent rounded border-border-strong focus:ring-accent"
               />
-              <label className="ml-2 text-sm text-gray-700">
+              <label className="ml-2 text-sm text-fg-2">
                 Unique function per stage (a function cannot appear in multiple stages)
               </label>
             </div>
@@ -324,14 +324,14 @@ export default function StreamEditPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-400"
+              className="px-6 py-2 bg-accent text-on rounded hover:bg-accent-hover disabled:bg-accent-disabled"
             >
               {saving ? 'Saving...' : 'Save Stream'}
             </button>
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              className="px-6 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger"
             >
               Cancel
             </button>
@@ -381,13 +381,13 @@ function StageEditor({
   });
 
   return (
-    <div className="border border-gray-200 rounded p-4 bg-gray-50">
+    <div className="border border-border rounded p-4 bg-bg">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-medium text-gray-900">Stage {stageIndex + 1}</h3>
+        <h3 className="text-lg font-medium text-fg">Stage {stageIndex + 1}</h3>
         <button
           type="button"
           onClick={() => removeStage(stageIndex)}
-          className="text-red-600 hover:text-red-800 text-sm"
+          className="text-danger hover:text-danger-fg-strong text-sm"
         >
           Remove Stage
         </button>
@@ -395,23 +395,23 @@ function StageEditor({
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Stage Name *</label>
+          <label className="block text-sm font-medium text-fg-2 mb-1">Stage Name *</label>
           <input
             {...register(`stages.${stageIndex}.name` as const, {
               required: 'Stage name is required',
             })}
             placeholder="discover, qualify, convert, etc."
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent bg-surface"
           />
         </div>
 
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-gray-700">Entry Events *</label>
+            <label className="block text-sm font-medium text-fg-2">Entry Events *</label>
             <button
               type="button"
               onClick={() => appendEntryEvent({ value: '' })}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-sm text-accent hover:text-accent-fg"
             >
               + Add
             </button>
@@ -422,12 +422,12 @@ function StageEditor({
                 <input
                   {...register(`stages.${stageIndex}.entry_events.${index}.value` as const)}
                   placeholder="event.name"
-                  className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="flex-1 px-3 py-1.5 text-sm border border-border-strong rounded focus:ring-2 focus:ring-accent bg-surface"
                 />
                 <button
                   type="button"
                   onClick={() => removeEntryEvent(index)}
-                  className="text-red-600 hover:text-red-800 text-sm"
+                  className="text-danger hover:text-danger-fg-strong text-sm"
                 >
                   ✕
                 </button>
@@ -438,11 +438,11 @@ function StageEditor({
 
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-gray-700">Exit Events *</label>
+            <label className="block text-sm font-medium text-fg-2">Exit Events *</label>
             <button
               type="button"
               onClick={() => appendExitEvent({ value: '' })}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-sm text-accent hover:text-accent-fg"
             >
               + Add
             </button>
@@ -453,12 +453,12 @@ function StageEditor({
                 <input
                   {...register(`stages.${stageIndex}.exit_events.${index}.value` as const)}
                   placeholder="event.name"
-                  className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="flex-1 px-3 py-1.5 text-sm border border-border-strong rounded focus:ring-2 focus:ring-accent bg-surface"
                 />
                 <button
                   type="button"
                   onClick={() => removeExitEvent(index)}
-                  className="text-red-600 hover:text-red-800 text-sm"
+                  className="text-danger hover:text-danger-fg-strong text-sm"
                 >
                   ✕
                 </button>
@@ -469,11 +469,11 @@ function StageEditor({
 
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-gray-700">Workflows (optional)</label>
+            <label className="block text-sm font-medium text-fg-2">Workflows (optional)</label>
             <button
               type="button"
               onClick={() => appendWorkflow({ value: '' })}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-sm text-accent hover:text-accent-fg"
             >
               + Add
             </button>
@@ -484,12 +484,12 @@ function StageEditor({
                 <input
                   {...register(`stages.${stageIndex}.workflows.${index}.value` as const)}
                   placeholder="context.workflow_name"
-                  className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="flex-1 px-3 py-1.5 text-sm border border-border-strong rounded focus:ring-2 focus:ring-accent bg-surface"
                 />
                 <button
                   type="button"
                   onClick={() => removeWorkflow(index)}
-                  className="text-red-600 hover:text-red-800 text-sm"
+                  className="text-danger hover:text-danger-fg-strong text-sm"
                 >
                   ✕
                 </button>

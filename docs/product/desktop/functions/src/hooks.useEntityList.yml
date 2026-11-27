@@ -1,0 +1,13 @@
+id: renderer.hooks.useEntityList
+name: useEntityList
+bounded_context: src
+entity: hooks
+action: useEntityList
+owner: System
+lifecycle: draft
+description: Function extracted from renderer/src/hooks/useEntityList.ts
+tags: []
+emits: []
+consumes: []
+apis: []
+source_file: renderer/src/hooks/useEntityList.ts

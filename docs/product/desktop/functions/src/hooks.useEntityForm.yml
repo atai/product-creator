@@ -1,0 +1,16 @@
+id: renderer.hooks.useEntityForm
+name: useEntityForm
+bounded_context: src
+entity: hooks
+action: useEntityForm
+owner: System
+lifecycle: draft
+description: Function extracted from renderer/src/hooks/useEntityForm.ts
+tags: []
+emits: []
+consumes: []
+apis: []
+calls:
+  - renderer.shims.navigation
+  - renderer.shims.navigation
+source_file: renderer/src/hooks/useEntityForm.ts

@@ -114,11 +114,11 @@ export default function Header() {
   }, [presentationOpen]);
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm">
+    <header className="app-header">
       <div className="w-full px-4 sm:px-8 py-4">
         <div className="flex flex-wrap justify-between items-center gap-4">
           <div className="flex flex-wrap items-center gap-4 lg:gap-8">
-            <Link href="/" className="text-2xl font-bold text-gray-900 hover:text-gray-700">
+            <Link href="/" className="app-header__brand">
               Product Creator
             </Link>
 
@@ -137,11 +137,7 @@ export default function Header() {
                     event.preventDefault();
                     navigateWithApp(item.path);
                   }}
-                  className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                    isActive(item.path)
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
+                  className={`app-nav-link ${isActive(item.path) ? 'app-nav-link--active' : ''}`}
                 >
                   {item.label}
                 </Link>
@@ -151,17 +147,15 @@ export default function Header() {
                 <button
                   type="button"
                   onClick={togglePresentation}
-                  className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${
-                    presentationItems.some((item) => isActive(item.path))
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  className={`app-nav-link flex items-center gap-2 ${
+                    presentationItems.some((item) => isActive(item.path)) ? 'app-nav-link--active' : ''
                   }`}
                 >
                   Presentation
                   <span className="text-xs">{presentationOpen ? '▲' : '▼'}</span>
                 </button>
                 {presentationOpen && (
-                  <div className="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                  <div className="app-nav-menu">
                     {presentationItems.map((item) => (
                       <button
                         key={item.path}
@@ -170,10 +164,8 @@ export default function Header() {
                           navigateWithApp(item.path);
                           closePresentation();
                         }}
-                        className={`w-full text-left px-4 py-2 text-sm ${
-                          isActive(item.path)
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-700 hover:bg-gray-100'
+                        className={`app-nav-menu__item ${
+                          isActive(item.path) ? 'app-nav-menu__item--active' : ''
                         }`}
                       >
                         {item.label}
@@ -187,11 +179,11 @@ export default function Header() {
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Apps:</label>
+              <label className="text-sm font-medium text-fg-2">Apps:</label>
               <select
                 value={selectedApp}
                 onChange={(e) => handleAppChange(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-900 text-sm min-w-[200px]"
+                className="px-3 py-1.5 border border-border-strong rounded bg-surface text-fg text-sm min-w-[200px]"
               >
                 <option value="">All apps</option>
                 {apps.map((app) => {
@@ -207,7 +199,7 @@ export default function Header() {
 
             <Link
               href="/workspace"
-              className="inline-flex items-center justify-center rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center justify-center rounded border border-border-strong bg-surface px-3 py-1.5 text-sm text-fg-2 hover:bg-bg"
               title="Workspace: opened projects and services"
             >
               <svg
@@ -224,7 +216,7 @@ export default function Header() {
             </Link>
             <Link
               href="/settings"
-              className="inline-flex items-center justify-center rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center justify-center rounded border border-border-strong bg-surface px-3 py-1.5 text-sm text-fg-2 hover:bg-bg"
               title="Settings: MCP server for AI agents"
             >
               Settings

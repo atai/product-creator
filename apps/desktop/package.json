@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@pc/core": "workspace:*",
+    "@pc/design-system": "workspace:*",
     "@pc/mcp": "workspace:*",
     "@tailwindcss/vite": "^4.3.5",
     "@types/cytoscape": "^3.31.0",

@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - design-system
 
 # pnpm >= 11: packages allowed to run install scripts
 allowBuilds:

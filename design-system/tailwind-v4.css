@@ -1,0 +1,75 @@
+/* Derived from tokens.css. Keep tokens.css as the source of truth. */
+@import 'tailwindcss';
+@import './tokens.css';
+
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-strong: var(--surface-strong);
+  --color-surface-stronger: var(--surface-stronger);
+  --color-surface-disabled: var(--surface-disabled);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-neutral: var(--surface-neutral);
+  --color-surface-neutral-hover: var(--surface-neutral-hover);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-muted: var(--muted);
+  --color-meta: var(--meta);
+  --color-fg-inverse: var(--fg-inverse);
+  --color-on: var(--on);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-on: var(--accent-on);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-muted: var(--accent-muted);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-fg-strong: var(--accent-fg-strong);
+  --color-accent-border: var(--accent-border);
+  --color-accent-disabled: var(--accent-disabled);
+  --color-success: var(--success);
+  --color-success-strong: var(--success-strong);
+  --color-success-fill: var(--success-fill);
+  --color-success-fill-strong: var(--success-fill-strong);
+  --color-success-muted: var(--success-muted);
+  --color-success-border: var(--success-border);
+  --color-success-fg: var(--success-fg);
+  --color-warn: var(--warn);
+  --color-warn-fill: var(--warn-fill);
+  --color-warn-muted: var(--warn-muted);
+  --color-warn-border: var(--warn-border);
+  --color-warn-border-strong: var(--warn-border-strong);
+  --color-warn-fg: var(--warn-fg);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-fill: var(--danger-fill);
+  --color-danger-fill-hover: var(--danger-fill-hover);
+  --color-danger-muted: var(--danger-muted);
+  --color-danger-border: var(--danger-border);
+  --color-danger-border-soft: var(--danger-border-soft);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-fg-strong: var(--danger-fg-strong);
+  --color-danger-soft: var(--danger-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-fg: var(--secondary-fg);
+  --color-secondary-fg-strong: var(--secondary-fg-strong);
+  --color-secondary-muted: var(--secondary-muted);
+  --color-secondary-fill: var(--secondary-fill);
+  --color-secondary-soft: var(--secondary-soft);
+  --color-secondary-soft-fg: var(--secondary-soft-fg);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  --shadow-sm: var(--elev-sm);
+  --shadow-md: var(--elev-md);
+  --shadow-lg: var(--elev-lg);
+  --shadow-focus-ring: var(--focus-ring);
+}

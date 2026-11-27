@@ -20,16 +20,16 @@ export default function CatalogPageLayout({
   children,
 }: CatalogPageLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-full bg-bg">
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+                <h1 className="text-3xl font-bold text-fg">{title}</h1>
                 {hintKey && <FormHelpHint hintKey={hintKey} />}
               </div>
-              {description && <p className="text-gray-600 mt-2 max-w-2xl">{description}</p>}
+              {description && <p className="text-muted mt-2 max-w-2xl">{description}</p>}
             </div>
             {actions}
           </div>

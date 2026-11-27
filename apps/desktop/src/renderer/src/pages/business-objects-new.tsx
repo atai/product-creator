@@ -254,14 +254,14 @@ export default function NewBusinessObjectPage() {
     label: string
   ) => (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700">
+      <label htmlFor={id} className="text-sm font-medium text-fg-2">
         {label}
       </label>
       <select
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="border border-gray-300 rounded px-3 py-2 text-sm"
+        className="border border-border-strong rounded px-3 py-2 text-sm"
       >
         {typeOptions.map((option) => (
           <option key={option.value} value={option.value}>
@@ -273,12 +273,12 @@ export default function NewBusinessObjectPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-full bg-bg">
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create Business Object</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-fg">Create Business Object</h1>
+            <p className="text-muted mt-2">
               Describe canonical fields and how they map into physical tables.
             </p>
           </div>
@@ -290,30 +290,30 @@ export default function NewBusinessObjectPage() {
                 : '/business-objects';
               router.push(url);
             }}
-            className="text-sm text-blue-600 hover:text-blue-800"
+            className="text-sm text-accent hover:text-accent-fg"
           >
             Back to list
           </button>
         </div>
 
         {!selectedApp && (
-          <div className="mb-4 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+          <div className="mb-4 rounded border border-warn-border-strong bg-warn-soft px-4 py-3 text-sm text-warn-fg">
             Select an app from the header to choose where the YAML file will be written.
           </div>
         )}
 
         {error && (
-          <div className="mb-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div className="mb-4 rounded border border-danger-border bg-danger-muted px-4 py-3 text-sm text-danger-fg-strong">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          <section className="bg-white rounded-lg shadow p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Overview</h2>
+          <section className="bg-surface rounded-lg shadow p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-fg">Overview</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
-                <label htmlFor="object-id" className="text-sm font-medium text-gray-700">
+                <label htmlFor="object-id" className="text-sm font-medium text-fg-2">
                   Object ID
                 </label>
                 <input
@@ -321,11 +321,11 @@ export default function NewBusinessObjectPage() {
                   value={form.id}
                   onChange={(e) => updateForm('id', e.target.value)}
                   placeholder="customer.profile"
-                  className="border border-gray-300 rounded px-3 py-2"
+                  className="border border-border-strong rounded px-3 py-2"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label htmlFor="object-name" className="text-sm font-medium text-gray-700">
+                <label htmlFor="object-name" className="text-sm font-medium text-fg-2">
                   Name
                 </label>
                 <input
@@ -333,11 +333,11 @@ export default function NewBusinessObjectPage() {
                   value={form.name}
                   onChange={(e) => updateForm('name', e.target.value)}
                   placeholder="Customer Profile"
-                  className="border border-gray-300 rounded px-3 py-2"
+                  className="border border-border-strong rounded px-3 py-2"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label htmlFor="object-owner" className="text-sm font-medium text-gray-700">
+                <label htmlFor="object-owner" className="text-sm font-medium text-fg-2">
                   Owner
                 </label>
                 <input
@@ -345,18 +345,18 @@ export default function NewBusinessObjectPage() {
                   value={form.owner}
                   onChange={(e) => updateForm('owner', e.target.value)}
                   placeholder="Growth Intelligence"
-                  className="border border-gray-300 rounded px-3 py-2"
+                  className="border border-border-strong rounded px-3 py-2"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label htmlFor="object-lifecycle" className="text-sm font-medium text-gray-700">
+                <label htmlFor="object-lifecycle" className="text-sm font-medium text-fg-2">
                   Lifecycle
                 </label>
                 <select
                   id="object-lifecycle"
                   value={form.lifecycle}
                   onChange={(e) => updateForm('lifecycle', e.target.value as BusinessObject['lifecycle'])}
-                  className="border border-gray-300 rounded px-3 py-2"
+                  className="border border-border-strong rounded px-3 py-2"
                 >
                   {lifecycleOptions.map((option) => (
                     <option key={option} value={option}>
@@ -367,7 +367,7 @@ export default function NewBusinessObjectPage() {
               </div>
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="object-description" className="text-sm font-medium text-gray-700">
+              <label htmlFor="object-description" className="text-sm font-medium text-fg-2">
                 Description
               </label>
               <textarea
@@ -376,34 +376,34 @@ export default function NewBusinessObjectPage() {
                 onChange={(e) => updateForm('description', e.target.value)}
                 rows={3}
                 placeholder="Explain the business purpose and downstream consumers."
-                className="border border-gray-300 rounded px-3 py-2"
+                className="border border-border-strong rounded px-3 py-2"
               />
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-meta">
               Target app: {selectedApp ? <span className="font-semibold">{selectedApp}</span> : 'Not selected'}
             </div>
           </section>
 
-          <section className="bg-white rounded-lg shadow p-6 space-y-4">
+          <section className="bg-surface rounded-lg shadow p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Fields</h2>
-              <div className="flex items-center gap-3 text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-fg">Fields</h2>
+              <div className="flex items-center gap-3 text-sm text-meta">
                 {loadingTypes ? 'Loading types…' : `${typeOptions.length} types available`}
               </div>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-meta">
               Describe the canonical data contract. Type options include base primitives and other business objects.
             </p>
             <div className="space-y-6">
               {form.fields.map((field, index) => (
-                <div key={`field-${index}`} className="border border-gray-200 rounded-lg p-4 space-y-4">
+                <div key={`field-${index}`} className="border border-border rounded-lg p-4 space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-700">Field #{index + 1}</span>
+                    <span className="text-sm font-semibold text-fg-2">Field #{index + 1}</span>
                     {form.fields.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeField(index)}
-                        className="text-sm text-red-600 hover:text-red-800"
+                        className="text-sm text-danger hover:text-danger-fg-strong"
                       >
                         Remove
                       </button>
@@ -411,7 +411,7 @@ export default function NewBusinessObjectPage() {
                   </div>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-1">
-                      <label className="text-sm font-medium text-gray-700" htmlFor={`field-name-${index}`}>
+                      <label className="text-sm font-medium text-fg-2" htmlFor={`field-name-${index}`}>
                         Name
                       </label>
                       <input
@@ -419,12 +419,12 @@ export default function NewBusinessObjectPage() {
                         value={field.name}
                         onChange={(e) => updateField(index, { name: e.target.value })}
                         placeholder="customer_id"
-                        className="border border-gray-300 rounded px-3 py-2 text-sm"
+                        className="border border-border-strong rounded px-3 py-2 text-sm"
                       />
                     </div>
                     {renderTypeSelect(field.type, (value) => updateField(index, { type: value }), `field-type-${index}`, 'Type')}
                     <div className="flex flex-col gap-1">
-                      <label className="text-sm font-medium text-gray-700" htmlFor={`field-desc-${index}`}>
+                      <label className="text-sm font-medium text-fg-2" htmlFor={`field-desc-${index}`}>
                         Description
                       </label>
                       <input
@@ -432,7 +432,7 @@ export default function NewBusinessObjectPage() {
                         value={field.description || ''}
                         onChange={(e) => updateField(index, { description: e.target.value })}
                         placeholder="What does this field represent?"
-                        className="border border-gray-300 rounded px-3 py-2 text-sm"
+                        className="border border-border-strong rounded px-3 py-2 text-sm"
                       />
                     </div>
                   </div>
@@ -442,41 +442,41 @@ export default function NewBusinessObjectPage() {
             <button
               type="button"
               onClick={addField}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-accent hover:text-accent-fg"
             >
               + Add field
             </button>
           </section>
 
-  <section className="bg-white rounded-lg shadow p-6 space-y-4">
+  <section className="bg-surface rounded-lg shadow p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Tables</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-fg">Tables</h2>
+              <p className="text-sm text-meta">
                 Map the business definition to physical storage. Optional but helpful for data engineers.
               </p>
             </div>
 
             {form.tables.length === 0 ? (
-              <div className="text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="text-sm text-meta border border-dashed border-border-strong rounded-lg p-6 text-center">
                 No tables added yet.
               </div>
             ) : (
               <div className="space-y-6">
                 {form.tables.map((table, tableIndex) => (
-                  <div key={`table-${tableIndex}`} className="border border-gray-200 rounded-lg p-4 space-y-4">
+                  <div key={`table-${tableIndex}`} className="border border-border rounded-lg p-4 space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-semibold text-gray-700">Table #{tableIndex + 1}</span>
+                      <span className="text-sm font-semibold text-fg-2">Table #{tableIndex + 1}</span>
                       <button
                         type="button"
                         onClick={() => removeTable(tableIndex)}
-                        className="text-sm text-red-600 hover:text-red-800"
+                        className="text-sm text-danger hover:text-danger-fg-strong"
                       >
                         Remove table
                       </button>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1">
-                        <label htmlFor={`table-name-${tableIndex}`} className="text-sm font-medium text-gray-700">
+                        <label htmlFor={`table-name-${tableIndex}`} className="text-sm font-medium text-fg-2">
                           Name
                         </label>
                         <input
@@ -484,11 +484,11 @@ export default function NewBusinessObjectPage() {
                           value={table.name}
                           onChange={(e) => updateTable(tableIndex, { name: e.target.value })}
                           placeholder="dim_customer"
-                          className="border border-gray-300 rounded px-3 py-2 text-sm"
+                          className="border border-border-strong rounded px-3 py-2 text-sm"
                         />
                       </div>
                       <div className="flex flex-col gap-1">
-                        <label htmlFor={`table-desc-${tableIndex}`} className="text-sm font-medium text-gray-700">
+                        <label htmlFor={`table-desc-${tableIndex}`} className="text-sm font-medium text-fg-2">
                           Description
                         </label>
                         <input
@@ -496,15 +496,15 @@ export default function NewBusinessObjectPage() {
                           value={table.description || ''}
                           onChange={(e) => updateTable(tableIndex, { description: e.target.value })}
                           placeholder="Purpose of this table"
-                          className="border border-gray-300 rounded px-3 py-2 text-sm"
+                          className="border border-border-strong rounded px-3 py-2 text-sm"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-4">
-                      <h3 className="text-sm font-semibold text-gray-700">Columns</h3>
+                      <h3 className="text-sm font-semibold text-fg-2">Columns</h3>
                       {(table.columns || []).length === 0 ? (
-                        <div className="text-sm text-gray-500 border border-dashed border-gray-200 rounded p-4">
+                        <div className="text-sm text-meta border border-dashed border-border rounded p-4">
                           No columns defined yet.
                         </div>
                       ) : (
@@ -512,7 +512,7 @@ export default function NewBusinessObjectPage() {
                           {table.columns?.map((column, columnIndex) => (
                             <div key={`column-${tableIndex}-${columnIndex}`} className="grid md:grid-cols-3 gap-4">
                               <div className="flex flex-col gap-1">
-                                <label className="text-sm font-medium text-gray-700" htmlFor={`column-name-${tableIndex}-${columnIndex}`}>
+                                <label className="text-sm font-medium text-fg-2" htmlFor={`column-name-${tableIndex}-${columnIndex}`}>
                                   Column name
                                 </label>
                                 <input
@@ -520,7 +520,7 @@ export default function NewBusinessObjectPage() {
                                   value={column.name}
                                   onChange={(e) => updateColumn(tableIndex, columnIndex, { name: e.target.value })}
                                   placeholder="customer_id"
-                                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                                  className="border border-border-strong rounded px-3 py-2 text-sm"
                                 />
                               </div>
                               {renderTypeSelect(
@@ -530,7 +530,7 @@ export default function NewBusinessObjectPage() {
                                 'Type'
                               )}
                               <div className="flex flex-col gap-1">
-                                <label className="text-sm font-medium text-gray-700" htmlFor={`column-desc-${tableIndex}-${columnIndex}`}>
+                                <label className="text-sm font-medium text-fg-2" htmlFor={`column-desc-${tableIndex}-${columnIndex}`}>
                                   Description
                                 </label>
                                 <div className="flex gap-2">
@@ -541,12 +541,12 @@ export default function NewBusinessObjectPage() {
                                       updateColumn(tableIndex, columnIndex, { description: e.target.value })
                                     }
                                     placeholder="How this column maps to the object"
-                                    className="border border-gray-300 rounded px-3 py-2 text-sm flex-1"
+                                    className="border border-border-strong rounded px-3 py-2 text-sm flex-1"
                                   />
                                   <button
                                     type="button"
                                     onClick={() => removeColumn(tableIndex, columnIndex)}
-                                    className="text-xs text-red-600 hover:text-red-800 px-3"
+                                    className="text-xs text-danger hover:text-danger-fg-strong px-3"
                                   >
                                     Remove
                                   </button>
@@ -559,7 +559,7 @@ export default function NewBusinessObjectPage() {
                       <button
                         type="button"
                         onClick={() => addColumn(tableIndex)}
-                        className="text-sm text-blue-600 hover:text-blue-800"
+                        className="text-sm text-accent hover:text-accent-fg"
                       >
                         + Add column
                       </button>
@@ -572,7 +572,7 @@ export default function NewBusinessObjectPage() {
             <button
               type="button"
               onClick={addTable}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-accent hover:text-accent-fg"
             >
               + Add table
             </button>
@@ -587,17 +587,17 @@ export default function NewBusinessObjectPage() {
                   : '/business-objects';
                 router.push(url);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 border border-border-strong rounded-md text-sm text-fg-2 hover:bg-bg"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || !selectedApp}
-              className={`px-4 py-2 rounded-md text-sm font-medium text-white ${
+              className={`px-4 py-2 rounded-md text-sm font-medium text-on ${
                 saving || !selectedApp
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  ? 'bg-surface-disabled cursor-not-allowed'
+                  : 'bg-accent hover:bg-accent-hover'
               }`}
             >
               {saving ? 'Saving…' : 'Save object'}

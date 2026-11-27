@@ -155,14 +155,14 @@ export default function GraphPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8">
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-full p-8">
+        <p className="text-muted">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-full p-8">
       <div className="max-w-7xl mx-auto">
 
         <div className="mb-6 flex gap-4">
@@ -193,27 +193,27 @@ export default function GraphPage() {
           </select>
         </div>
 
-        <div className="bg-white rounded shadow p-4">
+        <div className="bg-surface rounded shadow p-4">
           <div ref={cyRef} style={{ width: '100%', height: '600px' }} />
         </div>
 
-        <div className="mt-4 bg-white rounded shadow p-4">
+        <div className="mt-4 bg-surface rounded shadow p-4">
           <h3 className="font-semibold mb-2">Legend</h3>
           <div className="flex gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-500 rounded" />
+              <div className="w-4 h-4 bg-success-fill rounded" />
               <span>Active</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-yellow-500 rounded" />
+              <div className="w-4 h-4 bg-warn-fill rounded" />
               <span>Draft</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-orange-500 rounded" />
+              <div className="w-4 h-4 bg-secondary-fill rounded" />
               <span>Deprecated</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-gray-400 rounded" />
+              <div className="w-4 h-4 bg-surface-disabled rounded" />
               <span>Removed</span>
             </div>
           </div>

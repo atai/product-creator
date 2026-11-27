@@ -1,0 +1,15 @@
+id: main.updater.startautoupdates
+name: startAutoUpdates
+bounded_context: main
+entity: updater
+action: startautoupdates
+owner: System
+lifecycle: draft
+description: Function extracted from main/updater.ts
+tags: []
+emits: []
+consumes: []
+apis: []
+calls:
+  - main.updater.canautoupdate
+source_file: main/updater.ts

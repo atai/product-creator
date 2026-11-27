@@ -659,7 +659,7 @@ export default function ProjectsManagementPage() {
           type="button"
           ref={buttonRef}
           onClick={() => setIsOpen(!isOpen)}
-          className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 focus:outline-none"
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border-strong bg-surface text-xs font-semibold text-muted hover:bg-bg focus:outline-none"
           aria-label="Help"
         >
           ?
@@ -667,9 +667,9 @@ export default function ProjectsManagementPage() {
         {isOpen && (
           <div
             ref={tooltipRef}
-            className="absolute left-0 z-20 mt-2 w-64 rounded-md border border-gray-200 bg-white p-3 shadow-lg"
+            className="absolute left-0 z-20 mt-2 w-64 rounded-md border border-border bg-surface p-3 shadow-lg"
           >
-            <p className="text-sm text-gray-600">{text}</p>
+            <p className="text-sm text-muted">{text}</p>
           </div>
         )}
       </div>
@@ -678,29 +678,29 @@ export default function ProjectsManagementPage() {
 
   return (
     <div className="px-4 py-6 sm:px-8">
-      <div className="bg-white rounded-lg shadow px-6 py-5 mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Projects & Apps</h1>
-        <p className="mt-2 text-gray-600">
+      <div className="bg-surface rounded-lg shadow px-6 py-5 mb-6">
+        <h1 className="text-2xl font-semibold text-fg">Projects & Apps</h1>
+        <p className="mt-2 text-muted">
           Manage projects and their associated applications. IDs are generated automatically, but
           you can set them when creating. After creation, identifiers become immutable.
         </p>
-        {statusMessage && <div className="mt-3 text-sm text-green-600">{statusMessage}</div>}
-        {error && <div className="mt-3 text-sm text-red-600">{error}</div>}
+        {statusMessage && <div className="mt-3 text-sm text-success">{statusMessage}</div>}
+        {error && <div className="mt-3 text-sm text-danger">{error}</div>}
       </div>
 
       {loading ? (
-        <div className="text-center text-gray-600 py-12">Loading projects and apps...</div>
+        <div className="text-center text-muted py-12">Loading projects and apps...</div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2 h-[calc(100vh-12rem)]">
-          <section className="bg-white rounded-lg shadow p-6 flex flex-col h-full">
+          <section className="bg-surface rounded-lg shadow p-6 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Projects</h2>
-                <p className="text-sm text-gray-600">Total: {projects.length}</p>
+                <h2 className="text-xl font-semibold text-fg">Projects</h2>
+                <p className="text-sm text-muted">Total: {projects.length}</p>
               </div>
               <button
                 type="button"
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="text-sm text-accent hover:text-accent-fg"
                 onClick={() => resetProjectForm(true)}
               >
                 + New Project
@@ -716,8 +716,8 @@ export default function ProjectsManagementPage() {
                     key={project.id}
                     className={`border rounded-lg p-4 flex items-center justify-between cursor-pointer transition-colors ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-accent bg-accent-soft'
+                        : 'border-border hover:border-border-strong'
                     }`}
                     onClick={() => {
                       // Check if app form has unsaved changes (compare with default form, ignore projectId as it's set automatically)
@@ -738,19 +738,19 @@ export default function ProjectsManagementPage() {
                     }}
                   >
                     <div className="flex-1">
-                      <div className="text-sm text-gray-500 uppercase tracking-wide">{project.id}</div>
-                      <div className="text-lg font-semibold text-gray-900">{project.name}</div>
+                      <div className="text-sm text-meta uppercase tracking-wide">{project.id}</div>
+                      <div className="text-lg font-semibold text-fg">{project.name}</div>
                       {project.description && (
-                        <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                        <p className="text-sm text-muted mt-1">{project.description}</p>
                       )}
-                      <div className="text-xs text-gray-500 mt-2">
+                      <div className="text-xs text-meta mt-2">
                         Apps: {projectApps.length}
                       </div>
                     </div>
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
-                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                        className="px-3 py-1 text-sm border border-border-strong rounded hover:bg-bg"
                         onClick={() => {
                           handleProjectEdit(project);
                         }}
@@ -759,7 +759,7 @@ export default function ProjectsManagementPage() {
                       </button>
                       <button
                         type="button"
-                        className="px-3 py-1 text-sm border border-red-200 text-red-600 rounded hover:bg-red-50"
+                        className="px-3 py-1 text-sm border border-danger-border-soft text-danger rounded hover:bg-danger-muted"
                         onClick={() => handleProjectDelete(project)}
                       >
                         Delete
@@ -769,7 +769,7 @@ export default function ProjectsManagementPage() {
                 );
               })}
               {projects.length === 0 && (
-                  <div className="text-sm text-gray-500 text-center py-6">
+                  <div className="text-sm text-meta text-center py-6">
                   No projects yet. Create the first project to add applications.
                 </div>
               )}
@@ -777,52 +777,52 @@ export default function ProjectsManagementPage() {
 
             {((projectForm.mode === 'create' && showProjectForm) || projectForm.mode === 'edit') && (
               <form className="mt-6 space-y-4" onSubmit={handleProjectSubmit}>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-fg">
                   {projectForm.mode === 'create' ? 'Create Project' : `Edit Project ${projectForm.id}`}
                 </h3>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">ID (5 letters)</label>
+                  <label className="block text-sm font-medium text-fg-2">ID (5 letters)</label>
                   <input
                     type="text"
                     value={projectForm.id}
                     disabled={projectForm.mode === 'edit'}
                     onChange={(e) => setProjectForm((prev) => ({ ...prev, id: e.target.value }))}
                     placeholder="auto"
-                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
+                    className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm disabled:bg-surface-muted"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <label className="block text-sm font-medium text-fg-2">Name</label>
                   <input
                     type="text"
                     value={projectForm.name}
                     onChange={(e) => setProjectForm((prev) => ({ ...prev, name: e.target.value }))}
                     required
-                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <label className="block text-sm font-medium text-fg-2">Description</label>
                   <textarea
                     value={projectForm.description}
                     onChange={(e) =>
                       setProjectForm((prev) => ({ ...prev, description: e.target.value }))
                     }
                     rows={3}
-                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm"
                   />
                 </div>
                 <div className="flex gap-3">
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                    className="px-4 py-2 bg-accent text-on rounded text-sm hover:bg-accent-hover"
                   >
                     {projectForm.mode === 'create' ? 'Create' : 'Save'}
                   </button>
                   {(projectForm.mode === 'edit' || showProjectForm) && (
                     <button
                       type="button"
-                      className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+                      className="px-4 py-2 border border-border-strong rounded text-sm hover:bg-bg"
                       onClick={() => resetProjectForm(false)}
                     >
                       Cancel
@@ -833,11 +833,11 @@ export default function ProjectsManagementPage() {
             )}
           </section>
 
-          <section className="bg-white rounded-lg shadow p-6 flex flex-col h-full">
+          <section className="bg-surface rounded-lg shadow p-6 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Applications</h2>
-                <p className="text-sm text-gray-600">
+                <h2 className="text-xl font-semibold text-fg">Applications</h2>
+                <p className="text-sm text-muted">
                   {selectedProjectId
                     ? `Project: ${selectedProjectId} (${appsByProject.length})`
                     : `Select a project to view applications`}
@@ -845,7 +845,7 @@ export default function ProjectsManagementPage() {
               </div>
               <button
                 type="button"
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="text-sm text-accent hover:text-accent-fg"
                 onClick={() => {
                   if (!selectedProjectId) {
                     alert('Please select a project first');
@@ -863,22 +863,22 @@ export default function ProjectsManagementPage() {
               {appsByProject.map((app) => (
                 <div
                   key={app.id}
-                  className="border border-gray-200 rounded-lg p-4 flex items-center justify-between"
+                  className="border border-border rounded-lg p-4 flex items-center justify-between"
                 >
                   <div>
-                    <div className="text-sm text-gray-500 uppercase tracking-wide">{app.id}</div>
-                    <div className="text-lg font-semibold text-gray-900">{app.name}</div>
-                    <div className="text-xs text-gray-500 mt-2">
+                    <div className="text-sm text-meta uppercase tracking-wide">{app.id}</div>
+                    <div className="text-lg font-semibold text-fg">{app.name}</div>
+                    <div className="text-xs text-meta mt-2">
                       Directory: <span className="font-mono">{app.directory}</span>
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-meta">
                       Code: {app.codeBasePath || '-'} | DB: {app.dbSchemaPath || '-'}
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm border border-border-strong rounded hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() => handleSyncFromCode(app)}
                       disabled={!app.codeBasePath}
                       title={app.codeBasePath ? 'Synchronize objects from code' : 'Code base path is not set'}
@@ -887,7 +887,7 @@ export default function ProjectsManagementPage() {
                     </button>
                     <button
                       type="button"
-                      className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm border border-border-strong rounded hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() => handleSyncFromSchema(app)}
                       disabled={!app.dbSchemaPath}
                       title={app.dbSchemaPath ? 'Synchronize objects from DB schema' : 'DB schema path is not set'}
@@ -896,14 +896,14 @@ export default function ProjectsManagementPage() {
                     </button>
                     <button
                       type="button"
-                      className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                      className="px-3 py-1 text-sm border border-border-strong rounded hover:bg-bg"
                       onClick={() => handleAppEdit(app)}
                     >
                       Edit
                     </button>
                     <button
                       type="button"
-                      className="px-3 py-1 text-sm border border-red-200 text-red-600 rounded hover:bg-red-50"
+                      className="px-3 py-1 text-sm border border-danger-border-soft text-danger rounded hover:bg-danger-muted"
                       onClick={() => handleAppDelete(app)}
                     >
                       Delete
@@ -912,7 +912,7 @@ export default function ProjectsManagementPage() {
                 </div>
               ))}
               {appsByProject.length === 0 && (
-                <div className="text-sm text-gray-500 text-center py-6">
+                <div className="text-sm text-meta text-center py-6">
                   No applications for the selected project.
                 </div>
               )}
@@ -920,49 +920,49 @@ export default function ProjectsManagementPage() {
 
             {((appForm.mode === 'create' && showAppForm) || appForm.mode === 'edit') && (
               <form className="mt-6 space-y-4" onSubmit={handleAppSubmit}>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-fg">
                   {appForm.mode === 'create' ? 'Create App' : `Edit App ${appForm.id}`}
                 </h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">App ID</label>
+                  <label className="block text-sm font-medium text-fg-2">App ID</label>
                   <input
                     type="text"
                     value={appForm.id}
                     disabled={appForm.mode === 'edit'}
                     onChange={(e) => setAppForm((prev) => ({ ...prev, id: e.target.value }))}
                     placeholder="project-abc"
-                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
+                    className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm disabled:bg-surface-muted"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <label className="block text-sm font-medium text-fg-2">Name</label>
                   <input
                     type="text"
                     value={appForm.name}
                     onChange={(e) => setAppForm((prev) => ({ ...prev, name: e.target.value }))}
                     required
-                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm"
                   />
                 </div>
               </div>
               {selectedProjectId && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Project</label>
+                  <label className="block text-sm font-medium text-fg-2">Project</label>
                   <input
                     type="text"
                     value={projects.find(p => p.id === selectedProjectId)?.name || selectedProjectId}
                     disabled
-                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm bg-gray-100 text-gray-600"
+                    className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm bg-surface-muted text-muted"
                   />
                 </div>
               )}
               
-              <div className="mt-4 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <h4 className="text-sm font-semibold text-gray-900">Paths Configuration</h4>
+              <div className="mt-4 space-y-4 rounded-lg border border-border bg-bg p-4">
+                <h4 className="text-sm font-semibold text-fg">Paths Configuration</h4>
                 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <label className="flex items-center gap-2 text-sm font-medium text-fg-2">
                     Directory
                     <HelpTooltip text="YAML files describing all project entities will be created at this path." />
                   </label>
@@ -972,13 +972,13 @@ export default function ProjectsManagementPage() {
                     disabled={appForm.mode === 'edit'}
                     onChange={(e) => setAppForm((prev) => ({ ...prev, directory: e.target.value }))}
                     placeholder="/absolute/path/to/directory"
-                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 font-mono text-xs"
+                    className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm disabled:bg-surface-muted font-mono text-xs"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <label className="flex items-center gap-2 text-sm font-medium text-fg-2">
                     Code base
                     <HelpTooltip text="This path is used for application code analysis and should point to the root folder containing the application code." />
                   </label>
@@ -988,13 +988,13 @@ export default function ProjectsManagementPage() {
                     onChange={(e) =>
                       setAppForm((prev) => ({ ...prev, codeBasePath: e.target.value }))
                     }
-                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono text-xs"
+                    className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm font-mono text-xs"
                     placeholder="./src"
                   />
                 </div>
                 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <label className="flex items-center gap-2 text-sm font-medium text-fg-2">
                     DB schema
                     <HelpTooltip text="This path points to the database schema and is used for analyzing the application's database schema." />
                   </label>
@@ -1004,7 +1004,7 @@ export default function ProjectsManagementPage() {
                     onChange={(e) =>
                       setAppForm((prev) => ({ ...prev, dbSchemaPath: e.target.value }))
                     }
-                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono text-xs"
+                    className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm font-mono text-xs"
                     placeholder="./db/schema"
                   />
                 </div>
@@ -1012,14 +1012,14 @@ export default function ProjectsManagementPage() {
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                  className="px-4 py-2 bg-accent text-on rounded text-sm hover:bg-accent-hover"
                 >
                   {appForm.mode === 'create' ? 'Create' : 'Save'}
                 </button>
                 {(appForm.mode === 'edit' || showAppForm) && (
                   <button
                     type="button"
-                    className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+                    className="px-4 py-2 border border-border-strong rounded text-sm hover:bg-bg"
                     onClick={() => {
                       resetAppForm(selectedProjectId, '', false);
                     }}
@@ -1032,14 +1032,14 @@ export default function ProjectsManagementPage() {
             )}
 
             {showSyncForm && syncApp && (
-              <div className="mt-6 space-y-4 border-t border-gray-200 pt-6">
+              <div className="mt-6 space-y-4 border-t border-border pt-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-fg">
                     Sync From {syncType === 'code' ? 'Code' : 'Schema'}: {syncApp.name}
                   </h3>
                   <button
                     type="button"
-                    className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                    className="px-3 py-1 text-sm border border-border-strong rounded hover:bg-bg"
                     onClick={resetSyncForm}
                   >
                     Close
@@ -1050,18 +1050,18 @@ export default function ProjectsManagementPage() {
                 {syncStage === 'loading' && (
                   <div className="space-y-4">
                     <div>
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                      <div className="flex items-center justify-between text-sm text-muted mb-2">
                         <span>Загрузка данных {syncType === 'code' ? 'из кода' : 'из схемы'}</span>
                         <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-surface-strong rounded-full h-2">
                         <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-accent h-2 rounded-full transition-all duration-300"
                           style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
                         />
                       </div>
                       {syncProgress.message && (
-                        <p className="text-sm text-gray-500 mt-2">{syncProgress.message}</p>
+                        <p className="text-sm text-meta mt-2">{syncProgress.message}</p>
                       )}
                     </div>
                   </div>
@@ -1071,12 +1071,12 @@ export default function ProjectsManagementPage() {
                 {syncStage === 'matching' && (
                   <div className="space-y-4">
                     <div>
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                      <div className="flex items-center justify-between text-sm text-muted mb-2">
                         <span>Сопоставление данных</span>
                         <span>{syncType === 'code' ? matchedFunctions.length : matchedObjects.length} {syncType === 'code' ? 'функций' : 'объектов'}</span>
                       </div>
                       {syncProgress.message && (
-                        <p className="text-sm text-gray-500 mb-4">{syncProgress.message}</p>
+                        <p className="text-sm text-meta mb-4">{syncProgress.message}</p>
                       )}
                     </div>
 
@@ -1087,12 +1087,12 @@ export default function ProjectsManagementPage() {
                         placeholder="Поиск по имени..."
                         value={syncSearchQuery}
                         onChange={(e) => setSyncSearchQuery(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                        className="flex-1 px-3 py-2 border border-border-strong rounded text-sm"
                       />
                       <select
                         value={syncStatusFilter}
                         onChange={(e) => setSyncStatusFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded text-sm"
+                        className="px-3 py-2 border border-border-strong rounded text-sm"
                       >
                         <option value="all">Все статусы</option>
                         <option value="new">Новый</option>
@@ -1104,25 +1104,25 @@ export default function ProjectsManagementPage() {
 
                     {/* Matched Objects/Functions Table */}
                     {((syncType === 'code' && matchedFunctions.length > 0) || (syncType === 'schema' && matchedObjects.length > 0)) && (
-                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="border border-border rounded-lg overflow-hidden">
                         <div className="max-h-96 overflow-y-auto">
                           <table className="w-full text-sm">
-                          <thead className="bg-gray-50">
+                          <thead className="bg-bg">
                             <tr>
                               {syncType === 'code' ? (
                                 <>
-                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Функция</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Файл</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Функция в YAML</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Статус</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Действие</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Функция</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Файл</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Функция в YAML</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Статус</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Действие</th>
                                 </>
                               ) : (
                                 <>
-                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Модель</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Бизнес-объект</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Статус</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-gray-700">Действие</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Модель</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Бизнес-объект</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Статус</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Действие</th>
                                 </>
                               )}
                             </tr>
@@ -1139,29 +1139,29 @@ export default function ProjectsManagementPage() {
                                 .map((func, idx) => {
                                   const key = `${func.exportedFunction.relativePath}:${func.exportedFunction.name}`;
                                   return (
-                                    <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
+                                    <tr key={idx} className="border-t border-border hover:bg-bg">
                                       <td className="px-4 py-2">
                                         <div className="font-medium">{func.exportedFunction.name}</div>
                                         {func.exportedFunction.isAsync && (
-                                          <span className="text-xs text-gray-500">async</span>
+                                          <span className="text-xs text-meta">async</span>
                                         )}
                                       </td>
                                       <td className="px-4 py-2">
-                                        <span className="text-xs font-mono text-gray-600">{func.exportedFunction.relativePath}</span>
+                                        <span className="text-xs font-mono text-muted">{func.exportedFunction.relativePath}</span>
                                       </td>
                                       <td className="px-4 py-2">
                                         {func.functionCard ? (
-                                          <span className="text-gray-700">{func.functionCard.name} ({func.functionCard.id})</span>
+                                          <span className="text-fg-2">{func.functionCard.name} ({func.functionCard.id})</span>
                                         ) : (
-                                          <span className="text-gray-400">—</span>
+                                          <span className="text-meta">—</span>
                                         )}
                                       </td>
                                       <td className="px-4 py-2">
                                         <span className={`px-2 py-1 rounded text-xs ${
-                                          func.status === 'new' ? 'bg-green-100 text-green-800' :
-                                          func.status === 'matched' ? 'bg-blue-100 text-blue-800' :
-                                          func.status === 'needs_matching' ? 'bg-yellow-100 text-yellow-800' :
-                                          'bg-red-100 text-red-800'
+                                          func.status === 'new' ? 'bg-success-muted text-success-fg' :
+                                          func.status === 'matched' ? 'bg-accent-muted text-accent-fg' :
+                                          func.status === 'needs_matching' ? 'bg-warn-muted text-warn-fg' :
+                                          'bg-danger-soft text-danger-fg-strong'
                                         }`}>
                                           {func.status === 'new' ? 'Новый' :
                                            func.status === 'matched' ? 'Сопоставлен' :
@@ -1173,7 +1173,7 @@ export default function ProjectsManagementPage() {
                                         <select
                                           value={syncActions[key] || func.action}
                                           onChange={(e) => handleSyncActionChange(key, e.target.value as SyncActionType)}
-                                          className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                          className="px-2 py-1 border border-border-strong rounded text-xs"
                                         >
                                           <option value="skip">Пропустить</option>
                                           <option value="update">Обновить</option>
@@ -1192,21 +1192,21 @@ export default function ProjectsManagementPage() {
                                   return matchesSearch && matchesFilter;
                                 })
                                 .map((obj, idx) => (
-                                  <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
+                                  <tr key={idx} className="border-t border-border hover:bg-bg">
                                     <td className="px-4 py-2">{obj.prismaModel.name}</td>
                                     <td className="px-4 py-2">
                                       {obj.businessObject ? (
-                                        <span className="text-gray-700">{obj.businessObject.name}</span>
+                                        <span className="text-fg-2">{obj.businessObject.name}</span>
                                       ) : (
-                                        <span className="text-gray-400">—</span>
+                                        <span className="text-meta">—</span>
                                       )}
                                     </td>
                                     <td className="px-4 py-2">
                                       <span className={`px-2 py-1 rounded text-xs ${
-                                        obj.status === 'new' ? 'bg-green-100 text-green-800' :
-                                        obj.status === 'matched' ? 'bg-blue-100 text-blue-800' :
-                                        obj.status === 'needs_matching' ? 'bg-yellow-100 text-yellow-800' :
-                                        'bg-red-100 text-red-800'
+                                        obj.status === 'new' ? 'bg-success-muted text-success-fg' :
+                                        obj.status === 'matched' ? 'bg-accent-muted text-accent-fg' :
+                                        obj.status === 'needs_matching' ? 'bg-warn-muted text-warn-fg' :
+                                        'bg-danger-soft text-danger-fg-strong'
                                       }`}>
                                         {obj.status === 'new' ? 'Новый' :
                                          obj.status === 'matched' ? 'Сопоставлен' :
@@ -1218,7 +1218,7 @@ export default function ProjectsManagementPage() {
                                       <select
                                         value={syncActions[obj.prismaModel.name] || obj.action}
                                         onChange={(e) => handleSyncActionChange(obj.prismaModel.name, e.target.value as SyncActionType)}
-                                        className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                        className="px-2 py-1 border border-border-strong rounded text-xs"
                                       >
                                         <option value="skip">Пропустить</option>
                                         <option value="update">Обновить</option>
@@ -1236,7 +1236,7 @@ export default function ProjectsManagementPage() {
                     )}
 
                     {((syncType === 'code' && matchedFunctions.length === 0) || (syncType === 'schema' && matchedObjects.length === 0)) && syncStage === 'matching' && (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-8 text-meta">
                         <p>Ожидание данных...</p>
                       </div>
                     )}
@@ -1244,14 +1244,14 @@ export default function ProjectsManagementPage() {
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        className="px-4 py-2 bg-accent text-on rounded text-sm hover:bg-accent-hover"
                         onClick={handleExecuteSync}
                       >
                         Выполнить синхронизацию
                       </button>
                       <button
                         type="button"
-                        className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+                        className="px-4 py-2 border border-border-strong rounded text-sm hover:bg-bg"
                         onClick={resetSyncForm}
                       >
                         Отмена
@@ -1264,18 +1264,18 @@ export default function ProjectsManagementPage() {
                 {syncStage === 'executing' && (
                   <div className="space-y-4">
                     <div>
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                      <div className="flex items-center justify-between text-sm text-muted mb-2">
                         <span>Создание и удаление данных</span>
                         <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-surface-strong rounded-full h-2">
                         <div
-                          className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-success-fill-strong h-2 rounded-full transition-all duration-300"
                           style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
                         />
                       </div>
                       {syncProgress.message && (
-                        <p className="text-sm text-gray-500 mt-2">{syncProgress.message}</p>
+                        <p className="text-sm text-meta mt-2">{syncProgress.message}</p>
                       )}
                     </div>
                   </div>
@@ -1284,14 +1284,14 @@ export default function ProjectsManagementPage() {
                 {/* Stage 4: Completed */}
                 {syncStage === 'completed' && (
                   <div className="space-y-4">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <p className="text-sm text-green-800 font-semibold">Синхронизация завершена успешно</p>
-                      <p className="text-sm text-green-600 mt-1">{syncProgress.message}</p>
+                    <div className="bg-success-muted border border-success-border rounded-lg p-4">
+                      <p className="text-sm text-success-fg font-semibold">Синхронизация завершена успешно</p>
+                      <p className="text-sm text-success mt-1">{syncProgress.message}</p>
                     </div>
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        className="px-4 py-2 bg-accent text-on rounded text-sm hover:bg-accent-hover"
                         onClick={() => {
                           resetSyncForm();
                           loadData();
@@ -1306,15 +1306,15 @@ export default function ProjectsManagementPage() {
                 {/* Stage 5: Error */}
                 {syncStage === 'error' && (
                   <div className="space-y-4">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <p className="text-sm text-red-800 font-semibold">Ошибка синхронизации</p>
-                      <p className="text-sm text-red-600 mt-1">
+                    <div className="bg-danger-muted border border-danger-border-soft rounded-lg p-4">
+                      <p className="text-sm text-danger-fg-strong font-semibold">Ошибка синхронизации</p>
+                      <p className="text-sm text-danger mt-1">
                         {syncProgress.error || syncProgress.message || 'Произошла ошибка при синхронизации'}
                       </p>
                       {(syncProgress.error || syncProgress.message) && (
                         <details className="mt-2">
-                          <summary className="text-sm text-red-700 cursor-pointer hover:text-red-800">Подробности ошибки</summary>
-                          <pre className="mt-2 text-xs text-red-600 bg-red-100 p-2 rounded overflow-auto max-h-48 whitespace-pre-wrap break-words">
+                          <summary className="text-sm text-danger-fg cursor-pointer hover:text-danger-fg-strong">Подробности ошибки</summary>
+                          <pre className="mt-2 text-xs text-danger bg-danger-soft p-2 rounded overflow-auto max-h-48 whitespace-pre-wrap break-words">
                             {syncProgress.error || syncProgress.message}
                           </pre>
                         </details>
@@ -1323,7 +1323,7 @@ export default function ProjectsManagementPage() {
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+                        className="px-4 py-2 border border-border-strong rounded text-sm hover:bg-bg"
                         onClick={resetSyncForm}
                       >
                         Закрыть

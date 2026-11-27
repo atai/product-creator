@@ -41,6 +41,8 @@ version of Product Creator.
      - MCP server for local agents (:doc:`mcp`)
    * - `PRODUCTCREATOR-20 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-20>`_
      - Remote access: client of the Emperor MCP relay (:doc:`mcp`)
+   * - `PRODUCTCREATOR-19 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-19>`_
+     - Document templates (human / agent views) and fill procedures — design (:doc:`document-templates-design`)
 
 Known gaps
 ----------

@@ -1,0 +1,13 @@
+id: main.args.parseprojectargs
+name: parseProjectArgs
+bounded_context: main
+entity: args
+action: parseprojectargs
+owner: System
+lifecycle: draft
+description: Function extracted from main/args.ts
+tags: []
+emits: []
+consumes: []
+apis: []
+source_file: main/args.ts

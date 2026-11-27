@@ -1,0 +1,13 @@
+id: main.settings.validaterelayurl
+name: validateRelayUrl
+bounded_context: main
+entity: settings
+action: validaterelayurl
+owner: System
+lifecycle: draft
+description: Function extracted from main/settings.ts
+tags: []
+emits: []
+consumes: []
+apis: []
+source_file: main/settings.ts

@@ -17,9 +17,9 @@ import type {
  * service.pc.yml / library.pc.yml under catalogRoot (components). Every save writes them.
  */
 
-const input = 'w-full rounded border border-gray-300 px-2 py-1 text-sm';
-const btn = 'px-3 py-1.5 rounded border border-gray-300 bg-white text-sm hover:bg-gray-50';
-const primary = 'px-3 py-1.5 rounded bg-blue-600 text-white text-sm hover:bg-blue-700';
+const input = 'w-full rounded border border-border-strong px-2 py-1 text-sm';
+const btn = 'px-3 py-1.5 rounded border border-border-strong bg-surface text-sm hover:bg-bg';
+const primary = 'px-3 py-1.5 rounded bg-accent text-on text-sm hover:bg-accent-hover';
 
 type Editing =
   | { root: string; type: 'project' }
@@ -59,7 +59,7 @@ export default function WorkspacePage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Workspace</h1>
-          <p className="text-gray-600 text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Opened projects with their services and libraries. Changes are saved to <code>product-creator.yml</code>{' '}
             and <code>*.pc.yml</code> files in the project folder.
           </p>
@@ -74,11 +74,11 @@ export default function WorkspacePage() {
         </div>
       </div>
       {error && (
-        <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700" role="alert">
+        <div className="mb-4 rounded border border-danger-border bg-danger-muted p-3 text-sm text-danger-fg" role="alert">
           {error}
         </div>
       )}
-      {info.projects.length === 0 && <p className="text-gray-500">No projects opened.</p>}
+      {info.projects.length === 0 && <p className="text-meta">No projects opened.</p>}
       <div className="space-y-6">
         {info.projects.map((p) => (
           <ProjectCard key={p.root} info={p} editing={editing} setEditing={setEditing} run={run} />
@@ -158,12 +158,12 @@ function useOpenApi(root: string, project: ProjectModel | undefined) {
 }
 
 const STATE_STYLE: Record<GenerateStatus['state'], string> = {
-  idle: 'text-gray-400',
-  running: 'text-blue-600',
-  ok: 'text-green-700',
-  failed: 'text-red-600',
-  timeout: 'text-red-600',
-  cancelled: 'text-amber-600',
+  idle: 'text-meta',
+  running: 'text-accent',
+  ok: 'text-success',
+  failed: 'text-danger',
+  timeout: 'text-danger',
+  cancelled: 'text-warn',
 };
 
 function formatTime(ms: number | undefined): string {
@@ -188,7 +188,7 @@ function OpenApiCell({ component: c, info, log, onGenerate, onCancel }: OpenApiC
       {info?.specs.map((sp) => (
         <div key={sp.path} className="text-xs">
           <span className="font-mono">{sp.path}</span>{' '}
-          <span className="text-gray-500">
+          <span className="text-meta">
             {sp.exists ? `${sp.operations ?? '?'} ops · ${formatTime(sp.mtime)}` : 'not generated'}
           </span>
         </div>
@@ -198,12 +198,12 @@ function OpenApiCell({ component: c, info, log, onGenerate, onCancel }: OpenApiC
       {c.openapiGenerate && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {running ? (
-            <button className="text-xs text-red-600 hover:underline" onClick={onCancel}>
+            <button className="text-xs text-danger hover:underline" onClick={onCancel}>
               Cancel
             </button>
           ) : (
             <button
-              className="text-xs rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50"
+              className="text-xs rounded border border-border-strong px-2 py-0.5 hover:bg-bg"
               title={c.openapiGenerate.command}
               onClick={onGenerate}
             >
@@ -218,15 +218,15 @@ function OpenApiCell({ component: c, info, log, onGenerate, onCancel }: OpenApiC
             </span>
           )}
           {(log || status?.log) && (
-            <button className="text-xs text-blue-600 hover:underline" onClick={() => setShowLog(!showLog)}>
+            <button className="text-xs text-accent hover:underline" onClick={() => setShowLog(!showLog)}>
               {showLog ? 'Hide log' : 'Log'}
             </button>
           )}
         </div>
       )}
-      {status?.message && status.state !== 'ok' && status.state !== 'running' && <div className="text-xs text-red-600">{status.message}</div>}
+      {status?.message && status.state !== 'ok' && status.state !== 'running' && <div className="text-xs text-danger">{status.message}</div>}
       {showLog && (
-        <pre className="mt-1 max-h-48 overflow-auto rounded bg-gray-900 p-2 text-[11px] leading-snug text-gray-100 whitespace-pre-wrap">
+        <pre className="mt-1 max-h-48 overflow-auto rounded bg-surface-inverse p-2 text-[11px] leading-snug text-fg-inverse whitespace-pre-wrap">
           {log || status?.log}
         </pre>
       )}
@@ -249,27 +249,27 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
   const newComponent = (kind: ComponentModel['kind']): ComponentInput => ({ kind, slug: '', name: '', path: '' });
 
   return (
-    <section className="bg-white rounded-lg shadow p-5" data-testid="project">
+    <section className="bg-surface rounded-lg shadow p-5" data-testid="project">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">{project?.name ?? root}</h2>
-          <div className="text-xs text-gray-500 mt-1 font-mono">{root}</div>
+          <div className="text-xs text-meta mt-1 font-mono">{root}</div>
           {project && (
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-meta mt-1">
               id <span className="font-mono">{project.id}</span> · slug <span className="font-mono">{project.slug}</span> ·
               catalogs in <span className="font-mono">{project.catalogRoot}</span>
             </div>
           )}
           {info.origin && info.origin !== 'read' && (
-            <div className="text-xs mt-2 text-amber-700">
+            <div className="text-xs mt-2 text-warn-fg">
               {info.origin === 'imported' ? 'Imported from the folder layout on this open' : 'Migrated from product-creator.yml v1'}
               {info.notes?.map((n) => (
                 <div key={n}>• {n}</div>
               ))}
             </div>
           )}
-          {info.error && <div className="text-sm text-red-600 mt-2">{info.error}</div>}
-          {openapi.error && <div className="text-sm text-red-600 mt-2">{openapi.error}</div>}
+          {info.error && <div className="text-sm text-danger mt-2">{info.error}</div>}
+          {openapi.error && <div className="text-sm text-danger mt-2">{openapi.error}</div>}
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
           {project && (
@@ -320,15 +320,15 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
           const list = project.components.filter((c) => c.kind === kind);
           return (
             <div key={kind} className="mt-5">
-              <h3 className="font-semibold text-gray-700">
-                {kind === 'service' ? 'Services' : 'Libraries'} <span className="text-gray-400 font-normal">({list.length})</span>
+              <h3 className="font-semibold text-fg-2">
+                {kind === 'service' ? 'Services' : 'Libraries'} <span className="text-meta font-normal">({list.length})</span>
               </h3>
               {list.length === 0 ? (
-                <p className="text-sm text-gray-400 mt-1">None</p>
+                <p className="text-sm text-meta mt-1">None</p>
               ) : (
                 <table className="mt-2 w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 border-b">
+                    <tr className="text-left text-meta border-b">
                       <th className="py-1 pr-3">Name</th>
                       <th className="py-1 pr-3">Path</th>
                       <th className="py-1 pr-3">Catalog</th>
@@ -354,8 +354,8 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
                         <tr key={c.id} className="border-b last:border-0 align-top">
                           <td className="py-1 pr-3">
                             <div className="font-medium">{c.name}</div>
-                            <div className="text-xs text-gray-500 font-mono">{c.slug}</div>
-                            <div className="text-[10px] text-gray-400 font-mono">{c.id}</div>
+                            <div className="text-xs text-meta font-mono">{c.slug}</div>
+                            <div className="text-[10px] text-meta font-mono">{c.id}</div>
                           </td>
                           <td className="py-1 pr-3 font-mono text-xs">{c.path}</td>
                           <td className="py-1 pr-3 font-mono text-xs">{c.catalog}</td>
@@ -372,11 +372,11 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
                             {c.dependsOn?.map((d) => project.components.find((x) => x.id === d)?.name ?? d).join(', ') || '—'}
                           </td>
                           <td className="py-1 whitespace-nowrap text-right">
-                            <button className="text-blue-600 hover:underline text-xs mr-3" onClick={() => setEditing({ root, type: 'component', component: c })}>
+                            <button className="text-accent hover:underline text-xs mr-3" onClick={() => setEditing({ root, type: 'component', component: c })}>
                               Edit
                             </button>
                             <button
-                              className="text-red-600 hover:underline text-xs"
+                              className="text-danger hover:underline text-xs"
                               onClick={() => {
                                 if (window.confirm(`Remove ${c.name} from the project? Its catalog files are kept.`)) {
                                   void run(() => window.pc.editor.deleteComponent(root, c.id));
@@ -402,9 +402,9 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-xs font-medium text-gray-600">{label}</span>
+      <span className="text-xs font-medium text-muted">{label}</span>
       {children}
-      {hint && <span className="text-[11px] text-gray-400">{hint}</span>}
+      {hint && <span className="text-[11px] text-meta">{hint}</span>}
     </label>
   );
 }
@@ -413,7 +413,7 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
   const [v, setV] = useState({ name: project.name, slug: project.slug, description: project.description ?? '', docs: project.docs ?? '', catalogRoot: project.catalogRoot });
   return (
     <form
-      className="mt-4 grid grid-cols-2 gap-3 rounded border border-blue-200 bg-blue-50/40 p-4"
+      className="mt-4 grid grid-cols-2 gap-3 rounded border border-accent-border bg-accent-soft/40 p-4"
       onSubmit={(e) => {
         e.preventDefault();
         onSave(v);
@@ -471,7 +471,7 @@ function ComponentForm({
 
   return (
     <form
-      className="my-3 grid grid-cols-3 gap-3 rounded border border-blue-200 bg-blue-50/40 p-4"
+      className="my-3 grid grid-cols-3 gap-3 rounded border border-accent-border bg-accent-soft/40 p-4"
       data-testid="component-form"
       onSubmit={(e) => {
         e.preventDefault();
@@ -486,7 +486,7 @@ function ComponentForm({
     >
       <div className="col-span-3 text-sm font-semibold">
         {value.id ? `Edit ${value.kind}` : `New ${v.kind}`}
-        {value.id && <span className="ml-2 font-mono text-xs text-gray-500">{value.id}</span>}
+        {value.id && <span className="ml-2 font-mono text-xs text-meta">{value.id}</span>}
       </div>
       <Field label="Name">
         <input className={input} value={v.name} onChange={(e) => set('name', e.target.value)} required />
@@ -515,9 +515,9 @@ function ComponentForm({
       <Field label="OpenAPI specs" hint="one path per line: committed files or the output of the command">
         <textarea className={input} rows={2} value={specs} onChange={(e) => setSpecs(e.target.value)} />
       </Field>
-      <div className="col-span-3 grid grid-cols-3 gap-3 rounded border border-gray-200 bg-white/60 p-3">
-        <div className="col-span-3 text-xs font-medium text-gray-600">
-          OpenAPI generation <span className="font-normal text-gray-400">— optional; the command runs on your machine when you press “Generate OpenAPI”</span>
+      <div className="col-span-3 grid grid-cols-3 gap-3 rounded border border-border bg-surface/60 p-3">
+        <div className="col-span-3 text-xs font-medium text-muted">
+          OpenAPI generation <span className="font-normal text-meta">— optional; the command runs on your machine when you press “Generate OpenAPI”</span>
         </div>
         <div className="col-span-3">
           <Field label="Command" hint="e.g. pnpm run generate:openapi — executed as written; list its output file in “OpenAPI specs” above">
@@ -540,13 +540,13 @@ function ComponentForm({
         <input className={input} value={v.catalog ?? ''} disabled={Boolean(value.id)} onChange={(e) => set('catalog', e.target.value)} />
       </Field>
       <div className="col-span-3">
-        <span className="text-xs font-medium text-gray-600">Depends on</span>
+        <span className="text-xs font-medium text-muted">Depends on</span>
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-          {others.length === 0 && <span className="text-xs text-gray-400">no other components</span>}
+          {others.length === 0 && <span className="text-xs text-meta">no other components</span>}
           {others.map((c) => (
             <label key={c.id} className="text-xs flex items-center gap-1">
               <input type="checkbox" checked={Boolean(v.dependsOn?.includes(c.id))} onChange={() => toggleDep(c.id)} />
-              {c.name} <span className="text-gray-400">({c.kind})</span>
+              {c.name} <span className="text-meta">({c.kind})</span>
             </label>
           ))}
         </div>

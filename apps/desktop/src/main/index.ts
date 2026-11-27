@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, safeStorage, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, safeStorage, screen, shell } from 'electron';
 import { mkdirSync } from 'fs';
 import * as path from 'path';
 import { deleteComponent, importNewComponents, readProject, saveComponent, updateProject, type ProjectModel } from '@pc/core/project/model';
@@ -11,6 +11,7 @@ import { resolveUserDataDir } from './userData';
 import { DEFAULT_MCP_PORT, DEFAULT_MCP_PORT_DEV, SettingsStore } from './settings';
 import { McpController } from './mcp';
 import { RelayController } from './relay';
+import { attachMacMultiDisplayResizeGuard } from './resizeGuard';
 
 // Settings and data folder. Must run before anything reads userData and before the single-instance lock:
 // a development run (not packaged) uses '<appData>/Product Creator Dev' and never touches the installed
@@ -215,12 +216,14 @@ function createWindow() {
     width: 1400,
     height: 900,
     show: false,
+    backgroundColor: '#f9fafb',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       sandbox: false,
     },
   });
+  attachMacMultiDisplayResizeGuard(mainWindow, screen);
   mainWindow.on('ready-to-show', () => mainWindow?.show());
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);
