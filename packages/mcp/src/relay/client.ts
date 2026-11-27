@@ -455,27 +455,59 @@ export class RelayClient {
     req.end(body.length ? body : undefined);
   }
 
-  private onLocalResponse(stream: Stream, res: http.IncomingMessage) {
-    if (stream.dead) return res.destroy();
-    stream.res = res;
-    const type = String(res.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase();
-    const status = res.statusCode ?? 502;
-    const empty = res.headers['content-length'] === '0' || status === 202 || status === 204;
-    if (!empty && type !== 'application/json' && type !== 'text/event-stream') {
-      return this.abortStream(stream, 'INTERNAL', 'unexpected content type');
-    }
-    stream.sse = type === 'text/event-stream';
+  private responseHeaders(res: http.IncomingMessage): Record<string, string> {
     const out: Record<string, string> = {};
     for (const name of RESPONSE_HEADERS) {
       const v = res.headers[name];
       if (typeof v === 'string') out[name] = v;
     }
-    stream.headersSent = true;
-    if (empty) {
-      this.send(FrameType.RES_HEADERS, stream.id, FrameFlag.END_STREAM, { status, headers: out });
-      res.resume();
-      return this.finishStream(stream);
+    return out;
+  }
+
+  /**
+   * Empty body, no Content-Type: a valid MCP response. The SDK's DELETE handler
+   * returns `200` with no Content-Type and no Content-Length (chunked, zero bytes).
+   * The relay allows a missing Content-Type only for 202/204/404/405, so any other
+   * empty 2xx is sent as 204 (the MCP spec allows any 2xx on DELETE).
+   */
+  private sendEmptyResponse(stream: Stream, res: http.IncomingMessage, status: number, type: string) {
+    if (stream.dead) return;
+    const headers = this.responseHeaders(res);
+    if (!type && status >= 200 && status < 300 && status !== 202 && status !== 204) {
+      status = 204;
+      delete headers['content-type'];
     }
+    stream.headersSent = true;
+    this.send(FrameType.RES_HEADERS, stream.id, FrameFlag.END_STREAM, { status, headers });
+    res.resume();
+    this.finishStream(stream);
+  }
+
+  private onLocalResponse(stream: Stream, res: http.IncomingMessage) {
+    if (stream.dead) return res.destroy();
+    stream.res = res;
+    const type = String(res.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase();
+    const status = res.statusCode ?? 502;
+    // 202/204 and Content-Length: 0 are known-empty from headers alone. A typeless
+    // chunked 200 (SDK DELETE) only looks empty once the body stream ends.
+    const declaredEmpty = res.headers['content-length'] === '0' || status === 202 || status === 204;
+    const allowedType = type === 'application/json' || type === 'text/event-stream';
+    if (declaredEmpty) {
+      return this.sendEmptyResponse(stream, res, status, type);
+    }
+    if (!allowedType) {
+      res.on('data', (chunk: Buffer) => {
+        if (chunk.length) this.abortStream(stream, 'INTERNAL', 'unexpected content type');
+      });
+      res.on('end', () => {
+        if (!stream.dead) this.sendEmptyResponse(stream, res, status, type);
+      });
+      res.on('error', () => this.abortStream(stream, 'INTERNAL'));
+      return;
+    }
+    stream.sse = type === 'text/event-stream';
+    const out = this.responseHeaders(res);
+    stream.headersSent = true;
     this.send(FrameType.RES_HEADERS, stream.id, 0, { status, headers: out });
     if (stream.sse) {
       stream.keepAlive = setInterval(() => {

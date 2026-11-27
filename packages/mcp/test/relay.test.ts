@@ -383,6 +383,21 @@ describe('relayed requests', () => {
     expect(parse(list.text).result.tools.map((t: { name: string }) => t.name)).not.toContain('create_catalog_entry');
   });
 
+  it('forwards session DELETE as an empty 2xx, not RST_STREAM', async () => {
+    client = newClient();
+    client.start();
+    await relay.until(() => client.status().state === 'online');
+    const opened = await relay.request(71, { body: init });
+    expect(opened.status).toBe(200);
+    const sid = opened.headers['mcp-session-id'];
+    expect(sid).toBeTruthy();
+    const closed = await relay.request(72, { method: 'DELETE', headers: { 'mcp-session-id': sid } });
+    expect(closed.rst).toBeUndefined();
+    expect(closed.status).toBe(204);
+    expect(closed.text).toBe('');
+    expect(closed.headers['content-type']).toBeUndefined();
+  });
+
   it('cannot escalate the scope with forged headers (only the allow-list is forwarded)', async () => {
     client = newClient();
     client.start();
@@ -433,5 +448,106 @@ describe('relayed requests', () => {
     await relay.until(() => client.status().activeStreams === 1);
     relay.socket.send(encodeFrame({ type: FrameType.RST_STREAM, streamId: 61, header: { code: 'CANCELLED' } }));
     await relay.until(() => client.status().activeStreams === 0);
+  });
+});
+
+describe('empty or typeless local responses', () => {
+  let stub: http.Server;
+  let stubPort = 0;
+  let stubHandler: (req: http.IncomingMessage, res: http.ServerResponse) => void;
+
+  beforeAll(async () => {
+    stub = http.createServer((req, res) => stubHandler(req, res));
+    await new Promise<void>((r) => stub.listen(0, '127.0.0.1', () => r()));
+    stubPort = (stub.address() as { port: number }).port;
+  });
+  afterAll(async () => {
+    await new Promise<void>((r) => stub.close(() => r()));
+  });
+
+  const stubClient = () =>
+    new RelayClient({
+      url: relay.url,
+      deviceKey: DEVICE_KEY,
+      relayKey: RELAY_KEY,
+      localUrl: () => `http://127.0.0.1:${stubPort}/mcp`,
+      clientName: 'product-creator/test',
+      mcpScope: () => 'read',
+      timing,
+    });
+
+  const reply = (status: number, headers: http.OutgoingHttpHeaders, body?: string) => {
+    stubHandler = (_req, res) => {
+      res.writeHead(status, headers);
+      res.end(body);
+    };
+  };
+
+  const throughRelay = async (streamId: number) => {
+    client = stubClient();
+    client.start();
+    await relay.until(() => client.status().state === 'online');
+    return relay.request(streamId, { method: 'DELETE' });
+  };
+
+  it('200 with no Content-Type and a chunked empty body is forwarded as 204', async () => {
+    stubHandler = (_req, res) => {
+      res.writeHead(200, { 'Transfer-Encoding': 'chunked' });
+      res.end();
+    };
+    const r = await throughRelay(201);
+    expect(r.rst).toBeUndefined();
+    expect(r.status).toBe(204);
+    expect(r.text).toBe('');
+    expect(r.headers['content-type']).toBeUndefined();
+  });
+
+  it('200 with Content-Length: 0 and no Content-Type is forwarded as 204', async () => {
+    reply(200, { 'Content-Length': 0 });
+    const r = await throughRelay(202);
+    expect(r.rst).toBeUndefined();
+    expect(r.status).toBe(204);
+    expect(r.text).toBe('');
+  });
+
+  it('201 typeless empty body is forwarded as 204; 202 and 204 stay as they are', async () => {
+    reply(201, { 'Content-Length': 0 });
+    const created = await throughRelay(203);
+    expect(created.rst).toBeUndefined();
+    expect(created.status).toBe(204);
+
+    client.stop();
+    reply(202, { 'Content-Length': 0 });
+    const accepted = await throughRelay(204);
+    expect(accepted.rst).toBeUndefined();
+    expect(accepted.status).toBe(202);
+
+    client.stop();
+    reply(204, { 'Content-Length': 0 });
+    const noContent = await throughRelay(205);
+    expect(noContent.rst).toBeUndefined();
+    expect(noContent.status).toBe(204);
+  });
+
+  it('404 typeless empty body is forwarded as 404 (allowed by the relay)', async () => {
+    reply(404, { 'Content-Length': 0 });
+    const r = await throughRelay(206);
+    expect(r.rst).toBeUndefined();
+    expect(r.status).toBe(404);
+  });
+
+  it('non-empty response with an unexpected Content-Type is RST_STREAM INTERNAL', async () => {
+    reply(200, { 'Content-Type': 'text/plain' }, 'oops');
+    const r = await throughRelay(207);
+    expect(r.rst?.header).toMatchObject({ code: 'INTERNAL', message: 'unexpected content type' });
+  });
+
+  it('empty application/json 200 is forwarded as 200 with the original type', async () => {
+    reply(200, { 'Content-Type': 'application/json', 'Content-Length': 0 });
+    const r = await throughRelay(208);
+    expect(r.rst).toBeUndefined();
+    expect(r.status).toBe(200);
+    expect(r.headers['content-type']).toBe('application/json');
+    expect(r.text).toBe('');
   });
 });
