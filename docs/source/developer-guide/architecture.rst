@@ -2,7 +2,8 @@ Architecture
 ============
 
 Goal: an up-to-date specification (ТЗ) with a provable, end-to-end trace
-**feature → function card → code / schema / interface**.
+**feature → code / schema / interface**, where a *feature* (formerly *function card*) is a
+business capability in the YAML catalog.
 
 .. mermaid::
 

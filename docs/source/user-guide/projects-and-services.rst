@@ -7,7 +7,7 @@ A **project** is one repository. It consists of **components** of two kinds:
   Product Creator);
 * **libraries** — shared packages used by services (``packages/*``).
 
-Every component has its own feature catalog (functions, business objects, workflows, streams) and,
+Every component has its own feature catalog (features, business objects, workflows, streams) and,
 optionally, a code base, a Prisma schema and OpenAPI specifications. Components can depend on each
 other (``dependsOn``), usually a service on libraries.
 
@@ -24,10 +24,10 @@ can be committed together with the code.
      docs/product/                              # catalogRoot
        frontend/
          service.pc.yml                         # the "frontend" service
-         functions/  business-objects/  workflows/  streams/
+         features/  business-objects/  workflows/  streams/
        packages/shared/
          library.pc.yml                         # the "shared" library
-         functions/ ...
+         features/ ...
        integrations/youtrack/
          service.pc.yml
 

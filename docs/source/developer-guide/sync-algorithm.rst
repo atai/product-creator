@@ -197,3 +197,28 @@ The sync table shows these statuses:
 
 - the **status** shows the current state of the match (shown in the table);
 - the **action** is what the sync will do (can be changed in the drop-down).
+
+Code ↔ features sync
+--------------------
+
+``packages/core/src/sync/codeMatcher.ts`` (``matchCodeToFunctions``) and ``codeSyncService.ts``
+(PRODUCTCREATOR-30). For every exported code function, in order:
+
+#. **mapping** — an entry in ``.sync-mapping.json`` of the catalog pointing to an existing feature →
+   ``linked`` (action ``skip``);
+#. **same file** — a feature whose ``source_file`` is this file and whose name matches →
+   ``linked``;
+#. **unique match** — exactly one feature *without* ``source_file`` whose normalised name, or
+   entity + action, matches → ``proposed`` (action ``link``);
+#. otherwise → ``candidate`` (action ``skip``; ``create`` on request, id from
+   ``suggestFeatureId``: path segments without ``src``/``lib``/``app``/``index``/``renderer``/``main``,
+   camelCase → snake_case).
+
+A feature whose ``source_file`` is not among the analysed files is ``stale`` (action ``skip``;
+``unlink`` on request). Every item carries a ``reason``.
+
+Actions (``CODE_SYNC_ACTIONS``): ``skip``, ``link`` (set ``source_file``, union ``calls`` with the
+features implementing the called code functions), ``create`` (``draft`` feature; error if the id
+exists), ``unlink`` (remove ``source_file`` and the mapping entry). ``update`` / ``delete`` are legacy
+aliases of ``link`` / ``unlink`` (``normalizeCodeAction``). The sync never sets ``lifecycle: removed``
+and never deletes files.

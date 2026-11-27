@@ -51,11 +51,18 @@ Tools
 -----
 
 Defined in ``packages/mcp/src/tools.ts`` with ``define(name, {write?, input}, handler)``. Catalog
-entries are addressed by ``kind`` (``function``, ``business_object``, ``workflow``, ``stream``) and map
-to the core routes (``/api/index``, ``/api/business-objects``, ``/api/workflows``, ``/api/streams`` and
+entries are addressed by ``kind`` (``feature``, ``business_object``, ``workflow``, ``stream``;
+``function`` is accepted and normalised by ``kindOf()``) and map to the core routes (``/api/features``, ``/api/business-objects``, ``/api/workflows``, ``/api/streams`` and
 the ``/api/save*`` routes). Sync tools drive ``/api/apps/<id>/sync-code|sync-schema/{start,status,actions,execute}``:
-*preview* stops at the ``matching`` stage; *apply* sets ``skip`` for ``delete`` actions (unless
-``allow_delete``), executes and waits for ``completed`` (3 minute limit).
+*preview* stops at the ``matching`` stage; *apply* executes and waits for ``completed`` (3 minute
+limit). Code sync apply links ``proposed`` items, creates only the candidates named in ``create`` and
+unlinks ``stale`` items only with ``allow_unlink`` (``allow_delete`` is an alias); schema sync apply
+sets ``skip`` for ``delete`` actions unless ``allow_delete``.
+
+Plan-check tools (``validate_catalog``, ``validate_plan``, ``impact_of_change``, ``find_duplicates``,
+``get_object``) call ``/api/validation``, ``/api/validate-plan``, ``/api/impact``, ``/api/duplicates``.
+``projectView`` maps component ids to slugs and files to project-relative paths. A rejected write
+returns the error text plus the ``issues`` of the 400 response.
 
 To add a tool: call ``define`` (mark ``write: true`` if it changes anything), keep the output compact,
 add a case to ``packages/mcp/test/server.test.ts`` and a row to the User Docs table.

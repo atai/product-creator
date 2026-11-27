@@ -39,7 +39,7 @@ appended to it.
 Specs written to build folders (``dist/``) are usually git-ignored: generate them before opening the
 **Interfaces** page. A spec that was not generated yet is shown as such, not as an error.
 
-This is the first step of cross-service and cross-project synchronisation: next, function cards will be
+This is the first step of cross-service and cross-project synchronisation: next, features will be
 linked to operations they *implement* (provider) or *call* (consumer), so that a feature can be traced
 from one service to another and broken contracts are reported. See
 :doc:`/developer-guide/openapi-sync-design`.

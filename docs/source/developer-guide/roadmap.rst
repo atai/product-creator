@@ -43,12 +43,21 @@ version of Product Creator.
      - Remote access: client of the Emperor MCP relay (:doc:`mcp`)
    * - `PRODUCTCREATOR-19 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-19>`_
      - Document templates (human / agent views) and fill procedures — design (:doc:`document-templates-design`)
+   * - `PRODUCTCREATOR-28 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-28>`_
+     - Rename *function* → *feature* (types, ``features/`` folder, UI, MCP alias, ``migrate`` command)
+   * - `PRODUCTCREATOR-29 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-29>`_
+     - Model validation, ``Feature.objects``, plan checks and impact (core, MCP, Problems page, ``lint``)
+   * - `PRODUCTCREATOR-30 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-30>`_
+     - Code sync links code functions to existing features (linked / proposed / candidate / stale)
 
 Known gaps
 ----------
 
 * Signed releases need the GitHub secrets from :doc:`release`; Windows builds stay unsigned by
   decision (no code-signing certificate). The app icon is a placeholder.
-* Catalog entities (functions, business objects) still use readable ids, not UUIDs.
+* Catalog entities (features, business objects) still use readable ids, not UUIDs.
 * Doc page (generated ТЗ) is still a placeholder.
-* Unit tests cover the core project model and OpenAPI loader only; no UI tests yet.
+* Unit tests cover the core (project model, OpenAPI loader, validation, code matching), MCP and CLI;
+  no UI tests yet.
+* Business object field types do not model enums yet: a Prisma ``enum`` used as a field type is
+  reported as ``unknown_type``.

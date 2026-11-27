@@ -83,8 +83,9 @@ name from ``list_projects``) as an argument.
      - Services and libraries of a project: paths, code base, DB schema, OpenAPI settings
    * - ``list_catalog``
      - read
-     - Functions, business objects, workflows or streams of a project/component (filter, paging).
-       Functions carry their ``source_file`` link
+     - Features, business objects, workflows or streams of a project/component (filter, paging).
+       Features carry their ``source_file`` link. ``kind: function`` is accepted as the old name of
+       ``feature``
    * - ``get_catalog_entry``
      - read
      - Full card of one entry
@@ -94,19 +95,38 @@ name from ``list_projects``) as an argument.
    * - ``get_openapi_status``
      - read
      - Which components can generate a spec, spec files, state of the last generation
+   * - ``get_object``
+     - read
+     - A business object with its fields and types, and the features that read or write it
+   * - ``find_duplicates``
+     - read
+     - Entries with the same or a similar name or id (check before creating one)
+   * - ``impact_of_change``
+     - read
+     - What a change of a business object or feature affects: features, workflows, objects with fields
+       of its type
+   * - ``validate_plan``
+     - read
+     - Check proposed changes (``upsert`` / ``delete`` of features, objects, workflows) against the
+       catalog without writing; returns the errors the plan would introduce
+   * - ``validate_catalog``
+     - read
+     - All validation problems of a project or component (see :ref:`validation`)
    * - ``sync_code_preview`` / ``sync_schema_preview``
      - read
      - Match code (or the Prisma schema) with the catalog and show what a sync would do; writes nothing
    * - ``create_catalog_entry``
      - read-write
-     - Create a function, business object, workflow or stream (validated like in the editor)
+     - Create a feature, business object, workflow or stream. Rejected with the list of problems if
+       it would add a validation error
    * - ``update_catalog_entry``
      - read-write
-     - Change fields of an entry (merge patch; the id cannot change; validated)
+     - Change fields of an entry (merge patch; the id cannot change; rejected like create)
    * - ``sync_code_apply`` / ``sync_schema_apply``
      - read-write
-     - Run the sync with the default actions. Deletions are skipped unless the agent passes
-       ``allow_delete``
+     - Run the sync with the default actions. Code sync: links proposed features; creates features
+       only for the candidates listed in ``create``; unlinks stale ones only with ``allow_unlink``.
+       Schema sync: deletions are skipped unless the agent passes ``allow_delete``
    * - ``generate_openapi``
      - read-write
      - Run the *generate command* saved in the component settings (one component or all)

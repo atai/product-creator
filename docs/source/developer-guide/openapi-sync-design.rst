@@ -7,8 +7,8 @@ Problem
 -------
 
 Features of a product are implemented across several services and often several repositories
-(e.g. Emperor ``frontend`` calls ``integrations/youtrack``). A function card in one service must be
-traceable to the interface it uses and to the function that implements that interface in another
+(e.g. Emperor ``frontend`` calls ``integrations/youtrack``). A feature in one service must be
+traceable to the interface it uses and to the feature that implements that interface in another
 service/project. Contract changes must surface as broken traces.
 
 Model
@@ -17,9 +17,9 @@ Model
 .. mermaid::
 
    flowchart LR
-     FA["Function card<br/>(service A)"] -- "calls" --> OP["Operation<br/>B#POST /issues"]
+     FA["Feature<br/>(service A)"] -- "calls" --> OP["Operation<br/>B#POST /issues"]
      OP -- "declared in" --> SPEC["openapi.json<br/>(service B)"]
-     FB["Function card<br/>(service B)"] -- "implements" --> OP
+     FB["Feature<br/>(service B)"] -- "implements" --> OP
 
 * **Interface spec** — an OpenAPI 3.x / Swagger 2 document of a component (``openapi`` in its
   ``service.pc.yml``). Sources: **spec files committed in the repository** (import takes only files
@@ -29,7 +29,7 @@ Model
 * **Operation ref** — ``<componentId>#<METHOD> <path>``, e.g.
   ``61f70fc3-558a-43e8-aea8-1946caf1d9a7#POST /issues``. The component id is a UUID, unique across
   projects of the workspace and stable when the component is renamed.
-* **Link** — on a function card:
+* **Link** — on a feature:
 
   .. code-block:: yaml
 
@@ -50,10 +50,10 @@ Implemented (first step)
 Next steps
 ----------
 
-1. Add ``interfaces`` to ``function.schema.json`` and the function form (pick operations).
+1. Add ``interfaces`` to ``feature.schema.json`` and the feature form (pick operations).
 2. Auto-link: ``apis`` of a card (method + path) ↔ operations of its own service → ``implements``;
    code analysis of HTTP clients (fetch/axios/generated clients) → ``calls`` candidates.
-3. Trace report per workspace: operations without implementing function, functions without spec,
+3. Trace report per workspace: operations without implementing feature, features without spec,
    ``calls`` to missing/deprecated operations, cross-project dependency graph.
 4. Spec change detection (hash per operation, like Prisma sync) with update/skip/delete actions.
 5. Include the trace in the generated ТЗ (Doc page / Sphinx export).

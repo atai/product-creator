@@ -8,8 +8,11 @@ electron-vite in the main process). Modules are imported by path: ``@pc/core/sto
 Storage
 -------
 
-``getStorage()`` returns a singleton ``FunctionStorage`` (TinyBase tables: functions, workflows, streams,
-business_objects, projects, apps, events, edges).
+``getStorage()`` returns a singleton ``FunctionStorage`` (the class name is historical; TinyBase tables:
+features, workflows, streams, business_objects, projects, apps, events, edges). Feature methods:
+``getAllFeatures``, ``getFeatureById``, ``saveFeature``, ``getFeaturesOfApp``; the old
+``getAll``/``getById``/``save`` remain as deprecated aliases. ``modelSnapshot()`` feeds validation;
+``configureStorage({ watch: false })`` disables the watcher (CLI).
 
 * **Config mode** (web): ``configureStorage({ configRoot })`` — projects/apps are YAML files in
   ``<configRoot>/projects`` and ``<configRoot>/apps`` (default ``<cwd>/config``).
@@ -18,8 +21,10 @@ business_objects, projects, apps, events, edges).
   desktop editor uses ``project/model`` directly via IPC).
 * ``resetStorage()`` closes watchers; the desktop calls it when the workspace changes.
 
-Every app (service) has a ``directory`` with the catalog; ``functions/``, ``workflows/``, ``streams/``,
-``business-objects/`` are loaded and watched.
+Every app (service) has a ``directory`` with the catalog; ``features/`` (and the legacy ``functions/``),
+``workflows/``, ``streams/``, ``business-objects/`` are loaded and watched. chokidar 4 has no globs, so
+the watcher watches the app directories and filters catalog folders and ``*.yml`` files;
+``whenWatching()`` resolves when it is ready.
 
 Project model
 -------------
@@ -83,7 +88,8 @@ HTTP handlers
    * - ``GET /api/workspace``
      - mode (web/desktop), projects, apps
    * - ``GET /api/index?app=`` / ``GET /api/card?id=`` / ``POST /api/save``
-     - functions
+       (aliases ``/api/features``, ``/api/feature``, ``/api/save-feature``)
+     - features
    * - ``GET /api/business-objects?app=&hierarchical=`` / ``POST /api/save-business-object``
      - business objects
    * - ``GET /api/workflows`` / ``/api/workflow?id=`` / ``POST /api/save-workflow``
@@ -93,7 +99,11 @@ HTTP handlers
    * - ``GET /api/graph``
      - event graph
    * - ``POST /api/validate``
-     - JSON Schema validation of a function card
+     - JSON Schema validation of a feature
+   * - ``GET /api/validation?app=`` / ``POST /api/validate-plan``
+     - model validation of the catalog / of proposed changes
+   * - ``GET /api/impact?kind=&id=`` / ``GET /api/duplicates?kind=&name=&id=``
+     - impact of a change / similar entries
    * - ``GET|POST /api/projects``, ``/api/projects/[id]``, ``GET|POST /api/apps``, ``/api/apps/[id]``
      - projects/apps (config mode only for writes)
    * - ``POST /api/apps/[id]/sync-code/{start,actions,execute}``, ``GET …/status/[syncId]``
