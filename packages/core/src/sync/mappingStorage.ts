@@ -8,7 +8,7 @@ import logger from '../logger';
 export interface SyncMapping {
   [prismaModelName: string]: {
     businessObjectId: string;
-    action: 'skip' | 'update' | 'create' | 'delete';
+    action: 'skip' | 'update' | 'create' | 'delete' | 'link' | 'unlink';
     lastSync: number; // timestamp
   };
 }
@@ -89,7 +89,7 @@ export function updateMappingEntry(
   businessObjectsDirectory: string,
   prismaModelName: string,
   businessObjectId: string,
-  action: 'skip' | 'update' | 'create' | 'delete'
+  action: 'skip' | 'update' | 'create' | 'delete' | 'link' | 'unlink'
 ): void {
   logger.info('Updating mapping entry', { 
     businessObjectsDirectory, 

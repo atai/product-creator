@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState, FormEvent, useRef } from 'react';
 import { Project, AppEntity } from '@pc/core/types';
 import { useRoots } from '@/hooks/useRoots';
 import type { MatchedObject, SyncAction as SyncActionType } from '@pc/core/sync/matcher';
-import type { MatchedFunction } from '@pc/core/sync/codeMatcher';
+import type { MatchedFunction, SyncAction as CodeSyncAction } from '@pc/core/sync/codeMatcher';
+
+/** Actions of the schema sync and of the code sync (link / unlink, PRODUCTCREATOR-30) */
+type AnySyncAction = SyncActionType | CodeSyncAction;
 
 /** Shape of the JSON returned by the sync start/status endpoints */
 interface SyncApiResponse {
@@ -74,7 +77,7 @@ export default function ProjectsManagementPage() {
   const [matchedObjects, setMatchedObjects] = useState<MatchedObject[]>([]);
   const [matchedFunctions, setMatchedFunctions] = useState<MatchedFunction[]>([]);
   const [syncType, setSyncType] = useState<'schema' | 'code'>('schema');
-  const [syncActions, setSyncActions] = useState<Record<string, 'skip' | 'update' | 'create' | 'delete'>>({});
+  const [syncActions, setSyncActions] = useState<Record<string, AnySyncAction>>({});
   const [syncSearchQuery, setSyncSearchQuery] = useState<string>('');
   const [syncStatusFilter, setSyncStatusFilter] = useState<string>('all');
 
@@ -432,7 +435,7 @@ export default function ProjectsManagementPage() {
         if (data.matchedFunctions && Array.isArray(data.matchedFunctions)) {
           setMatchedFunctions(data.matchedFunctions);
           // Initialize actions from matched functions
-          const actions: Record<string, 'skip' | 'update' | 'create' | 'delete'> = {};
+          const actions: Record<string, AnySyncAction> = {};
           data.matchedFunctions.forEach((func: MatchedFunction) => {
             const key = `${func.exportedFunction.relativePath}:${func.exportedFunction.name}`;
             actions[key] = func.action;
@@ -493,7 +496,7 @@ export default function ProjectsManagementPage() {
         if (data.matchedObjects) {
           setMatchedObjects(data.matchedObjects);
           // Initialize actions from matched objects
-          const actions: Record<string, 'skip' | 'update' | 'create' | 'delete'> = {};
+          const actions: Record<string, AnySyncAction> = {};
           data.matchedObjects.forEach((obj: MatchedObject) => {
             actions[obj.prismaModel.name] = obj.action;
           });
@@ -524,7 +527,7 @@ export default function ProjectsManagementPage() {
     poll();
   };
 
-  const handleSyncActionChange = async (key: string, action: 'skip' | 'update' | 'create' | 'delete') => {
+  const handleSyncActionChange = async (key: string, action: AnySyncAction) => {
     if (!syncApp || !syncId) return;
     
     setSyncActions((prev) => ({ ...prev, [key]: action }));
@@ -1095,10 +1098,21 @@ export default function ProjectsManagementPage() {
                         className="px-3 py-2 border border-border-strong rounded text-sm"
                       >
                         <option value="all">Все статусы</option>
-                        <option value="new">Новый</option>
-                        <option value="matched">Сопоставлен</option>
-                        <option value="needs_matching">Нужно сопоставить</option>
-                        <option value="delete">Удалить</option>
+                        {syncType === 'code' ? (
+                          <>
+                            <option value="proposed">Предложена связь</option>
+                            <option value="linked">Связана</option>
+                            <option value="candidate">Кандидат (нет фичи)</option>
+                            <option value="stale">Файл удалён</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="new">Новый</option>
+                            <option value="matched">Сопоставлен</option>
+                            <option value="needs_matching">Нужно сопоставить</option>
+                            <option value="delete">Удалить</option>
+                          </>
+                        )}
                       </select>
                     </div>
 
@@ -1111,9 +1125,9 @@ export default function ProjectsManagementPage() {
                             <tr>
                               {syncType === 'code' ? (
                                 <>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Функция</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Функция в коде</th>
                                   <th className="px-4 py-2 text-left font-semibold text-fg-2">Файл</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Функция в YAML</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Фича</th>
                                   <th className="px-4 py-2 text-left font-semibold text-fg-2">Статус</th>
                                   <th className="px-4 py-2 text-left font-semibold text-fg-2">Действие</th>
                                 </>
@@ -1153,32 +1167,33 @@ export default function ProjectsManagementPage() {
                                         {func.functionCard ? (
                                           <span className="text-fg-2">{func.functionCard.name} ({func.functionCard.id})</span>
                                         ) : (
-                                          <span className="text-meta">—</span>
+                                          <span className="text-meta" title="create would use this id">— {func.functionId && <span className="font-mono text-xs">({func.functionId})</span>}</span>
                                         )}
+                                        {func.reason && <div className="text-xs text-meta">{func.reason}</div>}
                                       </td>
                                       <td className="px-4 py-2">
                                         <span className={`px-2 py-1 rounded text-xs ${
-                                          func.status === 'new' ? 'bg-success-muted text-success-fg' :
-                                          func.status === 'matched' ? 'bg-accent-muted text-accent-fg' :
-                                          func.status === 'needs_matching' ? 'bg-warn-muted text-warn-fg' :
+                                          func.status === 'proposed' ? 'bg-warn-muted text-warn-fg' :
+                                          func.status === 'linked' ? 'bg-accent-muted text-accent-fg' :
+                                          func.status === 'candidate' ? 'bg-surface-muted text-fg' :
                                           'bg-danger-soft text-danger-fg-strong'
                                         }`}>
-                                          {func.status === 'new' ? 'Новый' :
-                                           func.status === 'matched' ? 'Сопоставлен' :
-                                           func.status === 'needs_matching' ? 'Нужно сопоставить' :
-                                           'Удалить'}
+                                          {func.status === 'proposed' ? 'Предложена связь' :
+                                           func.status === 'linked' ? 'Связана' :
+                                           func.status === 'candidate' ? 'Кандидат' :
+                                           'Файл удалён'}
                                         </span>
                                       </td>
                                       <td className="px-4 py-2">
                                         <select
                                           value={syncActions[key] || func.action}
-                                          onChange={(e) => handleSyncActionChange(key, e.target.value as SyncActionType)}
+                                          onChange={(e) => handleSyncActionChange(key, e.target.value as CodeSyncAction)}
                                           className="px-2 py-1 border border-border-strong rounded text-xs"
                                         >
                                           <option value="skip">Пропустить</option>
-                                          <option value="update">Обновить</option>
-                                          <option value="create">Создать</option>
-                                          <option value="delete">Удалить</option>
+                                          {func.functionCard && func.status !== 'stale' && <option value="link">Связать с фичей</option>}
+                                          {!func.functionCard && <option value="create">Создать фичу</option>}
+                                          {func.status === 'stale' && <option value="unlink">Снять связь (source_file)</option>}
                                         </select>
                                       </td>
                                     </tr>

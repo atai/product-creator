@@ -1,280 +1,150 @@
 import { ExportedFunction } from '../code/types';
-import { FunctionCard } from '../types';
+import { Feature } from '../types';
 import { SyncMapping } from './mappingStorage';
-import logger from '../logger';
 
 /**
- * Action types for sync operations
+ * Code sync (PRODUCTCREATOR-30): code functions are the implementation of features, not features themselves.
+ * The sync links exported code functions to existing features (`source_file`, `calls`) and lists the rest as
+ * candidates; it does not create a feature per exported function unless asked to (action `create`).
+ *
+ *   linked     the feature already points to this code (source_file) — skip
+ *   proposed   an existing feature matches (mapping, same file + name, or name ↔ entity/action) — link
+ *   candidate  no feature matches — skip by default; create a feature or link it by hand
+ *   stale      a feature points to a file that is no longer in the code base — skip by default; unlink clears source_file
  */
-export type SyncAction = 'skip' | 'update' | 'create' | 'delete';
+export type SyncAction = 'skip' | 'link' | 'create' | 'unlink' | 'update' | 'delete';
 
-/**
- * Status of a matched function
- */
-export type MatchStatus = 'new' | 'matched' | 'needs_matching' | 'delete';
+/** Actions accepted by the sync routes; `update` and `delete` are the old names of `link` and `unlink` */
+export const CODE_SYNC_ACTIONS: SyncAction[] = ['skip', 'link', 'create', 'unlink', 'update', 'delete'];
 
-/**
- * Result of matching an exported function with existing function cards
- */
+export const normalizeCodeAction = (action: SyncAction): 'skip' | 'link' | 'create' | 'unlink' =>
+  action === 'update' ? 'link' : action === 'delete' ? 'unlink' : action;
+
+export type MatchStatus = 'linked' | 'proposed' | 'candidate' | 'stale';
+
 export interface MatchedFunction {
   exportedFunction: ExportedFunction;
-  functionCard?: FunctionCard;
+  /** The feature this code function implements (linked / proposed / stale) */
+  functionCard?: Feature;
   action: SyncAction;
   status: MatchStatus;
+  /** Feature id: the matched one, or the id `create` would use */
   functionId?: string;
-  changes?: string[]; // List of changed fields
+  /** Why the feature was proposed */
+  reason?: string;
+  changes?: string[];
 }
 
-/**
- * Match exported functions with existing function cards
- */
+/** Compact key for name matching: `createOrder`, `create_order`, `Create order` → `createorder` */
+export const nameKey = (value?: string | null): string => (value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/** One id part matching ^[a-z0-9_]+$: `useEntityForm` → `use_entity_form`, `[id]` → `id` */
+export function idPart(value: string, fallback = 'default'): string {
+  const part = value
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+  return part || fallback;
+}
+
+const SKIP_DIRS = new Set(['src', 'lib', 'app', 'index', 'renderer', 'main']);
+
+/** Feature id for `create`: <folder>.<file>.<function>, every part sanitised to the id pattern */
+export function suggestFeatureId(fn: ExportedFunction): { id: string; bounded_context: string; entity: string; action: string } {
+  const parts = fn.relativePath
+    .replace(/\.(c|m)?[jt]sx?$/, '')
+    .split(/[/\\]/)
+    .filter((p) => p && !SKIP_DIRS.has(p.toLowerCase()));
+  const entity = idPart(parts[parts.length - 1] ?? 'default');
+  const bounded_context = idPart(parts.length > 1 ? parts[parts.length - 2] : parts[0] ?? 'default');
+  const action = idPart(fn.name || 'default');
+  return { id: `${bounded_context}.${entity}.${action}`, bounded_context, entity, action };
+}
+
+const sameFile = (a?: string, b?: string) => Boolean(a && b && a.replace(/\\/g, '/').toLowerCase() === b.replace(/\\/g, '/').toLowerCase());
+
+/** Does the feature describe this code function? (name, action, action+entity, entity+action) */
+function nameMatches(fn: ExportedFunction, f: Feature): boolean {
+  const key = nameKey(fn.name);
+  if (!key) return false;
+  return [f.name, f.action, `${f.action}${f.entity}`, `${f.entity}${f.action}`].some((v) => nameKey(v) === key);
+}
+
 export function matchCodeToFunctions(
   exportedFunctions: ExportedFunction[],
-  existingFunctions: FunctionCard[],
+  existingFeatures: Feature[],
   mapping: SyncMapping,
-  _functionsDirectory: string
+  _featuresDirectory?: string,
+  /** All analysed source files (relative); default: the files of the exported functions */
+  sourceFiles?: string[]
 ): MatchedFunction[] {
   const matched: MatchedFunction[] = [];
-  const usedFunctionIds = new Set<string>();
+  const used = new Set<string>();
+  const byId = new Map(existingFeatures.map((f) => [f.id, f]));
+  const codeFiles = new Set((sourceFiles ?? exportedFunctions.map((fn) => fn.relativePath)).map((file) => file.replace(/\\/g, '/').toLowerCase()));
 
-  const normalizeKey = (value?: string | null): string | null => {
-    if (!value || typeof value !== 'string') return null;
-    return value.toLowerCase();
+  const linked = (fn: ExportedFunction, f: Feature, reason: string): MatchedFunction => {
+    used.add(f.id);
+    const already = sameFile(f.source_file, fn.relativePath);
+    return {
+      exportedFunction: fn,
+      functionCard: f,
+      functionId: f.id,
+      status: already ? 'linked' : 'proposed',
+      action: already ? 'skip' : 'link',
+      reason,
+      changes: already ? undefined : [`source_file: ${f.source_file ?? '(none)'} → ${fn.relativePath}`],
+    };
   };
 
-  // Create a map of existing functions by name and id for quick lookup
-  const functionsByName = new Map<string, FunctionCard>();
-  const functionsById = new Map<string, FunctionCard>();
-  const functionsBySourceFile = new Map<string, FunctionCard>();
-
-  existingFunctions.forEach((func) => {
-    const normalizedName = normalizeKey(func.name);
-    const normalizedId = normalizeKey(func.id);
-    const normalizedSource = normalizeKey(func.source_file);
-
-    if (normalizedName) {
-      functionsByName.set(normalizedName, func);
-    } else {
-      logger.warn('Function without name encountered during matching', { id: func.id });
-    }
-
-    if (normalizedId) {
-      functionsById.set(normalizedId, func);
-    } else {
-      logger.warn('Function without ID encountered during matching', { name: func.name });
-    }
-
-    if (normalizedSource) {
-      functionsBySourceFile.set(normalizedSource, func);
-    }
-  });
-
-  // Match each exported function
-  for (const exportedFunc of exportedFunctions) {
-    const funcName = normalizeKey(exportedFunc.name);
-    if (!funcName) {
-      logger.warn('Exported function without name encountered', { relativePath: exportedFunc.relativePath });
+  // 1. previous syncs (mapping) and features already pointing to the file
+  const pending: ExportedFunction[] = [];
+  for (const fn of exportedFunctions) {
+    if (!fn.name) continue;
+    const entry = mapping[`${fn.relativePath}:${fn.name}`];
+    const fromMapping = entry ? byId.get(entry.businessObjectId) : undefined;
+    if (fromMapping && !used.has(fromMapping.id)) {
+      matched.push(linked(fn, fromMapping, 'linked by an earlier sync'));
       continue;
     }
-    let matchedFunction: FunctionCard | undefined;
-    let action: SyncAction = 'create';
-    let status: MatchStatus = 'new';
-    let functionId: string | undefined;
-
-    // Try to generate function ID from file path and function name
-    // Format: context.entity.action
-    const generatedId = generateFunctionId(exportedFunc);
-
-    // Check mapping first (for repeated syncs)
-    const mappingKey = `${exportedFunc.relativePath}:${exportedFunc.name}`;
-    const mappingEntry = mapping[mappingKey];
-    if (mappingEntry) {
-      functionId = mappingEntry.businessObjectId; // Reusing the same mapping structure
-      const normalizedMappingId = normalizeKey(functionId);
-      matchedFunction = normalizedMappingId ? functionsById.get(normalizedMappingId) : undefined;
-      
-      if (matchedFunction) {
-        usedFunctionIds.add(matchedFunction.id);
-        action = mappingEntry.action as SyncAction;
-        status = action === 'skip' ? 'matched' : 'needs_matching';
-      }
+    const inFile = existingFeatures.find((f) => !used.has(f.id) && sameFile(f.source_file, fn.relativePath) && nameMatches(fn, f));
+    if (inFile) {
+      matched.push(linked(fn, inFile, 'same file and name'));
+      continue;
     }
+    pending.push(fn);
+  }
 
-    // If not found in mapping, try to match by source file
-    if (!matchedFunction && exportedFunc.relativePath) {
-      const normalizedPath = normalizeKey(exportedFunc.relativePath);
-      matchedFunction = normalizedPath ? functionsBySourceFile.get(normalizedPath) : undefined;
-      if (matchedFunction) {
-        // Check if function name matches
-        const normalizedMatchedName = normalizeKey(matchedFunction.name);
-        if (normalizedMatchedName === funcName) {
-          usedFunctionIds.add(matchedFunction.id);
-          functionId = matchedFunction.id;
-          
-          // Check if function has changed
-          const hasChanges = hasFunctionChanged(exportedFunc, matchedFunction);
-          action = hasChanges ? 'update' : 'skip';
-          status = hasChanges ? 'needs_matching' : 'matched';
-        } else {
-          matchedFunction = undefined;
-        }
-      }
+  // 2. features without code yet whose name or entity/action matches the code function
+  for (const fn of pending) {
+    const candidates = existingFeatures.filter((f) => !used.has(f.id) && !f.source_file && nameMatches(fn, f));
+    if (candidates.length === 1) {
+      matched.push(linked(fn, candidates[0], 'name matches the feature name or entity/action'));
+      continue;
     }
-
-    // Try matching by generated ID
-    if (!matchedFunction && generatedId) {
-      const normalizedGeneratedId = normalizeKey(generatedId);
-      matchedFunction = normalizedGeneratedId ? functionsById.get(normalizedGeneratedId) : undefined;
-      if (matchedFunction) {
-        usedFunctionIds.add(matchedFunction.id);
-        functionId = matchedFunction.id;
-        
-        const hasChanges = hasFunctionChanged(exportedFunc, matchedFunction);
-        action = hasChanges ? 'update' : 'skip';
-        status = hasChanges ? 'needs_matching' : 'matched';
-      }
-    }
-
-    // Try matching by name
-    if (!matchedFunction) {
-      matchedFunction = functionsByName.get(funcName);
-      if (matchedFunction) {
-        usedFunctionIds.add(matchedFunction.id);
-        functionId = matchedFunction.id;
-        
-        const hasChanges = hasFunctionChanged(exportedFunc, matchedFunction);
-        action = hasChanges ? 'update' : 'skip';
-        status = hasChanges ? 'needs_matching' : 'matched';
-      }
-    }
-
-    // If still no match, use generated ID
-    if (!functionId && generatedId) {
-      functionId = generatedId;
-    }
-
-    // Determine changes if updating
-    const changes = matchedFunction && action === 'update'
-      ? getFunctionChanges(exportedFunc, matchedFunction)
-      : undefined;
-
+    const suggestion = suggestFeatureId(fn);
     matched.push({
-      exportedFunction: exportedFunc,
-      functionCard: matchedFunction,
-      action,
-      status,
-      functionId,
-      changes,
+      exportedFunction: fn,
+      status: 'candidate',
+      action: 'skip',
+      functionId: suggestion.id,
+      reason: candidates.length > 1 ? `several features match: ${candidates.map((f) => f.id).join(', ')}` : 'no feature describes this code function',
     });
   }
 
-  // Find functions that should be deleted (exist but not in code)
-  // Only delete if they were synced from code before (have source_file)
-  const existingCodeFunctions = existingFunctions.filter(
-    (func) => func.source_file && !usedFunctionIds.has(func.id)
-  );
-
-  for (const func of existingCodeFunctions) {
-    // Check if this function was synced from code before
-    const wasSynced = Object.values(mapping).some(
-      (entry) => entry.businessObjectId === func.id
-    );
-
-    if (wasSynced || func.source_file) {
-      matched.push({
-        exportedFunction: {
-          name: func.name,
-          filePath: '',
-          relativePath: func.source_file || '',
-          lineNumber: 0,
-          isDefault: false,
-          isAsync: false,
-          parameters: [],
-        },
-        functionCard: func,
-        action: 'delete',
-        status: 'delete',
-        functionId: func.id,
-      });
-    }
+  // 3. features that point to a file which is not in the code base any more
+  for (const f of existingFeatures) {
+    if (!f.source_file || used.has(f.id) || codeFiles.has(f.source_file.replace(/\\/g, '/').toLowerCase())) continue;
+    matched.push({
+      exportedFunction: { name: f.name, filePath: '', relativePath: f.source_file, lineNumber: 0, isDefault: false, isAsync: false, parameters: [] },
+      functionCard: f,
+      functionId: f.id,
+      status: 'stale',
+      action: 'skip',
+      reason: `${f.source_file} is not in the code base`,
+    });
   }
-
   return matched;
 }
-
-/**
- * Generate function ID from exported function
- * Format: context.entity.action
- * Tries to extract from file path structure
- */
-function generateFunctionId(exportedFunc: ExportedFunction): string | null {
-  // Try to extract from file path: e.g., src/context/entity/action.ts -> context.entity.action
-  const pathParts = exportedFunc.relativePath
-    .replace(/\.ts$/, '')
-    .split(/[/\\]/)
-    .filter((p) => p && p !== 'src' && p !== 'lib' && p !== 'app');
-
-  if (pathParts.length >= 3) {
-    // Assume format: context/entity/action.ts
-    const context = pathParts[pathParts.length - 3];
-    const entity = pathParts[pathParts.length - 2];
-    const action = pathParts[pathParts.length - 1];
-    return `${context}.${entity}.${action}`;
-  } else if (pathParts.length === 2) {
-    // Format: context/entity.ts, use function name as action
-    const context = pathParts[pathParts.length - 2];
-    const entity = pathParts[pathParts.length - 1];
-    const action = exportedFunc.name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-    return `${context}.${entity}.${action}`;
-  } else if (pathParts.length === 1) {
-    // Single level, try to split filename
-    const fileName = pathParts[0];
-    const parts = fileName.split('.');
-    if (parts.length >= 2) {
-      return parts.join('.');
-    }
-  }
-
-  // Fallback: use function name and try to infer
-  // Try camelCase to dot notation: createUser -> create.user (if entity can be inferred)
-  // For now, return null and let the system generate a default
-  return null;
-}
-
-/**
- * Check if a function has changed compared to exported function
- */
-function hasFunctionChanged(exportedFunc: ExportedFunction, functionCard: FunctionCard): boolean {
-  // Compare source file
-  if (exportedFunc.relativePath !== functionCard.source_file) {
-    return true;
-  }
-
-  // Compare name
-  if (exportedFunc.name !== functionCard.name) {
-    return true;
-  }
-
-  // Note: We don't compare body text as it changes frequently
-  // We mainly care about structural changes (name, file location)
-
-  return false;
-}
-
-/**
- * Get list of changed fields between exported function and function card
- */
-function getFunctionChanges(exportedFunc: ExportedFunction, functionCard: FunctionCard): string[] {
-  const changes: string[] = [];
-
-  if (exportedFunc.relativePath !== functionCard.source_file) {
-    changes.push(`Source file changed: ${functionCard.source_file} → ${exportedFunc.relativePath}`);
-  }
-
-  if (exportedFunc.name !== functionCard.name) {
-    changes.push(`Name changed: ${functionCard.name} → ${exportedFunc.name}`);
-  }
-
-  return changes;
-}
-

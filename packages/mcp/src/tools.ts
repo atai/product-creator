@@ -143,7 +143,7 @@ function syncItems(kind: 'sync-code' | 'sync-schema', state: Rec): SyncItem[] {
   if (kind === 'sync-code') {
     return ((state.matchedFunctions as Rec[]) ?? []).map((m) => {
       const ef = (m.exportedFunction ?? {}) as Rec;
-      return { key: `${ef.relativePath}:${ef.name}`, name: String(ef.name), file: String(ef.relativePath), status: m.status, action: m.action, id: m.functionId, changes: m.changes };
+      return { key: `${ef.relativePath}:${ef.name}`, name: String(ef.name), file: String(ef.relativePath), status: m.status, action: m.action, id: m.functionId, reason: m.reason, changes: m.changes };
     });
   }
   return ((state.matchedObjects as Rec[]) ?? []).map((m) => {
@@ -166,27 +166,38 @@ async function syncPreview(host: McpHost, component: ComponentModel, kind: 'sync
   return { syncId: start.syncId, total: items.length, plannedActions: countBy(items), items: items.slice(0, limit), truncated: items.length > limit };
 }
 
-async function syncApply(host: McpHost, component: ComponentModel, kind: 'sync-code' | 'sync-schema', allowDelete: boolean) {
+async function syncApply(host: McpHost, component: ComponentModel, kind: 'sync-code' | 'sync-schema', allowDelete: boolean, create: string[] = []) {
   const start = (await api(host, 'POST', `/api/apps/${component.id}/${kind}/start`, {})) as { syncId?: string };
   if (!start.syncId) throw new ToolError('Sync did not start');
   const state = await pollSync(host, component.id, kind, start.syncId, ['matching']);
   const items = syncItems(kind, state);
   const overrides: Record<string, string> = {};
   let skippedDeletes = 0;
-  if (!allowDelete) {
-    for (const i of items) {
-      if (i.action === 'delete') {
-        overrides[i.key] = 'skip';
-        skippedDeletes++;
-      }
+  for (const i of items) {
+    if (kind === 'sync-code' && i.status === 'stale') {
+      // features whose code file is gone: unlink only when allowed
+      if (allowDelete) overrides[i.key] = 'unlink';
+      else skippedDeletes++;
+    } else if (!allowDelete && (i.action === 'delete' || i.action === 'unlink')) {
+      overrides[i.key] = 'skip';
+      skippedDeletes++;
     }
   }
+  // code sync: create features only for the candidates named by the caller (PRODUCTCREATOR-30)
+  const unknown = create.filter((key) => !items.some((i) => i.key === key && i.status === 'candidate'));
+  if (unknown.length) throw new ToolError(`Not candidates of this sync (see sync_code_preview): ${unknown.join(', ')}`);
+  for (const key of create) overrides[key] = 'create';
   await api(host, 'POST', `/api/apps/${component.id}/${kind}/actions`, { syncId: start.syncId, actions: overrides });
   await api(host, 'POST', `/api/apps/${component.id}/${kind}/execute`, { syncId: start.syncId });
   await pollSync(host, component.id, kind, start.syncId, ['completed']);
   await host.changed?.();
-  const applied = items.filter((i) => overrides[i.key] === undefined);
-  return { syncId: start.syncId, applied: countBy(applied), skippedDeletes, note: skippedDeletes ? 'delete actions were skipped; pass allow_delete=true to apply them' : undefined };
+  const applied = items.map((i) => ({ ...i, action: overrides[i.key] ?? i.action })).filter((i) => i.action !== 'skip');
+  return {
+    syncId: start.syncId,
+    applied: countBy(applied),
+    skippedDeletes,
+    note: skippedDeletes ? `${kind === 'sync-code' ? 'unlink' : 'delete'} actions were skipped; pass ${kind === 'sync-code' ? 'allow_unlink' : 'allow_delete'}=true to apply them` : undefined,
+  };
 }
 
 /** Model checks are global; tools report the entries of one project, with component slugs instead of ids */
@@ -437,7 +448,8 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     'sync_code_preview',
     {
       title: 'Preview code sync',
-      description: 'Analyse the code base of a component and match exported code functions with catalog features. Nothing is written; returns what sync_code_apply would do.',
+      description:
+        'Analyse the code base of a component and match exported code functions with catalog features (code functions implement features; they are not features). Status per code function: linked (feature already points to it), proposed (an existing feature matches by mapping, file+name or name/entity/action; action link sets its source_file and calls), candidate (no feature; skipped unless sync_code_apply gets it in `create`, or link it yourself with update_catalog_entry source_file), stale (feature points to a file that is gone; unlink clears source_file). Nothing is written.',
       input: { project: projectArg, component: componentArg, limit: z.number().int().min(1).max(MAX_LIST).optional() },
     },
     async ({ project, component, limit }) => {
@@ -522,10 +534,18 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Sync catalog from code',
       write: true,
-      description: 'Run the code sync with the matcher\'s default actions (create/update features from exported code functions, set source_file). Deletions are skipped unless allow_delete is true. Run sync_code_preview first.',
-      input: { project: projectArg, component: componentArg, allow_delete: z.boolean().optional() },
+      description:
+        'Apply the code sync: link proposed code functions to their features (source_file, calls). Candidates are not turned into features unless their keys (`<file>:<name>` from sync_code_preview) are listed in `create`. Stale links are kept unless allow_unlink is true. Features are never marked removed. Run sync_code_preview first.',
+      input: {
+        project: projectArg,
+        component: componentArg,
+        create: z.array(z.string()).max(500).optional().describe('Keys of candidate code functions to create draft features for'),
+        allow_unlink: z.boolean().optional().describe('Clear source_file of stale features'),
+        allow_delete: z.boolean().optional().describe('Old name of allow_unlink'),
+      },
     },
-    async ({ project, component, allow_delete }) => syncApply(host, resolveComponent(resolveProject(host, project), component), 'sync-code', allow_delete === true)
+    async ({ project, component, create, allow_unlink, allow_delete }) =>
+      syncApply(host, resolveComponent(resolveProject(host, project), component), 'sync-code', allow_unlink === true || allow_delete === true, create ?? [])
   );
 
   define(

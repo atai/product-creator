@@ -1,5 +1,5 @@
 import { getCodeSyncState, updateCodeSyncState } from '../../../../../../sync/codeSyncService';
-import { SyncAction } from '../../../../../../sync/codeMatcher';
+import { CODE_SYNC_ACTIONS, SyncAction } from '../../../../../../sync/codeMatcher';
 import logger from '../../../../../../logger';
 
 /**
@@ -46,7 +46,7 @@ export async function POST(
     // Convert actions object to Map
     const actionsMap = new Map<string, SyncAction>();
     Object.entries(actions).forEach(([key, value]) => {
-      if (['skip', 'update', 'create', 'delete'].includes(value as string)) {
+      if (CODE_SYNC_ACTIONS.includes(value as SyncAction)) {
         actionsMap.set(key, value as SyncAction);
       }
     });
@@ -94,9 +94,9 @@ export async function PUT(
       );
     }
 
-    if (!action || !['skip', 'update', 'create', 'delete'].includes(action)) {
+    if (!action || !CODE_SYNC_ACTIONS.includes(action)) {
       return Response.json(
-        { error: 'Invalid action. Must be one of: skip, update, create, delete' },
+        { error: `Invalid action. Must be one of: ${CODE_SYNC_ACTIONS.join(', ')}` },
         { status: 400 }
       );
     }

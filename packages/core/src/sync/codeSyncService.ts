@@ -1,7 +1,7 @@
 import { analyzeCode, findTypeScriptFiles } from '../code/parser';
 import { CodeAnalysisResult, ExportedFunction } from '../code/types';
-import { FunctionCard } from '../types';
-import { matchCodeToFunctions, MatchedFunction, SyncAction } from './codeMatcher';
+import { Feature } from '../types';
+import { matchCodeToFunctions, MatchedFunction, normalizeCodeAction, suggestFeatureId, SyncAction } from './codeMatcher';
 import { loadSyncMapping, saveSyncMapping, updateMappingEntry } from './mappingStorage';
 import { getStorage } from '../storage';
 import * as path from 'path';
@@ -254,7 +254,7 @@ export class CodeSyncService {
       });
 
       const storage = await getStorage();
-      const existingFunctions = storage.getAll().filter((func) => {
+      const existingFunctions = storage.getAllFeatures().filter((func) => {
         // Filter by app directory
         const filePath = storage.getFilePathById(func.id);
         if (!filePath) return false;
@@ -288,7 +288,8 @@ export class CodeSyncService {
         analysisResult.allExportedFunctions,
         existingFunctions,
         mapping,
-        this.functionsDirectory
+        this.functionsDirectory,
+        analysisResult.files.map((f) => f.relativePath)
       );
 
       logger.info('Functions matched', {
@@ -312,7 +313,8 @@ export class CodeSyncService {
   }
 
   /**
-   * Execute sync actions
+   * Execute sync actions (PRODUCTCREATOR-30): link sets the feature's source_file and calls, create adds a feature for a
+   * candidate, unlink clears source_file of a stale feature. Features are never marked removed by the sync.
    */
   async executeSync(
     matchedFunctions: MatchedFunction[],
@@ -321,252 +323,87 @@ export class CodeSyncService {
     progressCallback?: ProgressCallback
   ): Promise<void> {
     try {
-      await getStorage();
+      const storage = await getStorage();
       const total = matchedFunctions.length;
-      let current = 0;
+      const keyOf = (m: MatchedFunction) => `${m.exportedFunction.relativePath}:${m.exportedFunction.name}`;
+      const actionOf = (m: MatchedFunction) => normalizeCodeAction(actions.get(keyOf(m)) || m.action);
 
+      // code function name → feature it implements after this sync (for calls)
+      const implementedBy = new Map<string, string>();
+      for (const m of matchedFunctions) {
+        const action = actionOf(m);
+        if (m.status === 'stale') continue;
+        if (action === 'create' && m.functionId) implementedBy.set(m.exportedFunction.name, suggestFeatureId(m.exportedFunction).id);
+        else if (m.functionCard && (action === 'link' || (action === 'skip' && m.status === 'linked'))) implementedBy.set(m.exportedFunction.name, m.functionCard.id);
+      }
+      const callsOf = (fn: ExportedFunction, self: string) =>
+        [...new Set((analysisResult.functionDependencies.get(fn.name) ?? []).map((n) => implementedBy.get(n)).filter((id): id is string => Boolean(id) && id !== self))];
+
+      let current = 0;
       for (const matched of matchedFunctions) {
         const functionName = matched.exportedFunction.name;
-        const mappingKey = `${matched.exportedFunction.relativePath}:${functionName}`;
-        const action = actions.get(mappingKey) || matched.action;
-
+        const mappingKey = keyOf(matched);
+        const action = actionOf(matched);
         current++;
-        progressCallback?.({
-          stage: 'executing',
-          current,
-          total,
-          message: `Processing ${functionName} (${action})...`,
-        });
+        progressCallback?.({ stage: 'executing', current, total, message: `Processing ${functionName} (${action})...` });
 
         try {
-          switch (action) {
-            case 'create':
-              await this.createFunction(matched.exportedFunction, analysisResult);
-              updateMappingEntry(
-                this.functionsDirectory,
-                mappingKey,
-                matched.functionId ||
-                  this.generateFunctionId(matched.exportedFunction) ||
-                  this.generateDefaultId(matched.exportedFunction),
-                'create'
-              );
-              break;
-
-            case 'update':
-              if (matched.functionCard) {
-                await this.updateFunction(matched.exportedFunction, matched.functionCard, analysisResult);
-                updateMappingEntry(
-                  this.functionsDirectory,
-                  mappingKey,
-                  matched.functionCard.id,
-                  'update'
-                );
-              }
-              break;
-
-            case 'delete':
-              if (matched.functionCard) {
-                await this.deleteFunction(matched.functionCard);
-                // Remove from mapping
-                const mapping = loadSyncMapping(this.functionsDirectory);
-                delete mapping[mappingKey];
-                saveSyncMapping(this.functionsDirectory, mapping);
-              }
-              break;
-
-            case 'skip':
-              // No action needed, but update lastSync timestamp
-              if (matched.functionCard) {
-                updateMappingEntry(
-                  this.functionsDirectory,
-                  mappingKey,
-                  matched.functionCard.id,
-                  'skip'
-                );
-              }
-              break;
+          if (action === 'link' && matched.functionCard) {
+            const f = matched.functionCard;
+            const calls = [...new Set([...(f.calls ?? []), ...callsOf(matched.exportedFunction, f.id)])];
+            await this.saveFeature(storage, { ...f, source_file: matched.exportedFunction.relativePath, ...(calls.length ? { calls } : {}) });
+            updateMappingEntry(this.functionsDirectory, mappingKey, f.id, 'link');
+          } else if (action === 'create' && !matched.functionCard) {
+            const feature = this.featureFromCode(matched.exportedFunction, callsOf(matched.exportedFunction, suggestFeatureId(matched.exportedFunction).id));
+            if (storage.getFeatureById(feature.id)) throw new Error(`Feature ${feature.id} already exists; link it instead`);
+            await this.saveFeature(storage, feature);
+            updateMappingEntry(this.functionsDirectory, mappingKey, feature.id, 'create');
+          } else if (action === 'unlink' && matched.functionCard) {
+            const { source_file: _file, ...rest } = matched.functionCard;
+            await this.saveFeature(storage, rest);
+            const mapping = loadSyncMapping(this.functionsDirectory);
+            for (const [key, entry] of Object.entries(mapping)) if (entry.businessObjectId === matched.functionCard.id) delete mapping[key];
+            saveSyncMapping(this.functionsDirectory, mapping);
+          } else if (action === 'skip' && matched.functionCard && matched.status === 'linked') {
+            updateMappingEntry(this.functionsDirectory, mappingKey, matched.functionCard.id, 'skip');
           }
         } catch (error) {
-          logger.error(`Failed to ${action} function ${functionName}`, { error });
+          logger.error(`Failed to ${action} code function ${functionName}`, { error });
           // Continue with next function
         }
       }
 
-      progressCallback?.({
-        stage: 'completed',
-        current: total,
-        total,
-        message: 'Synchronization completed',
-      });
+      progressCallback?.({ stage: 'completed', current: total, total, message: 'Synchronization completed' });
     } catch (error) {
       logger.error('Failed to execute sync', { error, appId: this.appId });
       throw error;
     }
   }
 
-  /**
-   * Create function card from exported function
-   */
-  private async createFunction(
-    exportedFunc: ExportedFunction,
-    analysisResult: CodeAnalysisResult
-  ): Promise<void> {
-    try {
-      const storage = await getStorage();
-      const functionCard = this.convertExportedFunctionToFunctionCard(exportedFunc, analysisResult);
-      const result = await storage.save(functionCard, this.functionsDirectory);
-      if (!result.success) {
-        throw new Error(result.error || `Failed to save function ${functionCard.id}`);
-      }
-    } catch (error) {
-      logger.error(`Failed to create function from exported function ${exportedFunc.name}`, { error });
-      throw error;
-    }
+  private async saveFeature(storage: Awaited<ReturnType<typeof getStorage>>, feature: Feature): Promise<void> {
+    const result = await storage.saveFeature(feature, this.functionsDirectory);
+    if (!result.success) throw new Error(result.error || `Failed to save feature ${feature.id}`);
   }
 
-  /**
-   * Update existing function card from exported function
-   */
-  private async updateFunction(
-    exportedFunc: ExportedFunction,
-    existingCard: FunctionCard,
-    analysisResult: CodeAnalysisResult
-  ): Promise<void> {
-    try {
-      const storage = await getStorage();
-      const updatedCard = this.convertExportedFunctionToFunctionCard(exportedFunc, analysisResult, existingCard);
-      const result = await storage.save(updatedCard, this.functionsDirectory);
-      if (!result.success) {
-        throw new Error(result.error || `Failed to update function ${updatedCard.id}`);
-      }
-    } catch (error) {
-      logger.error(`Failed to update function from exported function ${exportedFunc.name}`, { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Delete function (set lifecycle to removed)
-   */
-  private async deleteFunction(functionCard: FunctionCard): Promise<void> {
-    try {
-      const storage = await getStorage();
-      const deletedCard: FunctionCard = {
-        ...functionCard,
-        lifecycle: 'removed',
-      };
-      const result = await storage.save(deletedCard, this.functionsDirectory);
-      if (!result.success) {
-        throw new Error(result.error || `Failed to delete function ${functionCard.id}`);
-      }
-    } catch (error) {
-      logger.error(`Failed to delete function ${functionCard.id}`, { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Convert exported function to Function Card
-   */
-  private convertExportedFunctionToFunctionCard(
-    exportedFunc: ExportedFunction,
-    analysisResult: CodeAnalysisResult,
-    existing?: FunctionCard
-  ): FunctionCard {
-    // Generate ID from file path or use existing
-    const functionId = existing?.id || this.generateFunctionId(exportedFunc) || this.generateDefaultId(exportedFunc);
-    
-    // Extract bounded_context, entity, action from ID or file path
-    const idParts = functionId.split('.');
-    let bounded_context = existing?.bounded_context || idParts[0] || 'default';
-    let entity = existing?.entity || idParts[1] || 'default';
-    let action = existing?.action || idParts[2] || exportedFunc.name.toLowerCase();
-
-    // Try to extract from file path
-    const pathParts = exportedFunc.relativePath.replace(/\.ts$/, '').split(/[/\\]/);
-    if (pathParts.length >= 3) {
-      bounded_context = pathParts[pathParts.length - 3];
-      entity = pathParts[pathParts.length - 2];
-      action = pathParts[pathParts.length - 1];
-    } else if (pathParts.length === 2) {
-      bounded_context = pathParts[pathParts.length - 2];
-      entity = pathParts[pathParts.length - 1];
-      action = exportedFunc.name.toLowerCase();
-    }
-
-    // Get called functions
-    const calledFunctions = analysisResult.functionDependencies.get(exportedFunc.name) || [];
-    // Convert function names to function IDs (if they exist)
-    const calls = calledFunctions
-      .map((funcName) => {
-        // Try to find the function ID
-        const foundFunc = analysisResult.allExportedFunctions.find((f) => f.name === funcName);
-        if (foundFunc) {
-          return this.generateFunctionId(foundFunc) || this.generateDefaultId(foundFunc);
-        }
-        return null;
-      })
-      .filter((id): id is string => id !== null);
-
+  /** A draft feature for a code function (action create); the id follows <bounded_context>.<entity>.<action> */
+  private featureFromCode(fn: ExportedFunction, calls: string[]): Feature {
+    const { id, bounded_context, entity, action } = suggestFeatureId(fn);
     return {
-      id: functionId,
-      name: existing?.name || exportedFunc.name,
+      id,
+      name: fn.name,
       bounded_context,
       entity,
       action,
-      owner: existing?.owner || 'System',
-      lifecycle: existing?.lifecycle || 'draft',
-      description: existing?.description || `Function extracted from ${exportedFunc.relativePath}`,
-      tags: existing?.tags || [],
-      emits: existing?.emits || [],
-      consumes: existing?.consumes || [],
-      apis: existing?.apis || [],
-      calls: calls.length > 0 ? calls : undefined,
-      source_file: exportedFunc.relativePath,
+      owner: 'System',
+      lifecycle: 'draft',
+      description: `Created from the code function ${fn.name} in ${fn.relativePath}`,
+      tags: [],
+      emits: [],
+      consumes: [],
+      apis: [],
+      ...(calls.length ? { calls } : {}),
+      source_file: fn.relativePath,
     };
-  }
-
-  /**
-   * Generate function ID from exported function
-   */
-  private generateFunctionId(exportedFunc: ExportedFunction): string | null {
-    const pathParts = exportedFunc.relativePath
-      .replace(/\.ts$/, '')
-      .split(/[/\\]/)
-      .filter((p) => p && p !== 'src' && p !== 'lib' && p !== 'app');
-
-    if (pathParts.length >= 3) {
-      const context = pathParts[pathParts.length - 3];
-      const entity = pathParts[pathParts.length - 2];
-      const action = pathParts[pathParts.length - 1];
-      return `${context}.${entity}.${action}`;
-    } else if (pathParts.length === 2) {
-      const context = pathParts[pathParts.length - 2];
-      const entity = pathParts[pathParts.length - 1];
-      const action = exportedFunc.name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-      return `${context}.${entity}.${action}`;
-    }
-
-    return null;
-  }
-
-  /**
-   * Generate default ID when path structure doesn't match expected format
-   */
-  private generateDefaultId(exportedFunc: ExportedFunction): string {
-    const funcName = exportedFunc.name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-    const pathParts = exportedFunc.relativePath
-      .replace(/\.ts$/, '')
-      .split(/[/\\]/)
-      .filter((p) => p && p !== 'src' && p !== 'lib' && p !== 'app' && p !== 'index');
-    
-    if (pathParts.length > 0) {
-      const context = pathParts[0] || 'default';
-      const entity = pathParts[pathParts.length - 1] || 'default';
-      return `${context}.${entity}.${funcName}`;
-    }
-    
-    return `default.default.${funcName}`;
   }
 }
 

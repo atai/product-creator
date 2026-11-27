@@ -191,21 +191,43 @@ describe('tools (read-write token)', () => {
     await client.close();
   });
 
-  it('previews a code sync without writing, then applies it', async () => {
-    write('svc/src/orders.ts', 'export function createOrder(id: string) { return id; }\n');
+  it('code sync links code functions to features and creates features only for named candidates (PRODUCTCREATOR-30)', async () => {
+    write('svc/src/orders.ts', 'export function createOrder(id: string) { return confirmOrder(id); }\nexport function confirmOrder(id: string) { return id; }\n');
     const { client } = await connect(bearer());
-    const before = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'feature' } })).total;
-    const preview = json(await client.callTool({ name: 'sync_code_preview', arguments: { project: project.slug, component: 'svc' } }));
-    expect(preview.items.some((i: { name: string; file: string }) => i.name === 'createOrder' && i.file.endsWith('orders.ts'))).toBe(true);
-    const unchanged = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'feature' } })).total;
-    expect(unchanged).toBe(before);
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    const order = { id: 'orders.order.create', name: 'Create order', bounded_context: 'orders', entity: 'order', action: 'create', owner: 'team-a', lifecycle: 'draft' };
+    expect((await call('create_catalog_entry', { component: 'svc', kind: 'feature', data: order })).isError).toBeFalsy();
+    const before = json(await call('list_catalog', { kind: 'feature' })).total;
 
-    const applied = await client.callTool({ name: 'sync_code_apply', arguments: { project: project.slug, component: 'svc' } });
-    expect(applied.isError).toBeFalsy();
-    const after = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'feature', query: 'createOrder' } }));
-    expect(after.total).toBeGreaterThanOrEqual(1);
-    expect(after.items[0].name).toBe('createOrder');
-    expect(after.items[0].source_file).toContain('orders.ts');
+    const preview = json(await call('sync_code_preview', { component: 'svc' }));
+    const byName = Object.fromEntries(preview.items.map((i: { name: string }) => [i.name, i]));
+    expect(byName.createOrder).toMatchObject({ status: 'proposed', action: 'link', id: 'orders.order.create' });
+    expect(byName.confirmOrder).toMatchObject({ status: 'candidate', action: 'skip' });
+    expect(json(await call('list_catalog', { kind: 'feature' })).total).toBe(before);
+
+    const applied = json(await call('sync_code_apply', { component: 'svc' }));
+    expect(applied.applied).toEqual({ link: 1 });
+    expect(json(await call('list_catalog', { kind: 'feature' })).total).toBe(before);
+    const linked = json(await call('get_catalog_entry', { kind: 'feature', id: 'orders.order.create' }));
+    expect(linked.entry.source_file).toContain('orders.ts');
+    expect(linked.entry.lifecycle).toBe('draft');
+
+    const bad = await call('sync_code_apply', { component: 'svc', create: ['nope.ts:x'] });
+    expect(bad.isError).toBe(true);
+    const created = json(await call('sync_code_apply', { component: 'svc', create: [byName.confirmOrder.key] }));
+    expect(created.applied).toEqual({ create: 1 });
+    const confirm = json(await call('list_catalog', { kind: 'feature', query: 'confirmOrder' }));
+    expect(confirm.total).toBe(1);
+    expect(confirm.items[0].id).toMatch(/^[a-z0-9_]+\.[a-z0-9_]+\.confirm_order$/);
+
+    const again = json(await call('sync_code_preview', { component: 'svc' }));
+    // billing.invoice.create points to svc/src/invoice.ts, which does not exist: stale, kept unless allow_unlink
+    expect(again.items.filter((i: { status: string }) => i.status !== 'linked').map((i: { name: string; status: string }) => `${i.status}:${i.name}`)).toEqual(['stale:Create invoice']);
+    expect(json(await call('sync_code_apply', { component: 'svc' })).skippedDeletes).toBe(1);
+    expect(json(await call('sync_code_apply', { component: 'svc', allow_unlink: true })).applied).toEqual({ unlink: 1 });
+    const unlinked = json(await call('get_catalog_entry', { kind: 'feature', id: FN.id }));
+    expect(unlinked.entry.source_file).toBeUndefined();
+    expect(unlinked.entry.lifecycle).not.toBe('removed');
     await client.close();
   });
 
