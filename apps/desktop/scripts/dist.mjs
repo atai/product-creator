@@ -103,7 +103,9 @@ if (missing.length) {
 
 if (!args.some((arg) => arg.startsWith('--publish') || arg === '-p')) args.push('--publish', 'never');
 // Copyright year range: repo created 2022 → year of this build (release year)
-args.push(`--config.copyright=Copyright © 2022-${new Date().getFullYear()} Rustam Atai`);
+const copyright = `--config.copyright=Copyright © 2022-${new Date().getFullYear()} Rustam Atai`;
+// On Windows spawnSync runs through cmd.exe (shell: true), which splits unquoted arguments at spaces
+args.push(process.platform === 'win32' ? `"${copyright}"` : copyright);
 const bin = process.platform === 'win32' ? 'electron-builder.cmd' : 'electron-builder';
 const result = spawnSync(bin, args, { cwd: appDir, stdio: 'inherit', env, shell: process.platform === 'win32' });
 if (result.status !== 0) process.exit(result.status ?? 1);
