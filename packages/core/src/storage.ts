@@ -3,11 +3,13 @@ import * as path from 'path';
 import type { FSWatcher } from 'chokidar';
 import chokidar from 'chokidar';
 import logger from './logger';
-import { FunctionCard, Workflow, Stream, BusinessObject, Project, AppEntity } from './types';
+import { Feature, Workflow, Stream, BusinessObject, Project, AppEntity } from './types';
 import { BaseRepository } from './repository/BaseRepository';
 import { FileSystemAdapter } from './repository/FileSystemAdapter';
 import {
-  functionConfig,
+  featureConfig,
+  FEATURES_DIR,
+  LEGACY_FEATURES_DIR,
   workflowConfig,
   streamConfig,
   businessObjectConfig,
@@ -37,6 +39,11 @@ const MANIFEST_READONLY_ERROR =
 
 let storageOptions: StorageOptions = {};
 
+/** A YAML file of the features table: `<catalog>/features/…` or the old `<catalog>/functions/…` */
+function isFeatureFile(filePath: string): boolean {
+  return new RegExp(`[\\\\/](${FEATURES_DIR}|${LEGACY_FEATURES_DIR})[\\\\/]`).test(filePath);
+}
+
 /**
  * Refactored FunctionStorage using Repository Pattern
  * Single Responsibility: Coordination between repositories and file watching
@@ -47,7 +54,7 @@ class FunctionStorage {
   private initialized = false;
 
   private fileSystem: FileSystemAdapter;
-  private functionRepo: BaseRepository<FunctionCard>;
+  private featureRepo: BaseRepository<Feature>;
   private workflowRepo: BaseRepository<Workflow>;
   private streamRepo: BaseRepository<Stream>;
   private businessObjectRepo: BaseRepository<BusinessObject>;
@@ -65,10 +72,10 @@ class FunctionStorage {
     this.fileSystem = new FileSystemAdapter();
 
     // Product repositories don't need roots - they use app.directory from config
-    this.functionRepo = new BaseRepository(
+    this.featureRepo = new BaseRepository(
       this.store,
       this.fileSystem,
-      functionConfig,
+      featureConfig,
       []
     );
 
@@ -111,11 +118,11 @@ class FunctionStorage {
   async initialize() {
     if (this.initialized) return;
 
-    logger.info('Initializing function storage');
+    logger.info('Initializing catalog storage');
 
     // Initialize tables
     this.store.setTables({
-      functions: {},
+      features: {},
       events: {},
       edges: {},
       workflows: {},
@@ -133,7 +140,7 @@ class FunctionStorage {
     this.setupWatcher();
 
     this.initialized = true;
-    logger.info('Function storage initialized');
+    logger.info('Catalog storage initialized');
   }
 
   private async loadAll() {
@@ -157,21 +164,23 @@ class FunctionStorage {
       }
     });
 
-    let totalFunctions = 0;
+    let totalFeatures = 0;
     let totalWorkflows = 0;
     let totalStreams = 0;
     let totalBusinessObjects = 0;
 
     for (const appDir of appDirectories) {
       // Load from each app directory
-      totalFunctions += await this.loadFromDirectory(this.functionRepo, appDir, 'functions');
+      // features/ plus the old folder name functions/ (read transparently until migrated, PRODUCTCREATOR-28)
+      totalFeatures += await this.loadFromDirectory(this.featureRepo, appDir, LEGACY_FEATURES_DIR);
+      totalFeatures += await this.loadFromDirectory(this.featureRepo, appDir, FEATURES_DIR);
       totalWorkflows += await this.loadFromDirectory(this.workflowRepo, appDir, 'workflows');
       totalStreams += await this.loadFromDirectory(this.streamRepo, appDir, 'streams');
       totalBusinessObjects += await this.loadFromDirectory(this.businessObjectRepo, appDir, 'business-objects');
     }
 
     logger.info(
-      `Total loaded: ${totalFunctions} functions, ${totalWorkflows} workflows, ${totalStreams} streams, ${totalBusinessObjects} business objects, ${totalProjects} projects, ${totalApps} apps`
+      `Total loaded: ${totalFeatures} features, ${totalWorkflows} workflows, ${totalStreams} streams, ${totalBusinessObjects} business objects, ${totalProjects} projects, ${totalApps} apps`
     );
 
     this.buildEdges();
@@ -199,7 +208,7 @@ class FunctionStorage {
    * Index events from functions
    */
   private indexEvents() {
-    const functions = this.store.getTable('functions');
+    const functions = this.store.getTable('features');
 
     for (const funcData of Object.values(functions)) {
       const emits = JSON.parse((funcData.emits as string) || '[]') as string[];
@@ -222,7 +231,7 @@ class FunctionStorage {
     // Clear existing edges
     this.store.delTable('edges');
 
-    const functions = this.store.getTable('functions');
+    const functions = this.store.getTable('features');
 
     for (const [funcId, funcData] of Object.entries(functions)) {
       const emits = JSON.parse((funcData.emits as string) || '[]') as string[];
@@ -269,7 +278,8 @@ class FunctionStorage {
 
     for (const appDir of appDirectories) {
       watchPaths.push(
-        `${path.resolve(appDir, 'functions')}/**/*.{yml,yaml}`,
+        `${path.resolve(appDir, FEATURES_DIR)}/**/*.{yml,yaml}`,
+        `${path.resolve(appDir, LEGACY_FEATURES_DIR)}/**/*.{yml,yaml}`,
         `${path.resolve(appDir, 'workflows')}/**/*.{yml,yaml}`,
         `${path.resolve(appDir, 'streams')}/**/*.{yml,yaml}`,
         `${path.resolve(appDir, 'business-objects')}/**/*.{yml,yaml}`
@@ -307,8 +317,8 @@ class FunctionStorage {
    * Reload file using appropriate repository
    */
   private async reloadFile(filePath: string) {
-    if (filePath.includes('/functions/')) {
-      await this.functionRepo.loadFile(filePath);
+    if (isFeatureFile(filePath)) {
+      await this.featureRepo.loadFile(filePath);
     } else if (filePath.includes('/workflows/')) {
       await this.workflowRepo.loadFile(filePath);
     } else if (filePath.includes('/streams/')) {
@@ -326,8 +336,8 @@ class FunctionStorage {
    * Remove file from store using appropriate repository
    */
   private removeFileFromStore(filePath: string) {
-    if (filePath.includes('/functions/')) {
-      this.functionRepo.removeByFilePath(filePath);
+    if (isFeatureFile(filePath)) {
+      this.featureRepo.removeByFilePath(filePath);
     } else if (filePath.includes('/workflows/')) {
       this.workflowRepo.removeByFilePath(filePath);
     } else if (filePath.includes('/streams/')) {
@@ -351,17 +361,17 @@ class FunctionStorage {
 
   // ===== Public API =====
 
-  // Functions
-  getAll(): FunctionCard[] {
-    return this.functionRepo.getAll();
+  // Features (PRODUCTCREATOR-28; getAll/getById/save keep their old names for existing callers)
+  getAllFeatures(): Feature[] {
+    return this.featureRepo.getAll();
   }
 
-  getById(id: string): FunctionCard | null {
-    return this.functionRepo.getById(id);
+  getFeatureById(id: string): Feature | null {
+    return this.featureRepo.getById(id);
   }
 
-  async save(data: FunctionCard, targetRoot?: string) {
-    const result = await this.functionRepo.save(data, targetRoot!);
+  async saveFeature(data: Feature, targetRoot?: string) {
+    const result = await this.featureRepo.save(data, targetRoot!);
     if (result.success) {
       this.buildEdges();
       this.indexEvents();
@@ -369,10 +379,36 @@ class FunctionStorage {
     return result;
   }
 
+  /** @deprecated use getAllFeatures */
+  getAll(): Feature[] {
+    return this.getAllFeatures();
+  }
+
+  /** @deprecated use getFeatureById */
+  getById(id: string): Feature | null {
+    return this.getFeatureById(id);
+  }
+
+  /** @deprecated use saveFeature */
+  async save(data: Feature, targetRoot?: string) {
+    return this.saveFeature(data, targetRoot);
+  }
+
+  /** File of a feature (in features/ or the old functions/ folder) */
   getFilePathById(id: string): string | null {
-    const row = this.store.getRow('functions', id);
+    const row = this.store.getRow('features', id);
     if (!row || !row.filePath) return null;
     return row.filePath as string;
+  }
+
+  /** Features stored in the catalog folder of one app (component) */
+  getFeaturesOfApp(appId: string): Feature[] {
+    const app = this.getAppById(appId);
+    if (!app?.directory) return [];
+    return this.getAllFeatures().filter((f) => {
+      const file = this.getFilePathById(f.id);
+      return file ? this.getRootForFilePath(file) === app.directory : false;
+    });
   }
 
   // Workflows
@@ -433,7 +469,7 @@ class FunctionStorage {
 
   getRootForFilePath(filePath: string): string | null {
     const resolved = path.resolve(filePath);
-    const subdirectories = ['functions', 'workflows', 'streams', 'business-objects'];
+    const subdirectories = [FEATURES_DIR, LEGACY_FEATURES_DIR, 'workflows', 'streams', 'business-objects'];
     
     // Check all app directories
     const apps = this.getAllApps();

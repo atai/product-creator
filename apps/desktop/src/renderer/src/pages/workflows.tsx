@@ -30,7 +30,7 @@ export default function WorkflowsPage() {
   return (
     <CatalogPageLayout
       title="Workflows"
-      description="Workflow-сценарии, которые оркестрируют функции и события. Проверяйте шаги, emitted events и переходите к редактированию."
+      description="Workflow-сценарии, которые оркестрируют фичи и события. Проверяйте шаги, emitted events и переходите к редактированию."
       hintKey="workflows"
       actions={
         <Link

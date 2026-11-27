@@ -11,10 +11,10 @@ export async function GET(request: Request) {
     }
 
     const storage = await getStorage();
-    const card = storage.getById(id);
+    const card = storage.getFeatureById(id);
 
     if (!card) {
-      return Response.json({ error: 'Card not found' }, { status: 404 });
+      return Response.json({ error: 'Feature not found' }, { status: 404 });
     }
 
     return Response.json(card);

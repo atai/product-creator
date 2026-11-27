@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Fuse from 'fuse.js';
-import { FunctionCard } from '@pc/core/types';
+import { Feature } from '@pc/core/types';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 
-export default function FunctionsPage() {
+export default function FeaturesPage() {
   const searchParams = useSearchParams();
-  const [functions, setFunctions] = useState<FunctionCard[]>([]);
-  const [filteredFunctions, setFilteredFunctions] = useState<FunctionCard[]>([]);
+  const [functions, setFunctions] = useState<Feature[]>([]);
+  const [filteredFunctions, setFilteredFunctions] = useState<Feature[]>([]);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({
     bounded_context: '',
@@ -22,7 +22,7 @@ export default function FunctionsPage() {
   useEffect(() => {
     // Load functions with app filter from URL
     const appParam = searchParams.get('app');
-    const url = appParam ? `/api/index?app=${encodeURIComponent(appParam)}` : '/api/index';
+    const url = appParam ? `/api/features?app=${encodeURIComponent(appParam)}` : '/api/features';
 
     fetch(url)
       .then((res) => res.json())
@@ -77,15 +77,15 @@ export default function FunctionsPage() {
 
   return (
     <CatalogPageLayout
-      title="Functions"
-      description="Каталог бизнес-функций: ищите по имени, тегам и API, фильтруйте по контексту, владельцу и статусу, чтобы быстро найти нужный сценарий."
+      title="Features"
+      description="Каталог фич (бизнес-возможностей): ищите по имени, тегам и API, фильтруйте по контексту, владельцу и статусу, чтобы быстро найти нужный сценарий."
       hintKey="home"
       actions={
         <Link
-          href="/new"
+          href="/features/new"
           className="px-4 py-2 bg-accent text-on rounded hover:bg-accent-hover text-sm font-medium whitespace-nowrap"
         >
-          New Function
+          New Feature
         </Link>
       }
       search={
@@ -149,7 +149,7 @@ export default function FunctionsPage() {
             {filteredFunctions.map((func) => (
               <Link
                 key={func.id}
-                href={`/f/${func.id}`}
+                href={`/features/${func.id}`}
                 className="block p-4 hover:bg-bg"
               >
                 <div className="flex justify-between items-start">

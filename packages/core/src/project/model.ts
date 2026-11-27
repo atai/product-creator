@@ -13,7 +13,7 @@ import { discoverComponents, guessKind, isDir, readJson, readYaml, slugify, type
  *   <root>/product-creator.yml                      project (id, slug, name, catalogRoot, ...)
  *   <root>/<catalogRoot>/<...>/service.pc.yml       a service; its folder is the service catalog
  *   <root>/<catalogRoot>/<...>/library.pc.yml       a library; its folder is the library catalog
- *       functions/ business-objects/ workflows/ streams/
+ *       features/ (old name: functions/) business-objects/ workflows/ streams/
  *
  * Ids are UUIDs generated once (import / create) and never change; `slug` and `name` are editable.
  * All references (dependsOn, storage app id, UI URLs, interface refs) use the UUID.
@@ -118,7 +118,7 @@ type RawComponentFile = Partial<Omit<ComponentModel, 'catalog' | 'kind' | 'opena
   openapi?: string | string[] | RawOpenApi;
 };
 
-const CATALOG_DIRS = new Set(['functions', 'business-objects', 'workflows', 'streams', 'node_modules', '.git']);
+const CATALOG_DIRS = new Set(['features', 'functions', 'business-objects', 'workflows', 'streams', 'node_modules', '.git']);
 
 /** Find component files below catalogRoot (component folders may be nested, e.g. integrations/foo) */
 function findComponentFiles(dir: string, depth = 0): { file: string; kind: ComponentKind }[] {

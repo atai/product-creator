@@ -27,6 +27,8 @@ export interface WorkspaceProjectInfo {
   origin?: 'read' | 'imported' | 'migrated';
   notes?: string[];
   error?: string;
+  /** Feature cards still in the old `functions/` folders (PRODUCTCREATOR-28); migrate with editor.migrateCatalog */
+  legacyFeatureFiles?: number;
 }
 
 export interface WorkspaceInfo {
@@ -37,6 +39,8 @@ export interface WorkspaceInfo {
 export interface EditResult {
   ok: boolean;
   error?: string;
+  /** Short summary of what was done (e.g. a catalog migration) */
+  message?: string;
   info: WorkspaceInfo;
 }
 
@@ -95,6 +99,8 @@ export interface PcBridge {
     saveComponent(root: string, component: ComponentInput): Promise<EditResult>;
     deleteComponent(root: string, id: string): Promise<EditResult>;
     importNew(root: string): Promise<EditResult>;
+    /** Move `functions/` → `features/` in all catalogs of the project (never overwrites) */
+    migrateCatalog(root: string): Promise<EditResult>;
   };
   /** OpenAPI generation: runs the configured command of a component (child process, streamed log) */
   openapi: {
@@ -134,6 +140,7 @@ export const IPC = {
   editorSaveComponent: 'pc:editor:save-component',
   editorDeleteComponent: 'pc:editor:delete-component',
   editorImportNew: 'pc:editor:import-new',
+  editorMigrateCatalog: 'pc:editor:migrate-catalog',
   openapiInfo: 'pc:openapi:info',
   openapiGenerate: 'pc:openapi:generate',
   openapiGenerateAll: 'pc:openapi:generate-all',

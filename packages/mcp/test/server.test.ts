@@ -123,28 +123,29 @@ describe('tools (read-write token)', () => {
     await client.close();
   });
 
-  it('creates, lists, reads and updates a function card with a source_file link', async () => {
+  it('creates, lists, reads and updates a feature with a source_file link', async () => {
     const { client } = await connect(bearer());
-    const created = await client.callTool({ name: 'create_catalog_entry', arguments: { project: project.slug, component: 'svc', kind: 'function', data: FN } });
+    const created = await client.callTool({ name: 'create_catalog_entry', arguments: { project: project.slug, component: 'svc', kind: 'feature', data: FN } });
     expect(created.isError).toBeFalsy();
-    expect(fs.existsSync(path.join(root, project.components.find((c) => c.slug === 'svc')!.catalog, 'functions', 'billing', 'invoice.create.yml'))).toBe(true);
+    expect(fs.existsSync(path.join(root, project.components.find((c) => c.slug === 'svc')!.catalog, 'features', 'billing', 'invoice.create.yml'))).toBe(true);
 
-    const dup = await client.callTool({ name: 'create_catalog_entry', arguments: { project: project.slug, component: 'svc', kind: 'function', data: FN } });
+    const dup = await client.callTool({ name: 'create_catalog_entry', arguments: { project: project.slug, component: 'svc', kind: 'feature', data: FN } });
     expect(dup.isError).toBe(true);
     expect(text(dup)).toContain('already exists');
 
-    const list = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'function', query: 'invoice' } }));
+    const list = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'feature', query: 'invoice' } }));
     expect(list.total).toBe(1);
     expect(list.items[0]).toMatchObject({ id: FN.id, component: 'svc', source_file: FN.source_file });
 
-    const updated = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'function', id: FN.id, patch: { lifecycle: 'active', description: 'Creates an invoice' } } });
+    const updated = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id, patch: { lifecycle: 'active', description: 'Creates an invoice' } } });
     expect(updated.isError).toBeFalsy();
+    // 'function' is the old name of the kind, still accepted (PRODUCTCREATOR-28)
     const got = json(await client.callTool({ name: 'get_catalog_entry', arguments: { project: project.slug, kind: 'function', id: FN.id } }));
     expect(got.entry).toMatchObject({ lifecycle: 'active', description: 'Creates an invoice', source_file: FN.source_file });
 
-    const renamed = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'function', id: FN.id, patch: { id: 'x.y.z' } } });
+    const renamed = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id, patch: { id: 'x.y.z' } } });
     expect(renamed.isError).toBe(true);
-    const invalid = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'function', id: FN.id, patch: { lifecycle: 'bogus' } } });
+    const invalid = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id, patch: { lifecycle: 'bogus' } } });
     expect(invalid.isError).toBe(true);
     await client.close();
   });
@@ -152,15 +153,15 @@ describe('tools (read-write token)', () => {
   it('previews a code sync without writing, then applies it', async () => {
     write('svc/src/orders.ts', 'export function createOrder(id: string) { return id; }\n');
     const { client } = await connect(bearer());
-    const before = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'function' } })).total;
+    const before = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'feature' } })).total;
     const preview = json(await client.callTool({ name: 'sync_code_preview', arguments: { project: project.slug, component: 'svc' } }));
     expect(preview.items.some((i: { name: string; file: string }) => i.name === 'createOrder' && i.file.endsWith('orders.ts'))).toBe(true);
-    const unchanged = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'function' } })).total;
+    const unchanged = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'feature' } })).total;
     expect(unchanged).toBe(before);
 
     const applied = await client.callTool({ name: 'sync_code_apply', arguments: { project: project.slug, component: 'svc' } });
     expect(applied.isError).toBeFalsy();
-    const after = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'function', query: 'createOrder' } }));
+    const after = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'feature', query: 'createOrder' } }));
     expect(after.total).toBeGreaterThanOrEqual(1);
     expect(after.items[0].name).toBe('createOrder');
     expect(after.items[0].source_file).toContain('orders.ts');
@@ -183,7 +184,7 @@ describe('scope and callers', () => {
     expect(names).toContain('list_projects');
     expect(names).not.toContain('create_catalog_entry');
     expect(names).not.toContain('generate_openapi');
-    const denied = await client.callTool({ name: 'create_catalog_entry', arguments: { project: project.slug, component: 'svc', kind: 'function', data: FN } });
+    const denied = await client.callTool({ name: 'create_catalog_entry', arguments: { project: project.slug, component: 'svc', kind: 'feature', data: FN } });
     expect(denied.isError).toBe(true);
     await client.callTool({ name: 'list_projects', arguments: {} });
     expect(audit.recent(50).find((e) => e.principal === 'relay:bot-1' && e.userAgent === 'ChatGPT-User' && e.action === 'list_projects')).toBeTruthy();

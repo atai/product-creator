@@ -227,7 +227,7 @@ export default function WorkflowEditPage() {
                       {...register(`steps.${index}.value` as const, {
                         required: 'Step is required',
                       })}
-                      placeholder="Function ID (e.g., identity.user.register)"
+                      placeholder="Feature ID (e.g., identity.user.register)"
                       className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                     />
                   </div>

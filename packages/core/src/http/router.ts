@@ -65,6 +65,10 @@ export const routes: RouteEntry[] = [
   compile('business-objects', r_business_objects as RouteModule),
   compile('card', r_card as RouteModule),
   compile('card-root', r_card_root as RouteModule),
+  // Feature names (PRODUCTCREATOR-28); index/card/save stay as the old names of the same handlers
+  compile('features', r_index as RouteModule),
+  compile('feature', r_card as RouteModule),
+  compile('save-feature', r_save as RouteModule),
   compile('graph', r_graph as RouteModule),
   compile('index', r_index as RouteModule),
   compile('interfaces', r_interfaces as RouteModule),

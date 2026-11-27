@@ -9,7 +9,7 @@ import type { McpHost, Principal } from './host.js';
 
 /** Entity kinds of the feature catalog and how the core API addresses them */
 const KINDS = {
-  function: { list: '/api/index', save: '/api/save', key: 'data', idOf: (e: Rec) => e.id },
+  feature: { list: '/api/features', save: '/api/save-feature', key: 'data', idOf: (e: Rec) => e.id },
   business_object: { list: '/api/business-objects', save: '/api/save-business-object', key: 'businessObject', idOf: (e: Rec) => e.id },
   workflow: { list: '/api/workflows', save: '/api/save-workflow', key: 'workflow', idOf: (e: Rec) => e.workflow },
   stream: { list: '/api/streams', save: '/api/save-stream', key: 'stream', idOf: (e: Rec) => e.stream },
@@ -17,7 +17,11 @@ const KINDS = {
 type Kind = keyof typeof KINDS;
 type Rec = Record<string, unknown>;
 
-const kindSchema = z.enum(['function', 'business_object', 'workflow', 'stream']).describe('Catalog entry type');
+const kindSchema = z
+  .enum(['feature', 'business_object', 'workflow', 'stream', 'function'])
+  .describe("Catalog entry type. A feature is a business capability (id <bounded_context>.<entity>.<action>); 'function' is its old name, accepted for one version");
+/** 'function' → 'feature' (renamed in PRODUCTCREATOR-28) */
+const kindOf = (kind: z.infer<typeof kindSchema>): Kind => (kind === 'function' ? 'feature' : kind);
 const projectArg = z.string().describe('Project id, slug, name or root path (see list_projects)');
 const componentArg = z.string().describe('Component (service/library) id or slug (see list_components)');
 
@@ -90,7 +94,7 @@ async function api(host: McpHost, method: string, url: string, body?: unknown): 
 
 const summarize = (kind: Kind, e: Rec): Rec => {
   switch (kind) {
-    case 'function':
+    case 'feature':
       return { id: e.id, name: e.name, bounded_context: e.bounded_context, entity: e.entity, action: e.action, lifecycle: e.lifecycle, owner: e.owner, source_file: e.source_file, apis: e.apis, tags: e.tags };
     case 'business_object':
       return { id: e.id, name: e.name, lifecycle: e.lifecycle, owner: e.owner, fields: Array.isArray(e.fields) ? e.fields.length : 0 };
@@ -236,7 +240,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     'list_catalog',
     {
       title: 'List catalog entries',
-      description: 'List feature-catalog entries (functions, business objects, workflows, streams) of a project or one component. Returns compact summaries; use get_catalog_entry for the full card. Functions carry `source_file` links to the code.',
+      description: 'List catalog entries (features, business objects, workflows, streams) of a project or one component. Returns compact summaries; use get_catalog_entry for the full card. Features carry `source_file` links to the code that implements them.',
       input: {
         project: projectArg,
         kind: kindSchema,
@@ -246,7 +250,8 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
         offset: z.number().int().min(0).optional(),
       },
     },
-    async ({ project, kind, component, query, limit, offset }) => {
+    async ({ project, kind: kindArg, component, query, limit, offset }) => {
+      const kind = kindOf(kindArg);
       const p = resolveProject(host, project);
       const components = component ? [resolveComponent(p, component)] : p.components;
       const rows: Rec[] = [];
@@ -266,10 +271,11 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     'get_catalog_entry',
     {
       title: 'Get a catalog entry',
-      description: 'Full card of a function, business object, workflow or stream. `id` is the function/business-object id, the workflow key or the stream key.',
+      description: 'Full card of a feature, business object, workflow or stream. `id` is the feature/business-object id, the workflow key or the stream key.',
       input: { project: projectArg, kind: kindSchema, id: z.string(), component: componentArg.optional() },
     },
-    async ({ project, kind, id, component }) => {
+    async ({ project, kind: kindArg, id, component }) => {
+      const kind = kindOf(kindArg);
       const p = resolveProject(host, project);
       for (const c of component ? [resolveComponent(p, component)] : p.components) {
         const hit = (await listEntries(host, kind, c)).find((e) => KINDS[kind].idOf(e) === id);
@@ -315,7 +321,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     'sync_code_preview',
     {
       title: 'Preview code sync',
-      description: 'Analyse the code base of a component and match exported functions with catalog functions. Nothing is written; returns what sync_code_apply would do.',
+      description: 'Analyse the code base of a component and match exported code functions with catalog features. Nothing is written; returns what sync_code_apply would do.',
       input: { project: projectArg, component: componentArg, limit: z.number().int().min(1).max(MAX_LIST).optional() },
     },
     async ({ project, component, limit }) => {
@@ -342,10 +348,11 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Create a catalog entry',
       write: true,
-      description: 'Create a function (id = <bounded_context>.<entity>.<action>), business object, workflow or stream in a component catalog. `data` is the full card; it is validated before writing.',
+      description: 'Create a feature (id = <bounded_context>.<entity>.<action>), business object, workflow or stream in a component catalog. `data` is the full card; it is validated before writing.',
       input: { project: projectArg, component: componentArg, kind: kindSchema, data: z.record(z.string(), z.unknown()) },
     },
-    async ({ project, component, kind, data }) => {
+    async ({ project, component, kind: kindArg, data }) => {
+      const kind = kindOf(kindArg);
       const p = resolveProject(host, project);
       const c = resolveComponent(p, component);
       const id = KINDS[kind].idOf(data);
@@ -367,7 +374,8 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       description: 'Change fields of an existing entry. `patch` is merged into the stored card at the top level (a null value removes a field); the id cannot change. The result is validated before writing.',
       input: { project: projectArg, kind: kindSchema, id: z.string(), patch: z.record(z.string(), z.unknown()), component: componentArg.optional() },
     },
-    async ({ project, kind, id, patch, component }) => {
+    async ({ project, kind: kindArg, id, patch, component }) => {
+      const kind = kindOf(kindArg);
       const p = resolveProject(host, project);
       let found: { c: ComponentModel; entry: Rec } | undefined;
       for (const c of component ? [resolveComponent(p, component)] : p.components) {
@@ -397,7 +405,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Sync catalog from code',
       write: true,
-      description: 'Run the code sync with the matcher\'s default actions (create/update function cards from exported functions, set source_file). Deletions are skipped unless allow_delete is true. Run sync_code_preview first.',
+      description: 'Run the code sync with the matcher\'s default actions (create/update features from exported code functions, set source_file). Deletions are skipped unless allow_delete is true. Run sync_code_preview first.',
       input: { project: projectArg, component: componentArg, allow_delete: z.boolean().optional() },
     },
     async ({ project, component, allow_delete }) => syncApply(host, resolveComponent(resolveProject(host, project), component), 'sync-code', allow_delete === true)

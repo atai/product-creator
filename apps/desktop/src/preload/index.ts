@@ -14,6 +14,7 @@ const bridge: PcBridge = {
     saveComponent: (root, component) => ipcRenderer.invoke(IPC.editorSaveComponent, root, component),
     deleteComponent: (root, id) => ipcRenderer.invoke(IPC.editorDeleteComponent, root, id),
     importNew: (root) => ipcRenderer.invoke(IPC.editorImportNew, root),
+    migrateCatalog: (root) => ipcRenderer.invoke(IPC.editorMigrateCatalog, root),
   },
   openapi: {
     info: (root) => ipcRenderer.invoke(IPC.openapiInfo, root),

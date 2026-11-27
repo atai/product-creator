@@ -3,6 +3,7 @@ import { mkdirSync } from 'fs';
 import * as path from 'path';
 import { deleteComponent, importNewComponents, readProject, saveComponent, updateProject, type ProjectModel } from '@pc/core/project/model';
 import { loginShellPath, OpenApiGenerationManager } from '@pc/core/interfaces/generator';
+import { migrateProject, summarizeMigration } from '@pc/core/catalog/migrate';
 import { IPC, type ApiRequest, type ApiResponse, type ComponentInput, type EditResult, type ProjectPatch } from '../shared/ipc';
 import { parseProjectArgs, defaultProjectFolder } from './args';
 import { Workspace } from './workspace';
@@ -188,6 +189,15 @@ function registerIpc() {
     edit(() => deleteComponent(workspace.requireRoot(root), id))()
   );
   ipcMain.handle(IPC.editorImportNew, (_e, root: string) => edit(() => importNewComponents(workspace.requireRoot(root)))());
+  ipcMain.handle(IPC.editorMigrateCatalog, async (_e, root: string): Promise<EditResult> => {
+    let message = '';
+    const result = await edit(() => {
+      const project = readProject(workspace.requireRoot(root));
+      if (!project) throw new Error('No product-creator.yml in this folder');
+      message = summarizeMigration(migrateProject(project));
+    })();
+    return { ...result, message };
+  });
 }
 
 const COPYRIGHT_START_YEAR = 2022;

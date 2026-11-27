@@ -1,18 +1,27 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Function Card Schema",
-  "required": ["id", "name", "bounded_context", "entity", "action", "owner", "lifecycle"],
+  "title": "Feature Schema",
+  "description": "A Feature is a business capability of the product (formerly \"function card\"). Its implementation in code is `source_file` + `calls`.",
+  "required": [
+    "id",
+    "name",
+    "bounded_context",
+    "entity",
+    "action",
+    "owner",
+    "lifecycle"
+  ],
   "properties": {
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+$",
-      "description": "Unique identifier in format: <context>.<entity>.<action>"
+      "description": "Unique identifier in format: <bounded_context>.<entity>.<action>"
     },
     "name": {
       "type": "string",
       "minLength": 1,
-      "description": "Human-readable name of the function"
+      "description": "Human-readable name of the feature"
     },
     "bounded_context": {
       "type": "string",
@@ -32,11 +41,16 @@
     "owner": {
       "type": "string",
       "minLength": 1,
-      "description": "Team or individual responsible for this function"
+      "description": "Team or individual responsible for this feature"
     },
     "lifecycle": {
       "type": "string",
-      "enum": ["draft", "active", "deprecated", "removed"],
+      "enum": [
+        "draft",
+        "active",
+        "deprecated",
+        "removed"
+      ],
       "description": "Current lifecycle stage"
     },
     "tags": {
@@ -53,7 +67,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "Events emitted by this function"
+      "description": "Events emitted by this feature"
     },
     "consumes": {
       "type": "array",
@@ -61,17 +75,26 @@
         "type": "string"
       },
       "default": [],
-      "description": "Events consumed by this function"
+      "description": "Events consumed by this feature"
     },
     "apis": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["method", "path"],
+        "required": [
+          "method",
+          "path"
+        ],
         "properties": {
           "method": {
             "type": "string",
-            "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
           },
           "path": {
             "type": "string",
@@ -80,11 +103,11 @@
         }
       },
       "default": [],
-      "description": "API endpoints exposed by this function"
+      "description": "API endpoints exposed by this feature"
     },
     "description": {
       "type": "string",
-      "description": "Detailed description of the function"
+      "description": "Detailed description of the feature"
     },
     "calls": {
       "type": "array",
@@ -92,11 +115,11 @@
         "type": "string"
       },
       "default": [],
-      "description": "IDs of functions called by this function"
+      "description": "IDs of features this feature uses (derived from the calls of its code)"
     },
     "source_file": {
       "type": "string",
-      "description": "Relative path to the source file containing this function"
+      "description": "Relative path of the source file that implements this feature"
     }
   }
 }

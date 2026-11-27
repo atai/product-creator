@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { FunctionCard } from '@pc/core/types';
+import { Feature } from '@pc/core/types';
 import FormHelpHint from '@/components/FormHelpHint';
 
 interface MatrixCell {
@@ -15,7 +15,7 @@ type Matrix = Record<string, Record<string, MatrixCell>>;
 export default function MatrixPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [functions, setFunctions] = useState<FunctionCard[]>([]);
+  const [functions, setFunctions] = useState<Feature[]>([]);
   const [selectedContext, setSelectedContext] = useState<string>('');
   const [matrix, setMatrix] = useState<Matrix>({});
   const [entities, setEntities] = useState<string[]>([]);
@@ -24,7 +24,7 @@ export default function MatrixPage() {
   useEffect(() => {
     // Load functions with app filter from URL
     const appParam = searchParams.get('app');
-    const url = appParam ? `/api/index?app=${encodeURIComponent(appParam)}` : '/api/index';
+    const url = appParam ? `/api/features?app=${encodeURIComponent(appParam)}` : '/api/features';
 
     fetch(url)
       .then((res) => res.json())
@@ -34,7 +34,7 @@ export default function MatrixPage() {
 
         // Auto-select first bounded context if available
         if (data.length > 0) {
-          const contexts = Array.from(new Set(data.map((f: FunctionCard) => f.bounded_context)));
+          const contexts = Array.from(new Set(data.map((f: Feature) => f.bounded_context)));
           if (contexts.length > 0) {
             const firstContext = contexts[0];
             if (typeof firstContext === 'string') {
@@ -102,7 +102,7 @@ export default function MatrixPage() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="mb-4 flex items-center">
-            <h1 className="text-2xl font-bold">Function Matrix</h1>
+            <h1 className="text-2xl font-bold">Feature Matrix</h1>
             <FormHelpHint hintKey="matrix" />
           </div>
           <p className="text-muted mb-4">
@@ -172,7 +172,7 @@ export default function MatrixPage() {
                               {cell.functionIds.map((id) => (
                                 <a
                                   key={id}
-                                  href={`/f/${id}`}
+                                  href={`/features/${id}`}
                                   className="text-success hover:text-success-strong text-xs hover:underline"
                                   title={id}
                                 >
@@ -199,11 +199,11 @@ export default function MatrixPage() {
             <div className="text-sm text-accent-fg space-y-1">
               <p>
                 <span className="inline-block w-4 h-4 bg-success-muted border border-border-strong mr-2"></span>
-                ✓ = Function exists (click to view)
+                ✓ = Feature exists (click to view)
               </p>
               <p>
                 <span className="inline-block w-4 h-4 bg-bg border border-border-strong mr-2"></span>
-                — = Function not implemented
+                — = Feature not defined
               </p>
             </div>
           </div>

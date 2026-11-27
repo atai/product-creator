@@ -1,16 +1,16 @@
 import { getStorage } from '../../../storage';
 import Ajv from 'ajv';
-import functionSchema from '../../../../schema/function.schema.json';
+import featureSchema from '../../../../schema/feature.schema.json';
 import logger from '../../../logger';
-import { FunctionCard } from '../../../types';
+import { Feature } from '../../../types';
 
 const ajv = new Ajv();
-const validate = ajv.compile(functionSchema);
+const validate = ajv.compile(featureSchema);
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const data: FunctionCard = body.data || body;
+    const data: Feature = body.data || body;
     const appId: string | undefined = body.appId;
 
     logger.info('Save request received', {
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const existing = storage.getById(data.id);
+    const existing = storage.getFeatureById(data.id);
 
     logger.info('Attempting save', {
       id: data.id,
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       isUpdate: !!existing
     });
 
-    const result = await storage.save(data, targetRoot);
+    const result = await storage.saveFeature(data, targetRoot);
 
     if (!result.success) {
       logger.error('Save failed in storage layer', { error: result.error });
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     const statusCode = existing ? 200 : 201;
     return Response.json({ success: true, id: data.id }, { status: statusCode });
   } catch (error) {
-    logger.error('Failed to save card', { error });
+    logger.error('Failed to save feature', { error });
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

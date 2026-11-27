@@ -1,20 +1,25 @@
 import * as path from 'path';
 import { EntityConfig } from './types';
-import { FunctionCard, Workflow, Stream, BusinessObject, Project, AppEntity } from '../types';
+import { Feature, Workflow, Stream, BusinessObject, Project, AppEntity } from '../types';
+
+/** Catalog folder of features (PRODUCTCREATOR-28) */
+export const FEATURES_DIR = 'features';
+/** Old folder name, still read so that existing catalogs keep working; `migrateFeatureFolders` moves it */
+export const LEGACY_FEATURES_DIR = 'functions';
 
 /**
- * Configuration for FunctionCard repository
+ * Configuration for the Feature repository
  */
-export const functionConfig: EntityConfig<FunctionCard> = {
-  tableName: 'functions',
-  subdirectory: 'functions',
+export const featureConfig: EntityConfig<Feature> = {
+  tableName: 'features',
+  subdirectory: FEATURES_DIR,
 
   getIdField: (entity) => entity.id,
 
   getFileName: (entity) => `${entity.entity}.${entity.action}.yml`,
 
   getFilePath: (entity, targetRoot, subdirectory) => {
-    // Functions need bounded_context in path
+    // Features need bounded_context in path
     return path.resolve(
       targetRoot,
       subdirectory,
@@ -59,7 +64,7 @@ export const functionConfig: EntityConfig<FunctionCard> = {
     entity: row.entity as string,
     action: row.action as string,
     owner: row.owner as string,
-    lifecycle: row.lifecycle as FunctionCard['lifecycle'],
+    lifecycle: row.lifecycle as Feature['lifecycle'],
     tags: JSON.parse((row.tags as string) || '[]'),
     emits: JSON.parse((row.emits as string) || '[]'),
     consumes: JSON.parse((row.consumes as string) || '[]'),

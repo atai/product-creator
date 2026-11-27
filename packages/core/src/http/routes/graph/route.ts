@@ -10,24 +10,14 @@ export async function GET(request: Request) {
     const lifecycle = searchParams.get('lifecycle');
 
     const storage = await getStorage();
-    let functions = storage.getAll();
+    let functions = storage.getAllFeatures();
 
     // Apply app filter first
     if (appId) {
       const app = storage.getAppById(appId);
       if (app && app.directory) {
-        const directory = app.directory;
-        const functionsTable = storage['store'].getTable('functions');
-        const filteredIds = Object.entries(functionsTable)
-          .filter(([, data]: [string, unknown]) => {
-            const row = data as Record<string, unknown>;
-            const root = storage.getRootForFilePath(row.filePath as string);
-            return root === directory;
-          })
-          .map(([id]) => id);
-
-        functions = functions.filter(f => filteredIds.includes(f.id));
-        logger.info('Filtered graph functions by app', { appId, directory, count: functions.length });
+        functions = storage.getFeaturesOfApp(appId);
+        logger.info('Filtered graph features by app', { appId, directory: app.directory, count: functions.length });
       }
     }
 

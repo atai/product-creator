@@ -5,7 +5,7 @@ export default function Home() {
         <div className="bg-surface rounded-lg shadow-lg p-8">
           <h1 className="text-4xl font-bold text-fg mb-6">Product Creator</h1>
           <p className="text-lg text-fg-2 mb-4">
-            Система управления каталогом продуктов и бизнес-функций.
+            Система управления каталогом продукта: фичи (бизнес-возможности), объекты и процессы.
           </p>
           <p className="text-muted mb-6">
             Используйте навигационное меню для доступа к различным разделам:
@@ -13,7 +13,7 @@ export default function Home() {
           <ul className="space-y-3 text-fg-2">
             <li className="flex items-start">
               <span className="font-semibold mr-2">•</span>
-              <span><strong>Functions</strong> — каталог бизнес-функций с поиском и фильтрацией</span>
+              <span><strong>Features</strong> — бизнес-возможности продукта с поиском и фильтрацией (код, который их реализует, — в source_file)</span>
             </li>
             <li className="flex items-start">
               <span className="font-semibold mr-2">•</span>

@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { configureStorage, resetStorage } from '@pc/core/storage';
 import { openProject, toStorageEntities, PROJECT_FILE, type OpenResult } from '@pc/core/project/model';
+import { legacyCatalogs } from '@pc/core/catalog/migrate';
 import type { WorkspaceInfo, WorkspaceProjectInfo } from '../shared/ipc';
 
 /**
@@ -90,7 +91,8 @@ export class Workspace {
       projects: this.roots.map((root): WorkspaceProjectInfo => {
         const r = this.loaded.get(root);
         if (!r) return { root, error: this.errors.get(root) ?? 'Not loaded' };
-        return { root, project: r.project, origin: r.origin, notes: r.notes };
+        const legacyFeatureFiles = legacyCatalogs(r.project).reduce((n, c) => n + c.files, 0);
+        return { root, project: r.project, origin: r.origin, notes: r.notes, ...(legacyFeatureFiles ? { legacyFeatureFiles } : {}) };
       }),
     };
   }

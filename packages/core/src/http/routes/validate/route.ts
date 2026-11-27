@@ -1,9 +1,9 @@
 import Ajv from 'ajv';
-import functionSchema from '../../../../schema/function.schema.json';
+import featureSchema from '../../../../schema/feature.schema.json';
 import logger from '../../../logger';
 
 const ajv = new Ajv();
-const validate = ajv.compile(functionSchema);
+const validate = ajv.compile(featureSchema);
 
 export async function POST(request: Request) {
   try {

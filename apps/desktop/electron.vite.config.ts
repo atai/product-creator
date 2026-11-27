@@ -8,6 +8,8 @@ export default defineConfig({
     build: {
       // @pc/core and @pc/mcp are TypeScript sources in the workspace: bundle them, keep their npm deps external
       externalizeDeps: { exclude: ['@pc/core', '@pc/mcp'] },
+      // cli.js: `product-creator migrate|lint` without Electron (run by bin/product-creator.mjs with node)
+      rollupOptions: { input: { index: resolve(__dirname, 'src/main/index.ts'), cli: resolve(__dirname, 'src/main/cli.ts') } },
     },
   },
   preload: {},

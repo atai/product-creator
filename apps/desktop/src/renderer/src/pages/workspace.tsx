@@ -241,6 +241,34 @@ interface CardProps {
   run: (action: () => Promise<WorkspaceInfo | EditResult>) => Promise<void>;
 }
 
+/**
+ * Features were called functions before PRODUCTCREATOR-28: cards in the old `functions/` folder are read as they are;
+ * this moves them to `features/` (never overwrites). The window reloads after the change, so the summary is kept in sessionStorage.
+ */
+function LegacyFeatures({ root, files, run }: { root: string; files: number; run: CardProps['run'] }) {
+  const key = `pc.migration.${root}`;
+  const [summary] = useState(() => sessionStorage.getItem(key));
+  const migrate = () =>
+    run(async () => {
+      const result = await window.pc.editor.migrateCatalog(root);
+      if (result.message) sessionStorage.setItem(key, result.message);
+      return result;
+    });
+  return (
+    <>
+      {files > 0 && (
+        <div className="text-xs mt-2 text-warn-fg" data-testid="legacy-features">
+          {files} feature card(s) are in the old <span className="font-mono">functions/</span> folder (read as features).
+          <button className={`${btn} ml-2`} onClick={() => void migrate()}>
+            Move to features/
+          </button>
+        </div>
+      )}
+      {summary && <div className="text-xs mt-2 text-meta whitespace-pre-line">{summary}</div>}
+    </>
+  );
+}
+
 function ProjectCard({ info, editing, setEditing, run }: CardProps) {
   const { root, project } = info;
   const editingHere = editing?.root === root ? editing : null;
@@ -269,6 +297,7 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
             </div>
           )}
           {info.error && <div className="text-sm text-danger mt-2">{info.error}</div>}
+          {project && <LegacyFeatures root={root} files={info.legacyFeatureFiles ?? 0} run={run} />}
           {openapi.error && <div className="text-sm text-danger mt-2">{openapi.error}</div>}
         </div>
         <div className="flex flex-wrap gap-2 justify-end">

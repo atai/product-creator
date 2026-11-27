@@ -18,7 +18,7 @@ export default function Header() {
     '/workflows',
     '/streams',
     '/business-objects',
-    '/functions',
+    '/features',
     '/doc',
     '/interfaces',
   ]);
@@ -126,7 +126,7 @@ export default function Header() {
               {[
                 { label: 'Objects', path: '/business-objects' },
                 { label: 'Workflows', path: '/workflows' },
-                { label: 'Functions', path: '/functions' },
+                { label: 'Features', path: '/features' },
                 { label: 'Streams', path: '/streams' },
                 { label: 'Interfaces', path: '/interfaces' },
               ].map((item) => (

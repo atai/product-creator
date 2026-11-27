@@ -1,4 +1,9 @@
-export interface FunctionCard {
+/**
+ * Feature: a business capability of the product (PRODUCTCREATOR-28; formerly "function card").
+ * Stored in `<catalog>/features/<bounded_context>/<entity>.<action>.yml`; the old folder `functions/` is still read.
+ * The implementation in code is `source_file` (file) and `calls` (features used by that code).
+ */
+export interface Feature {
   id: string;
   name: string;
   bounded_context: string;
@@ -17,6 +22,9 @@ export interface FunctionCard {
   calls?: string[];
   source_file?: string;
 }
+
+/** @deprecated renamed to {@link Feature} (PRODUCTCREATOR-28); kept for one version */
+export type FunctionCard = Feature;
 
 export interface GraphNode {
   id: string;

@@ -2,12 +2,12 @@ import './api-bridge';
 import './globals.css';
 import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Home from '@/pages/home';
-import Functions from '@/pages/functions';
-import FunctionView from '@/pages/f-id';
-import NewFunction from '@/pages/new';
+import Features from '@/pages/features';
+import FeatureView from '@/pages/features-id';
+import NewFeature from '@/pages/features-new';
 import BusinessObjects from '@/pages/business-objects';
 import NewBusinessObject from '@/pages/business-objects-new';
 import Workflows from '@/pages/workflows';
@@ -22,6 +22,15 @@ import WorkspacePage from '@/pages/workspace';
 import InterfacesPage from '@/pages/interfaces';
 import SettingsPage from '@/pages/settings';
 
+// Old routes of features (named "functions" before PRODUCTCREATOR-28), kept as redirects
+function LegacyFunctions() {
+  return <Navigate to={`/features${useLocation().search}`} replace />;
+}
+function LegacyFunction() {
+  const { id = '' } = useParams();
+  return <Navigate to={`/features/${encodeURIComponent(id)}${useLocation().search}`} replace />;
+}
+
 // Header and pages read apps/projects once; reload when the set of opened projects changes
 window.pc.onWorkspaceChanged(() => window.location.reload());
 
@@ -34,9 +43,12 @@ createRoot(document.getElementById('root')!).render(
           <main className="app-main">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/functions" element={<Functions />} />
-              <Route path="/f/:id" element={<FunctionView />} />
-              <Route path="/new" element={<NewFunction />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/features/new" element={<NewFeature />} />
+              <Route path="/features/:id" element={<FeatureView />} />
+              <Route path="/functions" element={<LegacyFunctions />} />
+              <Route path="/f/:id" element={<LegacyFunction />} />
+              <Route path="/new" element={<Navigate to="/features/new" replace />} />
               <Route path="/business-objects" element={<BusinessObjects />} />
               <Route path="/business-objects/new" element={<NewBusinessObject />} />
               <Route path="/workflows" element={<Workflows />} />

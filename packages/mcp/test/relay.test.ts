@@ -350,7 +350,7 @@ describe('relayed requests', () => {
     const names = parse(list.text).result.tools.map((t: { name: string }) => t.name);
     expect(names).toContain('list_projects');
     for (const w of ['create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'sync_schema_apply', 'generate_openapi']) expect(names).not.toContain(w);
-    const call = await relay.request(73, { body: rpc(3, 'tools/call', { name: 'create_catalog_entry', arguments: { project: 'demo', component: 'svc', kind: 'function', data: {} } }), scope: 'READ_WRITE', headers: { 'mcp-session-id': sid } });
+    const call = await relay.request(73, { body: rpc(3, 'tools/call', { name: 'create_catalog_entry', arguments: { project: 'demo', component: 'svc', kind: 'feature', data: {} } }), scope: 'READ_WRITE', headers: { 'mcp-session-id': sid } });
     expect(parse(call.text).error ?? parse(call.text).result.isError).toBeTruthy();
     expect(audit.recent(50).some((e) => e.action === 'create_catalog_entry' && e.principal === 'relay:bot-7' && e.outcome === 'ok')).toBe(false);
   });

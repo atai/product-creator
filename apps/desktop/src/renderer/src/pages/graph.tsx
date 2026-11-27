@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import cytoscape from 'cytoscape';
-import { GraphNode, GraphEdge, FunctionCard } from '@pc/core/types';
+import { GraphNode, GraphEdge, Feature } from '@pc/core/types';
 
 export default function GraphPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [functions, setFunctions] = useState<FunctionCard[]>([]);
+  const [functions, setFunctions] = useState<Feature[]>([]);
   const [filters, setFilters] = useState({
     bounded_context: '',
     lifecycle: '',
@@ -19,7 +19,7 @@ export default function GraphPage() {
   useEffect(() => {
     // Load functions with app filter from URL
     const appParam = searchParams.get('app');
-    const url = appParam ? `/api/index?app=${encodeURIComponent(appParam)}` : '/api/index';
+    const url = appParam ? `/api/features?app=${encodeURIComponent(appParam)}` : '/api/features';
 
     fetch(url)
       .then((res) => res.json())
@@ -142,7 +142,7 @@ export default function GraphPage() {
         cyInstance.current.on('tap', 'node', (evt) => {
           const node = evt.target;
           const id = node.data('id');
-          window.location.href = `/f/${id}`;
+          window.location.hash = `/features/${encodeURIComponent(id)}`;
         });
       })
       .catch((err) => {

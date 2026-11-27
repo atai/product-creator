@@ -3,16 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { FunctionCard } from '@pc/core/types';
+import { Feature } from '@pc/core/types';
 import * as yaml from 'js-yaml';
 import FormHelpHint from './FormHelpHint';
 
-interface FunctionFormProps {
-  existingCard?: FunctionCard | null;
+interface FeatureFormProps {
+  existingCard?: Feature | null;
   mode: 'new' | 'edit';
 }
 
-type FunctionFormData = Omit<FunctionCard, 'tags' | 'emits' | 'consumes' | 'apis'> & {
+type FeatureFormData = Omit<Feature, 'tags' | 'emits' | 'consumes' | 'apis'> & {
   tags: { value: string }[];
   emits: { value: string }[];
   consumes: { value: string }[];
@@ -22,7 +22,7 @@ type FunctionFormData = Omit<FunctionCard, 'tags' | 'emits' | 'consumes' | 'apis
   }[];
 };
 
-export default function FunctionForm({ existingCard, mode }: FunctionFormProps) {
+export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [preview, setPreview] = useState('');
@@ -37,7 +37,7 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
     reset,
     control,
     formState: { errors },
-  } = useForm<FunctionFormData>({
+  } = useForm<FeatureFormData>({
     defaultValues: {
       ...existingCard,
       lifecycle: existingCard?.lifecycle || 'draft',
@@ -45,25 +45,25 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
       emits: (existingCard?.emits || []).map(e => ({ value: e })),
       consumes: (existingCard?.consumes || []).map(c => ({ value: c })),
       apis: existingCard?.apis || [],
-    } as FunctionFormData,
+    } as FeatureFormData,
   });
 
-  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray<FunctionFormData, 'tags'>({
+  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray<FeatureFormData, 'tags'>({
     control,
     name: 'tags',
   });
 
-  const { fields: emitFields, append: appendEmit, remove: removeEmit } = useFieldArray<FunctionFormData, 'emits'>({
+  const { fields: emitFields, append: appendEmit, remove: removeEmit } = useFieldArray<FeatureFormData, 'emits'>({
     control,
     name: 'emits',
   });
 
-  const { fields: consumeFields, append: appendConsume, remove: removeConsume } = useFieldArray<FunctionFormData, 'consumes'>({
+  const { fields: consumeFields, append: appendConsume, remove: removeConsume } = useFieldArray<FeatureFormData, 'consumes'>({
     control,
     name: 'consumes',
   });
 
-  const { fields: apiFields, append: appendApi, remove: removeApi } = useFieldArray<FunctionFormData, 'apis'>({
+  const { fields: apiFields, append: appendApi, remove: removeApi } = useFieldArray<FeatureFormData, 'apis'>({
     control,
     name: 'apis',
   });
@@ -97,7 +97,7 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
         ? formData.id
         : `${formData.bounded_context || ''}.${formData.entity || ''}.${formData.action || ''}`;
 
-      const data: Partial<FunctionCard> = {
+      const data: Partial<Feature> = {
         id: generatedId,
         name: formData.name || '',
         bounded_context: formData.bounded_context || '',
@@ -119,7 +119,7 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
     }
   };
 
-  const onSubmit = async (data: FunctionFormData) => {
+  const onSubmit = async (data: FeatureFormData) => {
     setSaving(true);
     setError('');
 
@@ -136,7 +136,7 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
         ? data.id
         : `${data.bounded_context}.${data.entity}.${data.action}`;
 
-      const payload: FunctionCard = {
+      const payload: Feature = {
         ...data,
         id: generatedId,
         tags: (data.tags || []).map(t => t.value).filter((t) => t && t.trim()),
@@ -145,7 +145,7 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
         apis: (data.apis || []).filter((a) => a.method && a.path && a.path.trim()),
       };
 
-      const response = await fetch('/api/save', {
+      const response = await fetch('/api/save-feature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -162,7 +162,7 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
       }
 
       const result = await response.json();
-      router.push(`/f/${result.id}`);
+      router.push(`/features/${result.id}`);
     } catch {
       setError('Network error');
       setSaving(false);
@@ -174,7 +174,7 @@ export default function FunctionForm({ existingCard, mode }: FunctionFormProps) 
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 flex items-center">
           <h1 className="text-2xl font-bold">
-            {isEditMode ? `Edit: ${existingCard?.name}` : 'New Function'}
+            {isEditMode ? `Edit: ${existingCard?.name}` : 'New Feature'}
           </h1>
           <FormHelpHint hintKey="functionForm" />
           {isEditMode && existingCard && (
