@@ -224,7 +224,7 @@ New entity **feature** (``<catalogRoot>/features/<slug>.feature.yml``), audience
    title: Relay scope is the stricter of token and local setting       # both
    summary: Remote agents never get more rights than the app allows.   # human
    value: Owner keeps control of writes from the desktop.               # human
-   status: draft | review | approved | implemented | verified | dropped [both]
+   status: draft | review | approved | implemented | verified | dropped   # both
    priority: must | should | could                                     # both
    owner: atai                                                         # both
    tickets: [PRODUCTCREATOR-25]                                        # both
@@ -251,7 +251,7 @@ New entity **feature** (``<catalogRoot>/features/<slug>.feature.yml``), audience
      functions: [mcp.server.authenticate]
      operations: []
      business_objects: []
-   notes: …                                                            [agent] implementation hints, constraints
+   notes: …   # agent: implementation hints, constraints
 
 New entity **decision** (``decisions/NNNN-<slug>.yml``): ``key: ADR-0003``, title, status
 (proposed/accepted/superseded), context, decision, consequences, ``constraints`` (agent), links.
