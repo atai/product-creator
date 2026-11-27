@@ -1,9 +1,11 @@
 import { createStore, Store } from 'tinybase';
+import * as fs from 'fs';
 import * as path from 'path';
 import type { FSWatcher } from 'chokidar';
 import chokidar from 'chokidar';
 import logger from './logger';
 import { Feature, Workflow, Stream, BusinessObject, Project, AppEntity } from './types';
+import type { CatalogModel, ModelEntry } from './validation/model';
 import { BaseRepository } from './repository/BaseRepository';
 import { FileSystemAdapter } from './repository/FileSystemAdapter';
 import {
@@ -39,6 +41,9 @@ const MANIFEST_READONLY_ERROR =
 
 let storageOptions: StorageOptions = {};
 
+/** Folders of a component catalog that hold entity YAML files */
+const CATALOG_DIRS = [FEATURES_DIR, LEGACY_FEATURES_DIR, 'workflows', 'streams', 'business-objects'];
+
 /** A YAML file of the features table: `<catalog>/features/…` or the old `<catalog>/functions/…` */
 function isFeatureFile(filePath: string): boolean {
   return new RegExp(`[\\\\/](${FEATURES_DIR}|${LEGACY_FEATURES_DIR})[\\\\/]`).test(filePath);
@@ -51,6 +56,12 @@ function isFeatureFile(filePath: string): boolean {
 class FunctionStorage {
   private store: Store = createStore();
   private watcher: FSWatcher | null = null;
+  private watcherReady: Promise<void> = Promise.resolve();
+
+  /** Resolves when the file watcher has scanned the catalog folders (external edits are picked up from then on) */
+  whenWatching(): Promise<void> {
+    return this.watcherReady;
+  }
   private initialized = false;
 
   private fileSystem: FileSystemAdapter;
@@ -76,14 +87,16 @@ class FunctionStorage {
       this.store,
       this.fileSystem,
       featureConfig,
-      []
+      [],
+      { trackSources: true }
     );
 
     this.workflowRepo = new BaseRepository(
       this.store,
       this.fileSystem,
       workflowConfig,
-      []
+      [],
+      { trackSources: true }
     );
 
     this.streamRepo = new BaseRepository(
@@ -97,7 +110,8 @@ class FunctionStorage {
       this.store,
       this.fileSystem,
       businessObjectConfig,
-      []
+      [],
+      { trackSources: true }
     );
 
     this.projectRepo = new BaseRepository(
@@ -260,12 +274,10 @@ class FunctionStorage {
    * Setup file watcher
    */
   private setupWatcher() {
+    // chokidar 4 does not expand globs: watch the folders and keep only YAML files of the catalog folders
     const watchPaths: string[] = this.manifest
       ? []
-      : [
-          `${path.resolve(this.configRoot, 'projects')}/**/*.{yml,yaml}`,
-          `${path.resolve(this.configRoot, 'apps')}/**/*.{yml,yaml}`,
-        ];
+      : [path.resolve(this.configRoot, 'projects'), path.resolve(this.configRoot, 'apps')];
 
     // Add watch paths from all app directories
     const apps = this.getAllApps();
@@ -276,20 +288,29 @@ class FunctionStorage {
       }
     });
 
-    for (const appDir of appDirectories) {
-      watchPaths.push(
-        `${path.resolve(appDir, FEATURES_DIR)}/**/*.{yml,yaml}`,
-        `${path.resolve(appDir, LEGACY_FEATURES_DIR)}/**/*.{yml,yaml}`,
-        `${path.resolve(appDir, 'workflows')}/**/*.{yml,yaml}`,
-        `${path.resolve(appDir, 'streams')}/**/*.{yml,yaml}`,
-        `${path.resolve(appDir, 'business-objects')}/**/*.{yml,yaml}`
-      );
-    }
+    // Watch the catalog folders of every app directory, also those created later (features/ after a migration)
+    const isCatalogPath = (file: string): boolean =>
+      [...appDirectories].some((dir) => {
+        const rel = path.relative(dir, file);
+        if (rel === '') return true;
+        if (rel.startsWith('..') || path.isAbsolute(rel)) return false;
+        return CATALOG_DIRS.includes(rel.split(path.sep)[0]);
+      });
+    const configDirs = watchPaths.slice();
+    watchPaths.push(...appDirectories);
+    const existing = watchPaths.filter((p) => fs.existsSync(p));
 
-    this.watcher = chokidar.watch(watchPaths, {
+    this.watcher = chokidar.watch(existing, {
       persistent: true,
       ignoreInitial: true,
+      ignored: (file, stats) => {
+        if (configDirs.some((dir) => file === dir || file.startsWith(dir + path.sep))) return Boolean(stats?.isFile() && !/\.ya?ml$/.test(file));
+        if (!isCatalogPath(file)) return true;
+        return Boolean(stats?.isFile() && !/\.ya?ml$/.test(file));
+      },
     });
+
+    this.watcherReady = new Promise((resolve) => this.watcher!.once('ready', () => resolve()));
 
     this.watcher.on('add', async (filePath) => {
       logger.info('File added', { filePath });
@@ -450,6 +471,36 @@ class FunctionStorage {
     return await this.businessObjectRepo.save(data, targetRoot!);
   }
 
+  /** Component (app) id of a catalog file */
+  getAppIdForFilePath(filePath: string): string | undefined {
+    const root = this.getRootForFilePath(filePath);
+    return root ? this.getAllApps().find((a) => a.directory === root)?.id : undefined;
+  }
+
+  /** Catalog as plain entries with their file and component, for validation and plan checks (PRODUCTCREATOR-29) */
+  modelSnapshot(): CatalogModel {
+    const entries = <T,>(table: string, items: T[], idOf: (item: T) => string): ModelEntry<T>[] =>
+      items.map((data) => {
+        const file = this.getFilePath(table, idOf(data)) ?? undefined;
+        return { data, file, component: file ? this.getAppIdForFilePath(file) : undefined };
+      });
+    const duplicates: CatalogModel['duplicates'] = [];
+    const repos = [
+      ['feature', this.featureRepo],
+      ['workflow', this.workflowRepo],
+      ['business_object', this.businessObjectRepo],
+    ] as const;
+    for (const [kind, repo] of repos) {
+      for (const [id, files] of Object.entries(repo.getDuplicateSources())) duplicates.push({ kind, id, files });
+    }
+    return {
+      features: entries('features', this.getAllFeatures(), (f) => f.id),
+      workflows: entries('workflows', this.getAllWorkflows(), (w) => w.workflow),
+      objects: entries('business_objects', this.getAllBusinessObjects(), (o) => o.id),
+      duplicates,
+    };
+  }
+
   // Edges and Events
   getEdges() {
     return Object.values(this.store.getTable('edges'));
@@ -469,7 +520,7 @@ class FunctionStorage {
 
   getRootForFilePath(filePath: string): string | null {
     const resolved = path.resolve(filePath);
-    const subdirectories = [FEATURES_DIR, LEGACY_FEATURES_DIR, 'workflows', 'streams', 'business-objects'];
+    const subdirectories = CATALOG_DIRS;
     
     // Check all app directories
     const apps = this.getAllApps();

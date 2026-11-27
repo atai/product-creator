@@ -29,6 +29,10 @@ import * as r_save_workflow from './routes/save-workflow/route';
 import * as r_stream from './routes/stream/route';
 import * as r_streams from './routes/streams/route';
 import * as r_validate from './routes/validate/route';
+import * as r_validate_plan from './routes/validate-plan/route';
+import * as r_validation from './routes/validation/route';
+import * as r_impact from './routes/impact/route';
+import * as r_duplicates from './routes/duplicates/route';
 import * as r_workflow from './routes/workflow/route';
 import * as r_workflows from './routes/workflows/route';
 import * as r_workspace from './routes/workspace/route';
@@ -81,6 +85,11 @@ export const routes: RouteEntry[] = [
   compile('stream', r_stream as RouteModule),
   compile('streams', r_streams as RouteModule),
   compile('validate', r_validate as RouteModule),
+  // model checks (PRODUCTCREATOR-29)
+  compile('validate-plan', r_validate_plan as RouteModule),
+  compile('validation', r_validation as RouteModule),
+  compile('impact', r_impact as RouteModule),
+  compile('duplicates', r_duplicates as RouteModule),
   compile('workflow', r_workflow as RouteModule),
   compile('workflows', r_workflows as RouteModule),
   compile('workspace', r_workspace as RouteModule),

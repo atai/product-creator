@@ -3,6 +3,7 @@ import Ajv from 'ajv';
 import featureSchema from '../../../../schema/feature.schema.json';
 import logger from '../../../logger';
 import { Feature } from '../../../types';
+import { rejectInvalidSave } from '../../../validation/guard';
 
 const ajv = new Ajv();
 const validate = ajv.compile(featureSchema);
@@ -69,6 +70,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    // References, duplicates and the other model rules (PRODUCTCREATOR-29)
+    const rejected = rejectInvalidSave(storage, 'feature', data, appId);
+    if (rejected) return rejected;
 
     const existing = storage.getFeatureById(data.id);
 

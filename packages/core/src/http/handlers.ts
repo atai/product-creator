@@ -1,4 +1,6 @@
 import { getStorage } from '../storage';
+import type { EntityKind } from '../validation/model';
+import { rejectInvalidSave } from '../validation/guard';
 
 /**
  * Generic API handlers to eliminate duplication across routes
@@ -81,7 +83,9 @@ export function createSaveHandler<T>(
     data: T,
     targetRoot: string
   ) => Promise<{ success: boolean; error?: string }>,
-  entityKey: string
+  entityKey: string,
+  /** Run the model validation before writing (PRODUCTCREATOR-29) */
+  validateAs?: EntityKind
 ) {
   return async function POST(request: Request) {
     try {
@@ -113,6 +117,8 @@ export function createSaveHandler<T>(
       }
 
       const targetRoot = app.directory;
+      const rejected = validateAs ? rejectInvalidSave(storage, validateAs, entity, appId) : null;
+      if (rejected) return rejected;
       const result = await saver(storage, entity as T, targetRoot);
 
       if (!result.success) {

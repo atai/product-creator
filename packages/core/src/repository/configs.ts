@@ -54,6 +54,7 @@ export const featureConfig: EntityConfig<Feature> = {
     // optional link fields: kept in the row so that reading a card and saving it back does not drop them
     ...(entity.source_file ? { source_file: entity.source_file } : {}),
     ...(entity.calls?.length ? { calls: JSON.stringify(entity.calls) } : {}),
+    ...(entity.objects?.length ? { objects: JSON.stringify(entity.objects) } : {}),
     filePath,
   }),
 
@@ -72,6 +73,7 @@ export const featureConfig: EntityConfig<Feature> = {
     description: row.description as string,
     ...(row.source_file ? { source_file: row.source_file as string } : {}),
     ...(row.calls ? { calls: JSON.parse(row.calls as string) as string[] } : {}),
+    ...(row.objects ? { objects: JSON.parse(row.objects as string) as Feature['objects'] } : {}),
   }),
 };
 

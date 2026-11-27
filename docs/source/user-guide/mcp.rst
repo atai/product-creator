@@ -126,19 +126,26 @@ Remote access (ChatGPT, servers)
 --------------------------------
 
 Agents that cannot reach ``127.0.0.1`` (ChatGPT developer-mode connectors, an agent on a server) connect
-through the **Emperor MCP relay**. Product Creator opens one outgoing connection to
-``relay.emperor.ecooz.net``; the relay hands every request of a remote agent to your app. Nothing is
-opened on your computer, and it works only while Product Creator **and** its MCP server are running.
+through the **Emperor MCP relay** on `ecooz.net <https://ecooz.net>`_. Product Creator opens one
+outgoing connection to ``relay.emperor.ecooz.net``; the relay hands every request of a remote agent to
+your app. Nothing is opened on your computer, and it works only while Product Creator **and** its MCP
+server are running.
 
-#. Sign in to Emperor and open **Profile → Remote access**.
-#. **Create device** — copy the device key ``rld_…`` (it is shown once).
+Devices, bot tokens, audit and revoke live in Emperor: open `ecooz.net <https://ecooz.net>`_, switch to
+your **personal workspace**, then **Services → Product Creator**. Full Emperor-side steps (who sees the
+screen, Connect device, tokens, rotate and revoke) are in
+`Product Creator (remote access) <https://ecooz.net/support/docs/product-creator>`_.
+
+#. On `ecooz.net <https://ecooz.net>`_ open your personal workspace → **Services → Product Creator**
+   (see `Product Creator (remote access) <https://ecooz.net/support/docs/product-creator>`_).
+#. **Connect device** — copy the device key ``rld_…`` (it is shown once).
 #. In Product Creator → **Settings → Expose remotely**: paste the key and press **Save key**. The key
    is stored encrypted with the keychain of your operating system (macOS Keychain, Windows DPAPI,
    libsecret); if that is unavailable the key is not saved.
 #. Tick **Expose remotely** and make sure **Run MCP server** is on. The status becomes *online* and the
    **Public URL** appears: ``https://relay.emperor.ecooz.net/d/<slug>/mcp``.
-#. In Emperor create a **bot token** (``rly_…``) for that device with scope *READ* or *READ_WRITE* and
-   give the remote agent the public URL plus ``Authorization: Bearer rly_…``.
+#. On the same Emperor screen create a **bot token** (``rly_…``) for that device with scope *READ* or
+   *READ_WRITE* and give the remote agent the public URL plus ``Authorization: Bearer rly_…``.
 
 The scope of a remote agent is the **stricter** of its bot token scope and the *scope* setting above:
 

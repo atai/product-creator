@@ -21,6 +21,15 @@ export interface Feature {
   description?: string;
   calls?: string[];
   source_file?: string;
+  /** Business objects the feature uses (PRODUCTCREATOR-29); each id must be a business object of the catalog */
+  objects?: FeatureObjectRef[];
+}
+
+export interface FeatureObjectRef {
+  /** Business object id */
+  id: string;
+  /** read: only reads the object; write: creates, changes or deletes it */
+  access: 'read' | 'write';
 }
 
 /** @deprecated renamed to {@link Feature} (PRODUCTCREATOR-28); kept for one version */

@@ -9,12 +9,44 @@ import { IRepository, SaveResult, EntityConfig } from './types';
  * Implements common CRUD operations following DRY principle
  */
 export class BaseRepository<T> implements IRepository<T> {
+  /**
+   * Catalog entities: every file that defines an id (PRODUCTCREATOR-29). Two files with the same id are a duplicate
+   * (e.g. a card in both functions/ and features/); the store keeps the last one read, validation reports both.
+   */
+  private sources = new Map<string, Set<string>>();
+
   constructor(
     private store: Store,
     private fileSystem: FileSystemAdapter,
     private config: EntityConfig<T>,
-    private productRoots: string[]
+    private productRoots: string[],
+    private options: { trackSources?: boolean } = {}
   ) {}
+
+  /** Ids defined by more than one file, with those files */
+  getDuplicateSources(): Record<string, string[]> {
+    const out: Record<string, string[]> = {};
+    for (const [id, files] of this.sources) if (files.size > 1) out[id] = [...files].sort();
+    return out;
+  }
+
+  /** A file no longer defines `exceptId`'s siblings: drop it from the sources and from the store, re-read a remaining duplicate */
+  private forgetFile(filePath: string, exceptId?: string): void {
+    for (const [id, files] of [...this.sources]) {
+      if (id === exceptId || !files.delete(filePath)) continue;
+      const row = this.store.getRow(this.config.tableName, id);
+      const shown = row?.filePath === filePath;
+      if (files.size === 0) {
+        this.sources.delete(id);
+        if (shown) this.store.delRow(this.config.tableName, id);
+      } else if (shown) {
+        this.store.delRow(this.config.tableName, id);
+        const [other] = files;
+        const data = this.fileSystem.loadYamlFile<T>(other);
+        if (data) this.loadData(data, other);
+      }
+    }
+  }
 
   /**
    * Load all entities from all product roots
@@ -82,6 +114,13 @@ export class BaseRepository<T> implements IRepository<T> {
     // Store in TinyBase
     const id = this.config.getIdField(data);
     const row = this.config.toRow(data, filePath);
+    if (this.options.trackSources) {
+      this.forgetFile(filePath, id);
+      const files = this.sources.get(id) ?? new Set<string>();
+      files.add(filePath);
+      this.sources.set(id, files);
+      if (files.size > 1) logger.warn(`Duplicate ${this.config.tableName} id`, { id, files: [...files] });
+    }
 
     this.store.setRow(this.config.tableName, id, row as Record<string, string | number | boolean>);
 
@@ -169,6 +208,7 @@ export class BaseRepository<T> implements IRepository<T> {
           
           // Delete the old file since we're migrating to the new path
           this.fileSystem.deleteFile(existingFilePath);
+          if (this.options.trackSources) this.sources.get(id)?.delete(existing.filePath as string);
           
           // Remove the old entry from store (it will be reloaded with new path after save)
           this.store.delRow(this.config.tableName, id);
@@ -202,6 +242,12 @@ export class BaseRepository<T> implements IRepository<T> {
    * Remove entity from store by file path
    */
   removeByFilePath(filePath: string): boolean {
+    if (this.options.trackSources) {
+      const known = [...this.sources.values()].some((files) => files.has(filePath));
+      this.forgetFile(filePath);
+      if (known) logger.debug(`Removed ${this.config.tableName} file`, { filePath });
+      return known;
+    }
     const table = this.store.getTable(this.config.tableName);
 
     for (const [id, data] of Object.entries(table)) {

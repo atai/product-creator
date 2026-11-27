@@ -1,10 +1,12 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { openProject, toStorageEntities, PROJECT_FILE, type ProjectModel } from '../src/project/model';
 import { configureStorage, getStorage, resetStorage } from '../src/storage';
 import { legacyCatalogs, migrateFeatureFolders, migrateProject } from '../src/catalog/migrate';
+import { dispatch } from '../src/http/router';
+import { validateModel } from '../src/validation/model';
 
 let root: string;
 let project: ProjectModel;
@@ -82,4 +84,78 @@ describe('features folder (PRODUCTCREATOR-28)', () => {
     expect(migrateProject(project)[0].moved).toEqual([]);
     expect(fs.existsSync(path.join(catalog, 'functions'))).toBe(false);
   });
+
+  it('reports an id defined in functions/ and features/, and recovers when one is removed', async () => {
+    const cat = project.components[0].catalog;
+    write(path.join(cat, 'functions/orders/order.create.yml'), card('orders.order.create', 'Old'));
+    write(path.join(cat, 'features/orders/order.create.yml'), card('orders.order.create', 'New'));
+    const storage = await load();
+    const dup = validateModel(storage.modelSnapshot()).filter((i) => i.code === 'duplicate_id');
+    expect(dup).toHaveLength(1);
+    expect(dup[0].message).toContain('2 files');
+
+    const legacy = path.join(catalog, 'functions/orders/order.create.yml');
+    await storage.whenWatching();
+    fs.unlinkSync(legacy);
+    // the file watcher drops the removed file and re-reads the remaining one
+    await vi.waitFor(() => expect(validateModel(storage.modelSnapshot()).filter((i) => i.code === 'duplicate_id')).toHaveLength(0), { timeout: 5000 });
+    expect(storage.getFeatureById('orders.order.create')?.name).toBe('New');
+  });
 });
+
+describe('file watcher', () => {
+  it('picks up files written outside the app, also in a features/ folder created later', async () => {
+    write(path.join(project.components[0].catalog, 'functions/orders/order.create.yml'), card('orders.order.create'));
+    const storage = await load();
+    await storage.whenWatching();
+    write(path.join(project.components[0].catalog, 'features/orders/order.pay.yml'), card('orders.order.pay'));
+    write(path.join(project.components[0].catalog, 'notes/readme.yml'), card('orders.order.noise'));
+    await vi.waitFor(() => expect(storage.getFeatureById('orders.order.pay')).not.toBeNull(), { timeout: 5000 });
+    expect(storage.getFeatureById('orders.order.noise')).toBeNull();
+  });
+});
+
+describe('save guard (PRODUCTCREATOR-29)', () => {
+  const post = (url: string, body: unknown) =>
+    dispatch(new Request(`http://pc.local${url}`, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }));
+
+  it('rejects writes that add errors, accepts consistent ones, keeps existing problems editable', async () => {
+    const cat = project.components[0].catalog;
+    write(path.join(cat, 'features/legacy/thing.do.yml'), card('legacy.thing.do') + 'calls:\n  - gone.x.y\n');
+    await load();
+    const appId = project.components[0].id;
+
+    const wf = await post('/api/save-workflow', { workflow: { workflow: 'orders.checkout', steps: ['orders.order.create'] }, appId });
+    expect(wf.status).toBe(400);
+    const body = (await wf.json()) as { issues: { code: string }[] };
+    expect(body.issues[0].code).toBe('unknown_feature');
+
+    const feature = { id: 'orders.order.create', name: 'Create order', bounded_context: 'orders', entity: 'order', action: 'create', owner: 'team', lifecycle: 'active', objects: [{ id: 'order', access: 'write' }] };
+    const missingObject = await post('/api/save-feature', { data: feature, appId });
+    expect(missingObject.status).toBe(400);
+    expect(await missingObject.text()).toContain('unknown_object');
+
+    const bo = await post('/api/save-business-object', { businessObject: { id: 'order', name: 'Order', owner: 'team', lifecycle: 'active', fields: [{ name: 'id', type: 'string' }] }, appId });
+    expect(bo.status).toBe(200);
+    expect((await post('/api/save-feature', { data: feature, appId })).status).toBe(201);
+    expect((await post('/api/save-workflow', { workflow: { workflow: 'orders.checkout', steps: ['orders.order.create'] }, appId })).status).toBe(200);
+
+    const plan = await post('/api/validate-plan', { changes: [{ kind: 'function', op: 'delete', id: 'orders.order.create' }] });
+    const planBody = (await plan.json()) as { ok: boolean; introduced: { id: string }[] };
+    expect(planBody.ok).toBe(false);
+    expect(planBody.introduced.map((i) => i.id)).toContain('orders.checkout');
+
+    // an entry with an old problem can still be saved (the problem is not new)
+    const legacy = { ...feature, id: 'legacy.thing.do', bounded_context: 'legacy', entity: 'thing', action: 'do', objects: undefined, calls: ['gone.x.y'], name: 'Renamed' };
+    expect((await post('/api/save-feature', { data: legacy, appId })).status).toBe(200);
+
+    const impact = await dispatch(new Request('http://pc.local/api/impact?kind=business_object&id=order'));
+    const impactBody = (await impact.json()) as { features: { id: string }[]; workflows: { id: string }[] };
+    expect(impactBody.features.map((f) => f.id)).toEqual(['orders.order.create']);
+    expect(impactBody.workflows.map((w) => w.id)).toEqual(['orders.checkout']);
+
+    const validation = (await (await dispatch(new Request(`http://pc.local/api/validation?app=${appId}`))).json()) as { errors: number };
+    expect(validation.errors).toBe(1);
+  });
+});
+

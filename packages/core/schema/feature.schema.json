@@ -120,6 +120,33 @@
     "source_file": {
       "type": "string",
       "description": "Relative path of the source file that implements this feature"
+    },
+    "objects": {
+      "type": "array",
+      "description": "Business objects this feature reads or writes (ids of business objects). Validated: every id must exist.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "access"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Business object id"
+          },
+          "access": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ],
+            "description": "read: the feature only reads the object; write: creates, changes or deletes it"
+          }
+        },
+        "additionalProperties": false
+      }
     }
   }
 }
