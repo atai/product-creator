@@ -34,6 +34,8 @@ export interface StorageOptions {
     /** Pseudo file path used as origin of manifest entities (for logging). */
     source?: string;
   };
+  /** Watch the catalog folders for external changes (default true; the CLI reads once) */
+  watch?: boolean;
 }
 
 const MANIFEST_READONLY_ERROR =
@@ -74,8 +76,10 @@ class FunctionStorage {
 
   private configRoot: string;
   private manifest: StorageOptions['manifest'];
+  private watch: boolean;
 
   constructor(options: StorageOptions = {}) {
+    this.watch = options.watch !== false;
     this.configRoot = options.configRoot ?? path.resolve(process.cwd(), 'config');
     this.manifest = options.manifest;
     // In manifest mode projects/apps are not loaded from (or saved to) config YAML files
@@ -151,7 +155,7 @@ class FunctionStorage {
     await this.loadAll();
 
     // Setup file watcher
-    this.setupWatcher();
+    if (this.watch) this.setupWatcher();
 
     this.initialized = true;
     logger.info('Catalog storage initialized');

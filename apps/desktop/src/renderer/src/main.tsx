@@ -21,6 +21,7 @@ import Projects from '@/pages/projects';
 import WorkspacePage from '@/pages/workspace';
 import InterfacesPage from '@/pages/interfaces';
 import SettingsPage from '@/pages/settings';
+import ProblemsPage from '@/pages/problems';
 
 // Old routes of features (named "functions" before PRODUCTCREATOR-28), kept as redirects
 function LegacyFunctions() {
@@ -62,6 +63,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/workspace" element={<WorkspacePage />} />
               <Route path="/interfaces" element={<InterfacesPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/problems" element={<ProblemsPage />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </main>

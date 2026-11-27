@@ -4,6 +4,7 @@
 //   product-creator ~/git/repo-a ~/git/repo-b
 // Command-line mode (no window; exit code reports the result):
 //   product-creator migrate [folder...] [--dry-run]
+//   product-creator lint [folder...] [--warnings] [--json] [--catalog <dir>]
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
@@ -12,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const appDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const CLI_COMMANDS = new Set(['migrate']);
+const CLI_COMMANDS = new Set(['migrate', 'lint']);
 
 if (CLI_COMMANDS.has(process.argv[2])) {
   const cli = resolve(appDir, 'out/main/cli.js');

@@ -6,6 +6,7 @@ import { Feature } from '@pc/core/types';
 import FeatureForm from '@/components/FeatureForm';
 import Link from 'next/link';
 import FormHelpHint from '@/components/FormHelpHint';
+import ImpactPanel from '@/components/ImpactPanel';
 
 export default function FeatureDetail() {
   const params = useParams();
@@ -156,6 +157,26 @@ export default function FeatureDetail() {
                 </div>
               )}
 
+              {feature.source_file && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium text-meta mb-2">Implemented in</h3>
+                  <p className="font-mono text-sm">{feature.source_file}</p>
+                </div>
+              )}
+
+              {feature.objects && feature.objects.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium text-meta mb-2">Business objects</h3>
+                  <ul className="space-y-1 text-sm">
+                    {feature.objects.map((o) => (
+                      <li key={o.id}>
+                        <span className="font-mono">{o.id}</span> <span className="text-xs text-meta">{o.access}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {feature.apis && feature.apis.length > 0 && (
                 <div className="mt-6">
                   <h3 className="text-sm font-medium text-meta mb-2">APIs</h3>
@@ -171,6 +192,7 @@ export default function FeatureDetail() {
                   </div>
                 </div>
               )}
+              <ImpactPanel kind="feature" id={feature.id} />
             </div>
           </div>
         </div>

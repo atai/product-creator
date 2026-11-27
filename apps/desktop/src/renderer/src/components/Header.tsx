@@ -21,6 +21,7 @@ export default function Header() {
     '/features',
     '/doc',
     '/interfaces',
+    '/problems',
   ]);
 
   const buildHrefWithParams = (path: string, appValue?: string) => {
@@ -129,6 +130,7 @@ export default function Header() {
                 { label: 'Features', path: '/features' },
                 { label: 'Streams', path: '/streams' },
                 { label: 'Interfaces', path: '/interfaces' },
+                { label: 'Problems', path: '/problems' },
               ].map((item) => (
                 <Link
                   key={item.path}

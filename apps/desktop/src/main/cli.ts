@@ -1,13 +1,20 @@
+import * as fs from 'fs';
 import * as path from 'path';
-import { readProject } from '@pc/core/project/model';
+import { readProject, toStorageEntities, PROJECT_FILE } from '@pc/core/project/model';
 import { migrateProject, summarizeMigration } from '@pc/core/catalog/migrate';
+import { configureStorage, getStorage, resetStorage } from '@pc/core/storage';
+import { countIssues, validateModel, type ValidationIssue } from '@pc/core/validation/model';
+import type { AppEntity } from '@pc/core/types';
+import logger from '@pc/core/logger';
 
 /**
  * Command-line mode without Electron (bin/product-creator.mjs runs it with node):
  *   product-creator migrate [folder...] [--dry-run]   move functions/ → features/ in all catalogs (PRODUCTCREATOR-28)
- * Exit code: 0 ok, 1 problems found (e.g. conflicts), 2 usage error.
+ *   product-creator lint [folder...] [--warnings] [--json]   model validation of the catalogs (PRODUCTCREATOR-29)
+ *   product-creator lint --catalog <dir> [...]        validate one catalog folder of a repo without product-creator.yml (read only)
+ * Exit code: 0 ok, 1 problems found (conflicts, model errors), 2 usage error.
  */
-export const CLI_COMMANDS = ['migrate'] as const;
+export const CLI_COMMANDS = ['migrate', 'lint'] as const;
 export type CliCommand = (typeof CLI_COMMANDS)[number];
 
 export interface CliIo {
@@ -41,8 +48,61 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
     }
     return exit;
   }
+  if (command === 'lint') return lint(rest, io);
   io.error(`Usage: product-creator [folder...] | ${CLI_COMMANDS.map((c) => `product-creator ${c} [folder...]`).join(' | ')}`);
   return 2;
+}
+
+async function lint(args: string[], io: CliIo): Promise<number> {
+  const flags = new Set(args.filter((a) => a.startsWith('--') && a !== '--catalog'));
+  const catalogs: string[] = [];
+  const folders: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--catalog' && args[i + 1]) catalogs.push(path.resolve(io.cwd, args[++i]));
+    else if (!args[i].startsWith('--')) folders.push(args[i]);
+  }
+  const projects = [];
+  const apps: AppEntity[] = [];
+  for (const dir of catalogs) {
+    if (!fs.existsSync(dir)) {
+      io.error(`${dir}: no such folder`);
+      return 2;
+    }
+    apps.push({ id: `catalog:${dir}`, name: path.basename(dir), projectId: 'catalogs', directory: dir });
+  }
+  if (!catalogs.length || folders.length) {
+    for (const { root, project } of projectsOf(folders, io)) {
+      if (!project) {
+        io.error(`${root}: no product-creator.yml (open the folder in the app once, or use --catalog <dir>)`);
+        return 2;
+      }
+      projects.push(project);
+    }
+  }
+  const entities = toStorageEntities(projects);
+  // the CLI prints a report; the storage debug log would drown it
+  for (const t of logger.transports) t.silent = true;
+  await resetStorage();
+  configureStorage({ manifest: { projects: [...entities.projects, ...(apps.length ? [{ id: 'catalogs', name: 'catalogs' }] : [])], apps: [...entities.apps, ...apps], source: PROJECT_FILE }, watch: false });
+  const storage = await getStorage();
+  const issues = validateModel(storage.modelSnapshot()).filter((i) => flags.has('--warnings') || i.severity === 'error');
+  const all = validateModel(storage.modelSnapshot());
+  await resetStorage();
+  const counts = countIssues(all);
+  const names = new Map([...entities.apps, ...apps].map((a) => [a.id, a.name]));
+  if (flags.has('--json')) {
+    io.log(JSON.stringify({ ...counts, issues }, null, 2));
+  } else {
+    const byFile = new Map<string, ValidationIssue[]>();
+    for (const i of issues) byFile.set(i.file ?? `(${i.kind} ${i.id})`, [...(byFile.get(i.file ?? `(${i.kind} ${i.id})`) ?? []), i]);
+    for (const [file, list] of byFile) {
+      io.log(path.isAbsolute(file) ? path.relative(io.cwd, file) || file : file);
+      for (const i of list) io.log(`  ${i.severity === 'error' ? 'error' : 'warn '}  ${i.code.padEnd(26)} ${i.field ? `${i.field}: ` : ''}${i.message}`);
+    }
+    const scope = [...new Set([...entities.apps, ...apps].map((a) => names.get(a.id)))].join(', ');
+    io.log(`${counts.errors} error(s), ${counts.warnings} warning(s) in ${scope || 'no catalogs'}${flags.has('--warnings') ? '' : ' (warnings hidden; --warnings shows them)'}`);
+  }
+  return counts.errors > 0 ? 1 : 0;
 }
 
 // Entry point when run as out/main/cli.js

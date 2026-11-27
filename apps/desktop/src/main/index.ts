@@ -268,7 +268,7 @@ function createWindow() {
  */
 async function runSmokeTest() {
   const report: Record<string, unknown> = { projects: workspace.info().projects.map((p) => ({ root: p.root, origin: p.origin, notes: p.notes, components: p.project?.components.length, error: p.error })) };
-  for (const url of ['/api/workspace', '/api/apps', '/api/index', '/api/business-objects', '/api/interfaces']) {
+  for (const url of ['/api/workspace', '/api/apps', '/api/features', '/api/business-objects', '/api/interfaces', '/api/validation']) {
     const res = await handleApi({ method: 'GET', url });
     let size: unknown = res.body.length;
     try {

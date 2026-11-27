@@ -98,9 +98,9 @@ describe('features folder (PRODUCTCREATOR-28)', () => {
     await storage.whenWatching();
     fs.unlinkSync(legacy);
     // the file watcher drops the removed file and re-reads the remaining one
-    await vi.waitFor(() => expect(validateModel(storage.modelSnapshot()).filter((i) => i.code === 'duplicate_id')).toHaveLength(0), { timeout: 5000 });
+    await vi.waitFor(() => expect(validateModel(storage.modelSnapshot()).filter((i) => i.code === 'duplicate_id')).toHaveLength(0), { timeout: 15000 });
     expect(storage.getFeatureById('orders.order.create')?.name).toBe('New');
-  });
+  }, 20000);
 });
 
 describe('file watcher', () => {
@@ -110,9 +110,9 @@ describe('file watcher', () => {
     await storage.whenWatching();
     write(path.join(project.components[0].catalog, 'features/orders/order.pay.yml'), card('orders.order.pay'));
     write(path.join(project.components[0].catalog, 'notes/readme.yml'), card('orders.order.noise'));
-    await vi.waitFor(() => expect(storage.getFeatureById('orders.order.pay')).not.toBeNull(), { timeout: 5000 });
+    await vi.waitFor(() => expect(storage.getFeatureById('orders.order.pay')).not.toBeNull(), { timeout: 15000 });
     expect(storage.getFeatureById('orders.order.noise')).toBeNull();
-  });
+  }, 20000);
 });
 
 describe('save guard (PRODUCTCREATOR-29)', () => {

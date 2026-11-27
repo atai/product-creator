@@ -4,6 +4,7 @@ import { Fragment, useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BusinessObject } from '@pc/core/types';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
+import ImpactPanel from '@/components/ImpactPanel';
 
 export default function BusinessObjectsPage() {
   const searchParams = useSearchParams();
@@ -271,6 +272,8 @@ export default function BusinessObjectsPage() {
                               )}
                             </section>
                           </div>
+
+                          <ImpactPanel kind="business_object" id={bo.id} app={selectedApp || undefined} />
 
                           {/* Table Parts Section */}
                           {hasChildren && (

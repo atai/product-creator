@@ -6,6 +6,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { Feature } from '@pc/core/types';
 import * as yaml from 'js-yaml';
 import FormHelpHint from './FormHelpHint';
+import ValidationIssues, { type Issue } from './ValidationIssues';
 
 interface FeatureFormProps {
   existingCard?: Feature | null;
@@ -28,6 +29,9 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
   const [preview, setPreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [checked, setChecked] = useState(false);
+  const [objectIds, setObjectIds] = useState<string[]>([]);
   const [selectedApp, setSelectedApp] = useState<string>('');
 
   const {
@@ -67,6 +71,21 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
     control,
     name: 'apis',
   });
+
+  // Business objects the feature reads or writes (PRODUCTCREATOR-29)
+  const { fields: objectFields, append: appendObject, remove: removeObject } = useFieldArray<FeatureFormData, 'objects'>({
+    control,
+    name: 'objects',
+  });
+
+  useEffect(() => {
+    fetch('/api/business-objects')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: { id: string; childObjects?: { id: string }[] }[]) =>
+        setObjectIds(list.flatMap((o) => [o.id, ...(o.childObjects ?? []).map((c) => c.id)]).sort())
+      )
+      .catch(() => setObjectIds([]));
+  }, []);
 
   useEffect(() => {
     const appParam = searchParams.get('app');
@@ -119,6 +138,31 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
     }
   };
 
+  /** Validate the form against the model without saving (POST /api/validate-plan) */
+  const checkPlan = async () => {
+    const data = watch();
+    const id = isEditMode ? data.id : `${data.bounded_context}.${data.entity}.${data.action}`;
+    const objects = (data.objects || []).filter((o) => o.id && o.id.trim());
+    const proposed = {
+      ...data,
+      id,
+      tags: (data.tags || []).map((t) => t.value).filter((t) => t && t.trim()),
+      emits: (data.emits || []).map((e) => e.value).filter((e) => e && e.trim()),
+      consumes: (data.consumes || []).map((c) => c.value).filter((c) => c && c.trim()),
+      apis: (data.apis || []).filter((a) => a.method && a.path && a.path.trim()),
+      ...(objects.length ? { objects } : { objects: undefined }),
+    };
+    const response = await fetch('/api/validate-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ changes: [{ kind: 'feature', data: proposed, component: selectedApp || undefined }] }),
+    });
+    const result = (await response.json()) as { introduced?: Issue[]; error?: string };
+    setError(result.error ?? '');
+    setIssues(result.introduced ?? []);
+    setChecked(true);
+  };
+
   const onSubmit = async (data: FeatureFormData) => {
     setSaving(true);
     setError('');
@@ -143,7 +187,9 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
         emits: (data.emits || []).map(e => e.value).filter((e) => e && e.trim()),
         consumes: (data.consumes || []).map(c => c.value).filter((c) => c && c.trim()),
         apis: (data.apis || []).filter((a) => a.method && a.path && a.path.trim()),
+        objects: (data.objects || []).filter((o) => o.id && o.id.trim()).map((o) => ({ id: o.id.trim(), access: o.access || 'read' })),
       };
+      if (!payload.objects?.length) delete payload.objects;
 
       const response = await fetch('/api/save-feature', {
         method: 'POST',
@@ -156,7 +202,8 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
 
       if (!response.ok) {
         const err = await response.json();
-        setError(err.error || 'Failed to save');
+        setIssues(Array.isArray(err.issues) ? err.issues : []);
+        setError(Array.isArray(err.issues) && err.issues.length ? 'Not saved: the change breaks the model' : err.error || 'Failed to save');
         setSaving(false);
         return;
       }
@@ -184,6 +231,11 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
 
         {error && (
           <div className="mb-4 p-4 bg-danger-soft text-danger-fg-strong rounded">{error}</div>
+        )}
+        {(issues.length > 0 || checked) && (
+          <div className="mb-4 p-4 bg-surface rounded shadow">
+            {issues.length ? <ValidationIssues issues={issues} app={selectedApp || undefined} /> : <p className="text-sm text-success-fg">The change is consistent with the model.</p>}
+          </div>
         )}
 
         <div className="grid grid-cols-2 gap-8">
@@ -409,7 +461,50 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                 </div>
               </div>
 
+              {/* Business objects (PRODUCTCREATOR-29) */}
+              <div>
+                <label className="block text-sm font-medium mb-1 text-fg-2">Business objects</label>
+                <datalist id="feature-object-ids">
+                  {objectIds.map((id) => (
+                    <option key={id} value={id} />
+                  ))}
+                </datalist>
+                <div className="space-y-2">
+                  {objectFields.map((field, index) => (
+                    <div key={field.id} className="flex gap-2">
+                      <input
+                        {...register(`objects.${index}.id` as const)}
+                        list="feature-object-ids"
+                        className="flex-1 px-3 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta"
+                        placeholder="business object id"
+                      />
+                      <select {...register(`objects.${index}.access` as const)} className="px-3 py-2 border border-border-strong rounded bg-surface text-fg">
+                        <option value="read">read</option>
+                        <option value="write">write</option>
+                      </select>
+                      <button type="button" onClick={() => removeObject(index)} className="px-3 py-2 bg-danger-fill text-on rounded hover:bg-danger-fill-hover">
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => appendObject({ id: '', access: 'read' })}
+                    className="px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm"
+                  >
+                    + Add object
+                  </button>
+                </div>
+              </div>
+
               <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => void checkPlan()}
+                  className="px-4 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger"
+                >
+                  Check
+                </button>
                 <button
                   type="button"
                   onClick={updatePreview}

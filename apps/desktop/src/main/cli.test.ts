@@ -35,6 +35,27 @@ describe('product-creator migrate', () => {
     expect(fs.existsSync(path.join(root, project.components[0].catalog, 'functions'))).toBe(false);
   });
 
+  it('lint reports model errors with exit code 1, also for a bare catalog folder', async () => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'pc-cli-'));
+    process.env.PC_LOG_DIR = path.join(root, '.logs-outside');
+    fs.writeFileSync(path.join(root, 'package.json'), '{"name":"demo"}');
+    const project = openProject(root).project;
+    const wf = path.join(root, project.components[0].catalog, 'workflows', 'orders.checkout.yml');
+    fs.mkdirSync(path.dirname(wf), { recursive: true });
+    fs.writeFileSync(wf, 'workflow: orders.checkout\nsteps:\n  - orders.order.create\n');
+
+    const run = io();
+    expect(await runCli(['lint'], run.io)).toBe(1);
+    expect(run.out.join('\n')).toMatch(/unknown_feature[\s\S]*1 error/);
+
+    const bare = io();
+    expect(await runCli(['lint', '--catalog', path.join(root, project.components[0].catalog), '--json'], bare.io)).toBe(1);
+    expect(JSON.parse(bare.out.join('\n')).errors).toBe(1);
+
+    fs.unlinkSync(wf);
+    expect(await runCli(['lint'], io().io)).toBe(0);
+  });
+
   it('reports usage and missing projects', async () => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), 'pc-cli-'));
     expect(await runCli(['bogus'], io().io)).toBe(2);
