@@ -1,6 +1,6 @@
 {
   "name": "@pc/design-system",
-  "version": "0.0.0",
+  "version": "0.1.4",
   "private": true,
   "description": "Product Creator design tokens and Tailwind v4 bridge",
   "exports": {

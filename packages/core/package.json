@@ -1,6 +1,6 @@
 {
   "name": "@pc/core",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "private": true,
   "description": "Product Creator domain core: feature catalog storage, validation, code/Prisma/OpenAPI sync, project model and HTTP-style handlers",
   "type": "module",
