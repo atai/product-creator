@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { Feature } from '@pc/core/types';
+import { LIFECYCLES, Feature } from '@pc/core/types';
 import * as yaml from 'js-yaml';
 import FormHelpHint from './FormHelpHint';
 import ValidationIssues, { type Issue } from './ValidationIssues';
@@ -290,10 +290,11 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                   {...register('lifecycle', { required: true })}
                   className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="deprecated">Deprecated</option>
-                  <option value="removed">Removed</option>
+                  {LIFECYCLES.map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
                 </select>
               </div>
 

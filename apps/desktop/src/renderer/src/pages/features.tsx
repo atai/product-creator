@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Fuse from 'fuse.js';
-import { Feature } from '@pc/core/types';
+import { LIFECYCLES, Feature } from '@pc/core/types';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
+import LifecycleBadge from '../components/LifecycleBadge';
 
 export default function FeaturesPage() {
   const searchParams = useSearchParams();
@@ -65,7 +66,7 @@ export default function FeaturesPage() {
 
   const uniqueContexts = Array.from(new Set(functions.map((f) => f.bounded_context)));
   const uniqueOwners = Array.from(new Set(functions.map((f) => f.owner)));
-  const lifecycles = ['draft', 'active', 'deprecated', 'removed'];
+  const lifecycles = LIFECYCLES;
 
   if (loading) {
     return (
@@ -158,19 +159,7 @@ export default function FeaturesPage() {
                     <p className="text-sm text-muted">{func.id}</p>
                     <p className="text-sm text-meta mt-1">{func.description}</p>
                   </div>
-                  <span
-                    className={`px-2 py-1 text-xs rounded ${
-                      func.lifecycle === 'active'
-                        ? 'bg-success-muted text-success-fg'
-                        : func.lifecycle === 'draft'
-                        ? 'bg-warn-muted text-warn-fg'
-                        : func.lifecycle === 'deprecated'
-                        ? 'bg-secondary-soft text-secondary-soft-fg'
-                        : 'bg-surface-muted text-fg'
-                    }`}
-                  >
-                    {func.lifecycle}
-                  </span>
+                  <LifecycleBadge lifecycle={func.lifecycle} />
                 </div>
               </Link>
             ))}

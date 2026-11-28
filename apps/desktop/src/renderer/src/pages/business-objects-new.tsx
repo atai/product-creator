@@ -2,12 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  BusinessObject,
-  BusinessObjectField,
-  BusinessObjectTable,
-  BusinessObjectTableColumn,
-} from '@pc/core/types';
+import { LIFECYCLES, BusinessObject, BusinessObjectField, BusinessObjectTable, BusinessObjectTableColumn } from '@pc/core/types';
 import { BASE_FIELD_TYPES, buildTypeOptions } from '@pc/core/businessObjectTypeCatalog';
 
 type BusinessObjectFormState = {
@@ -20,7 +15,7 @@ type BusinessObjectFormState = {
   tables: BusinessObjectTable[];
 };
 
-const lifecycleOptions: BusinessObject['lifecycle'][] = ['draft', 'active', 'deprecated', 'removed'];
+const lifecycleOptions = LIFECYCLES;
 
 const defaultField = (): BusinessObjectField => ({
   name: '',

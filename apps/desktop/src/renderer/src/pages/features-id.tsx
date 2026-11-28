@@ -8,6 +8,7 @@ import Link from 'next/link';
 import FormHelpHint from '@/components/FormHelpHint';
 import ImpactPanel from '@/components/ImpactPanel';
 import FeatureSpecView from '../components/FeatureSpecView';
+import LifecycleBadge from '../components/LifecycleBadge';
 
 export default function FeatureDetail() {
   const params = useParams();
@@ -100,19 +101,7 @@ export default function FeatureDetail() {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-meta">Lifecycle</h3>
-                  <span
-                    className={`inline-block px-2 py-1 text-xs rounded ${
-                      feature.lifecycle === 'active'
-                        ? 'bg-success-muted text-success-fg'
-                        : feature.lifecycle === 'draft'
-                        ? 'bg-warn-muted text-warn-fg'
-                        : feature.lifecycle === 'deprecated'
-                        ? 'bg-secondary-soft text-secondary-soft-fg'
-                        : 'bg-surface-muted text-fg'
-                    }`}
-                  >
-                    {feature.lifecycle}
-                  </span>
+                  <LifecycleBadge lifecycle={feature.lifecycle} />
                 </div>
               </div>
 

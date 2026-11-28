@@ -54,6 +54,41 @@ functions in code.
 ``objects`` drives impact analysis: a change of a business object shows the features and workflows it
 affects.
 
+.. _lifecycle:
+
+Lifecycle
+~~~~~~~~~
+
+Features and business objects have the same statuses. Each status has its own rules; the checks that
+enforce them come with the design checks (`PRODUCTCREATOR-34
+<https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-34>`_).
+
+.. list-table::
+   :header-rows: 1
+   :widths: 14 30 56
+
+   * - Status
+     - Meaning
+     - Rules
+   * - ``draft``
+     - Being worked out
+     - Design problems are warnings, so planning is never blocked. In a spec: a *drafts* section, not
+       a task for an agent.
+   * - ``approved``
+     - Spec agreed, ready to build
+     - Description, at least one requirement, every requirement covered by acceptance, no open
+       questions, no calls to draft features. The contract an agent builds against.
+   * - ``implemented``
+     - In the code
+     - ``source_file`` exists; references only to implemented or deprecated entries; criteria
+       without ``verify`` are a warning. Code that disappeared (stale in code sync) is an error.
+   * - ``deprecated``
+     - Still in the code, not for new work
+     - New references to it are a warning; impact shows who still depends on it.
+   * - ``removed``
+     - Gone from the code, kept for history
+     - Nothing may reference it. Left out of specs, the graph and the matrix.
+
 .. _feature-spec:
 
 Spec of a feature

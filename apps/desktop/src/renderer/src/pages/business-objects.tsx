@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { BusinessObject } from '@pc/core/types';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 import ImpactPanel from '@/components/ImpactPanel';
+import LifecycleBadge from '../components/LifecycleBadge';
 
 export default function BusinessObjectsPage() {
   const searchParams = useSearchParams();
@@ -156,19 +157,7 @@ export default function BusinessObjectsPage() {
                       <td className="px-6 py-4 text-sm text-fg">{bo.name}</td>
                       <td className="px-6 py-4 text-sm text-muted">{bo.owner}</td>
                       <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
-                            bo.lifecycle === 'active'
-                              ? 'bg-success-muted text-success-fg'
-                              : bo.lifecycle === 'draft'
-                                ? 'bg-warn-muted text-warn-fg'
-                                : bo.lifecycle === 'deprecated'
-                                  ? 'bg-secondary-soft text-secondary-soft-fg'
-                                  : 'bg-surface-muted text-fg'
-                          }`}
-                        >
-                          {bo.lifecycle}
-                        </span>
+                        <LifecycleBadge lifecycle={bo.lifecycle} />
                       </td>
                       <td className="px-6 py-4 text-sm text-muted">
                         {bo.description || '-'}

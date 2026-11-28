@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import cytoscape from 'cytoscape';
-import { GraphNode, GraphEdge, Feature } from '@pc/core/types';
+import { LIFECYCLES, GraphNode, GraphEdge, Feature } from '@pc/core/types';
 
 export default function GraphPage() {
   const searchParams = useSearchParams();
@@ -95,7 +95,14 @@ export default function GraphPage() {
               },
             },
             {
-              selector: 'node[lifecycle="active"]',
+              selector: 'node[lifecycle="approved"]',
+              style: {
+                'background-color': '#4299e1',
+                'text-outline-color': '#4299e1',
+              },
+            },
+            {
+              selector: 'node[lifecycle="implemented"]',
               style: {
                 'background-color': '#48bb78',
                 'text-outline-color': '#48bb78',
@@ -151,7 +158,7 @@ export default function GraphPage() {
   }, [loading, filters, searchParams]);
 
   const uniqueContexts = Array.from(new Set(functions.map((f) => f.bounded_context)));
-  const lifecycles = ['draft', 'active', 'deprecated', 'removed'];
+  const lifecycles = LIFECYCLES;
 
   if (loading) {
     return (
