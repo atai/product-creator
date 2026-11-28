@@ -15,7 +15,8 @@ import logger from '@pc/core/logger';
  *   product-creator lint [folder...] [--warnings] [--info] [--json]   model validation of the catalogs (PRODUCTCREATOR-29);
  *                                                     design checks (PRODUCTCREATOR-34) are advisory by default: warnings and info
  *   product-creator lint --catalog <dir> [...]        validate one catalog folder of a repo without product-creator.yml (read only)
- *   product-creator spec [folder...] [--strict] [--no-screens]   write spec.md + agent/ to spec.output (PRODUCTCREATOR-35);
+ *   product-creator spec [folder...] [--strict] [--no-screens] [--language <tag>]   write <lang>/spec.md per project
+ *                                                     language + agent/ to spec.output (PRODUCTCREATOR-35, -37);
  *                                                     screenshots are captured first when configured (PRODUCTCREATOR-36);
  *                                                     --no-screens reuses the images there are;
  *                                                     --strict: exit 1 when the model has errors (the spec is written anyway)
@@ -56,7 +57,12 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
     return exit;
   }
   if (command === 'lint') return lint(rest, io);
-  if (command === 'spec') return spec(folders, flags, io);
+  if (command === 'spec') {
+    // --language <tag>: one language instead of all project languages (PRODUCTCREATOR-37)
+    const at = rest.indexOf('--language');
+    const language = at >= 0 ? rest[at + 1] : undefined;
+    return spec(folders.filter((f) => f !== language), flags, io, language);
+  }
   io.error(`Usage: product-creator [folder...] | ${CLI_COMMANDS.map((c) => `product-creator ${c} [folder...]`).join(' | ')}`);
   return 2;
 }
@@ -115,7 +121,7 @@ async function lint(args: string[], io: CliIo): Promise<number> {
   return counts.errors > 0 ? 1 : 0;
 }
 
-async function spec(folders: string[], flags: Set<string>, io: CliIo): Promise<number> {
+async function spec(folders: string[], flags: Set<string>, io: CliIo, language?: string): Promise<number> {
   const projects = [];
   for (const { root, project } of projectsOf(folders, io)) {
     if (!project) {
@@ -147,12 +153,14 @@ async function spec(folders: string[], flags: Set<string>, io: CliIo): Promise<n
         for (const f of report.failed) io.log(`  failed ${f.feature} ${f.id}: ${f.error ?? 'capture failed'}`);
         if (report.state === 'failed' || report.state === 'cancelled') exit = Math.max(exit, 1);
       }
-      const generated = generateSpec(project, model);
+      const generated = generateSpec(project, model, language ? { languages: [language] } : {});
       const { dir, files } = writeSpec(project, generated);
       const { errors, warnings } = generated.spec.counts;
       io.log(`${project.name}: ${files.length} file(s) in ${path.relative(io.cwd, dir) || dir}`);
-      io.log(`  ${generated.spec.features.length} feature(s), ${generated.spec.objects.length} object(s), ${generated.spec.workflows.length} workflow(s); language ${generated.spec.language}`);
-      if (generated.labelsFallback) io.log(`  no labels for "${generated.spec.language}": headings are in ${generated.labelsLanguage}`);
+      io.log(`  ${generated.spec.features.length} feature(s), ${generated.spec.objects.length} object(s), ${generated.spec.workflows.length} workflow(s)`);
+      for (const l of generated.languages) {
+        io.log(`  ${l.file}${l.untranslated ? `: ${l.untranslated} text(s) not translated` : ''}${l.labelsFallback ? ` (no labels for "${l.language}", headings in ${l.labelsLanguage})` : ''}`);
+      }
       io.log(`  ${errors} error(s), ${warnings} warning(s)${errors ? ': the spec says it is not ready' : ''}`);
       if (errors && flags.has('--strict')) exit = 1;
     } catch (error) {

@@ -70,7 +70,7 @@ export type IssueCode =
   | DesignCode;
 
 export type Severity = 'error' | 'warning' | 'info';
-export type IssueKind = EntityKind | 'stream' | 'component';
+export type IssueKind = EntityKind | 'stream' | 'component' | 'project';
 
 export interface ValidationIssue {
   severity: Severity;

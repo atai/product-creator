@@ -23,7 +23,8 @@
       "type": "string",
       "minLength": 1,
       "description": "Human-readable name of the feature",
-      "x-audience": "both"
+      "x-audience": "both",
+      "x-translatable": true
     },
     "bounded_context": {
       "type": "string",
@@ -120,7 +121,8 @@
     "description": {
       "type": "string",
       "description": "Detailed description of the feature",
-      "x-audience": "both"
+      "x-audience": "both",
+      "x-translatable": true
     },
     "calls": {
       "type": "array",
@@ -194,7 +196,8 @@
           "text": {
             "type": "string",
             "minLength": 1,
-            "description": "The requirement: one testable statement (\"The app shows …\", \"The agent can …\")"
+            "description": "The requirement: one testable statement (\"The app shows …\", \"The agent can …\")",
+            "x-translatable": true
           },
           "priority": {
             "type": "string",
@@ -235,22 +238,26 @@
           "given": {
             "type": "string",
             "minLength": 1,
-            "description": "Precondition"
+            "description": "Precondition",
+            "x-translatable": true
           },
           "when": {
             "type": "string",
             "minLength": 1,
-            "description": "Action"
+            "description": "Action",
+            "x-translatable": true
           },
           "then": {
             "type": "string",
             "minLength": 1,
-            "description": "Expected result"
+            "description": "Expected result",
+            "x-translatable": true
           },
           "text": {
             "type": "string",
             "minLength": 1,
-            "description": "The criterion as one sentence, when given/when/then does not fit"
+            "description": "The criterion as one sentence, when given/when/then does not fit",
+            "x-translatable": true
           },
           "verify": {
             "type": "string",
@@ -305,7 +312,8 @@
           "text": {
             "type": "string",
             "minLength": 1,
-            "description": "The constraint, measurable where possible (\"responds in < 200 ms\", \"works offline\")"
+            "description": "The constraint, measurable where possible (\"responds in < 200 ms\", \"works offline\")",
+            "x-translatable": true
           }
         }
       }
@@ -330,12 +338,14 @@
           "decision": {
             "type": "string",
             "minLength": 1,
-            "description": "What was decided"
+            "description": "What was decided",
+            "x-translatable": true
           },
           "reason": {
             "type": "string",
             "minLength": 1,
-            "description": "Why; alternatives that were rejected"
+            "description": "Why; alternatives that were rejected",
+            "x-translatable": true
           },
           "date": {
             "type": "string",
@@ -373,7 +383,8 @@
           "question": {
             "type": "string",
             "minLength": 1,
-            "description": "The question"
+            "description": "The question",
+            "x-translatable": true
           },
           "owner": {
             "type": "string",
@@ -451,7 +462,8 @@
           "title": {
             "type": "string",
             "minLength": 1,
-            "description": "Caption of the screenshot in the spec"
+            "description": "Caption of the screenshot in the spec",
+            "x-translatable": true
           },
           "path": {
             "type": "string",
@@ -511,6 +523,14 @@
             "description": "[width, height] in CSS pixels"
           }
         }
+      }
+    },
+    "i18n": {
+      "type": "object",
+      "x-audience": "both",
+      "description": "Translations (PRODUCTCREATOR-37): i18n.<language> holds the translatable fields (x-translatable) in that language; list items are keyed by their id (or x-i18n-key); _source keeps fingerprints of the translated primary texts (set on save) to detect stale translations.",
+      "additionalProperties": {
+        "type": "object"
       }
     }
   }

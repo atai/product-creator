@@ -76,7 +76,8 @@ function featureSection(spec: SpecModel, m: Messages, entry: SpecFeature): strin
     out.push('', `**${m.screens}**`);
     for (const s of entry.screens) {
       const caption = `${s.screen.id} — ${cell(s.screen.title)}`;
-      out.push('', s.exists ? `![${caption}](${s.file})` : `> *${caption}: ${m.screenNotCaptured}*`, '', `*${caption}*`);
+      // spec.md lives in <lang>/, images under the output folder
+      out.push('', s.exists ? `![${caption}](../${s.file})` : `> *${caption}: ${m.screenNotCaptured}*`, '', `*${caption}*`);
     }
   }
   if (f.objects?.length) out.push('', `**${m.objects}:** ${f.objects.map((o) => `\`${o.id}\` (${o.access === 'write' ? m.write : m.read})`).join(', ')}`);
@@ -109,7 +110,9 @@ export function renderHuman(spec: SpecModel, m: Messages): string {
   const status = spec.counts.errors ? m.statusErrors(spec.counts.errors, spec.counts.warnings) : spec.counts.warnings ? m.statusWarnings(spec.counts.warnings) : spec.counts.infos ? m.statusHints(spec.counts.infos) : m.statusClean;
 
   // errors and warnings are a highlighted block; a clean model (hints at most) is a plain line
-  const out: string[] = [`# ${p.name}: ${m.title}`, '', spec.counts.errors || spec.counts.warnings ? `> ${status}` : status, '', `*${m.generatedNote}*`, '', `## ${m.contents}`, ''];
+  const out: string[] = [`# ${p.name}: ${m.title}`, '', spec.counts.errors || spec.counts.warnings ? `> ${status}` : status, '', `*${m.generatedNote}*`];
+  if (spec.untranslated) out.push('', `*${m.untranslated(spec.untranslated, spec.primary)}*`);
+  out.push('', `## ${m.contents}`, '');
   sections.forEach((s, i) => out.push(`${i + 1}. ${s}`));
   let n = 0;
   const h2 = (title: string) => out.push('', `## ${++n}. ${title}`);

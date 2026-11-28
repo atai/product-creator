@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { UI_LANGUAGES, type UiLanguageSetting } from './i18n';
 
 export type McpScope = 'read' | 'write';
 
@@ -28,6 +29,8 @@ export interface RelaySettings {
 export interface AppSettings {
   mcp: McpSettings;
   relay: RelaySettings;
+  /** Language of the interface (PRODUCTCREATOR-37): system (follow the OS) | en | ru | de */
+  uiLanguage: UiLanguageSetting;
 }
 
 export const DEFAULT_RELAY_URL = 'wss://relay.emperor.ecooz.net/tunnel';
@@ -83,6 +86,7 @@ export class SettingsStore {
     }
     const mcp: Partial<McpSettings> = raw.mcp ?? {};
     const settings: AppSettings = {
+      uiLanguage: raw.uiLanguage && (['system', ...UI_LANGUAGES] as string[]).includes(raw.uiLanguage) ? raw.uiLanguage : 'system',
       relay: { enabled: false, url: DEFAULT_RELAY_URL },
       mcp: {
         enabled: mcp.enabled === true,
@@ -108,6 +112,13 @@ export class SettingsStore {
 
   get(): AppSettings {
     return structuredClone(this.data);
+  }
+
+  setUiLanguage(value: UiLanguageSetting): AppSettings {
+    if (!(['system', ...UI_LANGUAGES] as string[]).includes(value)) throw new Error(`Unknown interface language "${value}"`);
+    this.data = { ...this.data, uiLanguage: value };
+    this.write(this.data);
+    return this.get();
   }
 
   updateMcp(patch: Partial<Pick<McpSettings, 'enabled' | 'scope' | 'port'>>): AppSettings {

@@ -1,6 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { ComponentModel, ProjectModel } from '../project/model';
+import { projectLanguages, type ComponentModel, type ProjectModel } from '../project/model';
+import { translationProblems } from '../i18n';
+import { catalogSchemas } from './schemas';
+import productSchema from '../../schema/product.schema.json';
 import { kindOf, type BusinessObject, type Feature, type Lifecycle, type Workflow } from '../types';
 import { referencedType, typeKey, type CatalogModel, type DesignContext, type IssueKind, type ModelEntry, type Severity, type ValidationIssue } from './model';
 
@@ -43,6 +46,9 @@ export const DESIGN_CHECKS = {
   api_not_in_openapi: { intended: 'warning', title: 'An API of a feature is not an operation of the component OpenAPI spec' },
   unknown_actor: { intended: 'error', title: 'A feature names an actor the project does not define' },
   stream_event_unknown: { intended: 'warning', title: 'A stream stage waits for an event nothing emits' },
+  translation_stale: { intended: 'warning', title: 'The primary text changed after it was translated' },
+  translation_orphan: { intended: 'warning', title: 'A translation of an item that no longer exists' },
+  translation_unknown_language: { intended: 'warning', title: 'A translation into a language the project does not have' },
 } as const satisfies Record<string, { intended: Severity; title: string }>;
 
 export type DesignCode = keyof typeof DESIGN_CHECKS;
@@ -292,6 +298,21 @@ export function designIssues(model: CatalogModel, context: DesignContext): Valid
       });
     }
   }
+  // ------------------------------------------------------------------ translations (PRODUCTCREATOR-37)
+  const translations = (entry: { kind: IssueKind; id: string; component?: string; file?: string; lifecycle?: Lifecycle | null }, data: unknown, schema: object, project: ProjectModel | undefined) => {
+    if (!project) return;
+    const languages = projectLanguages(project);
+    for (const p of translationProblems(data, schema, languages)) {
+      if (p.kind === 'unknown_language') add('translation_unknown_language', entry, `i18n.${p.language}`, `Translations into "${p.language}", which is not a language of the project (${languages.join(', ')}). Add it to languages in product-creator.yml, or remove the translations.`);
+      else if (p.kind === 'orphan') add('translation_orphan', entry, `i18n.${p.language}.${p.path}`, `The ${p.language} translation of ${p.path} has no primary text any more (the item was removed or renamed). Remove it, or move it to the new item.`);
+      else add('translation_stale', entry, `i18n.${p.language}.${p.path}`, `${p.path} changed after it was translated into ${p.language}. Update the translation (saving it marks it current).`);
+    }
+  };
+  const projectOf = (component?: string) => (component ? owners.get(component)?.project : undefined);
+  for (const e of model.features.filter(live)) translations(fEntry(e), e.data, catalogSchemas.feature, projectOf(e.component));
+  for (const o of model.objects.filter(live)) translations(oEntry(o), o.data, catalogSchemas.business_object, projectOf(o.component));
+  for (const w of model.workflows.filter(live)) translations(wEntry(w), w.data, catalogSchemas.workflow, projectOf(w.component));
+  for (const project of context.projects) translations({ kind: 'project', id: project.slug, component: project.components[0]?.id }, project, productSchema, project);
   return issues;
 }
 

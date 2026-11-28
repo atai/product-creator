@@ -61,7 +61,7 @@ function model(): CatalogModel {
 describe('spec generation (PRODUCTCREATOR-35)', () => {
   it('human view: product context, features by context, drafts apart, problems next to the entry and in the list', () => {
     const { files, spec } = generateSpec(project(), model());
-    const md = files['spec.md'];
+    const md = files['en/spec.md'];
     expect(md).toMatch(/^# Shop: Specification/);
     expect(md).toContain('**Not ready:** the model has 1 error(s)');
     expect(md).toContain('- **G1** Checkout in one minute');
@@ -99,11 +99,34 @@ describe('spec generation (PRODUCTCREATOR-35)', () => {
     m.objects.push({ data: { id: 'order.line', name: 'Order line', owner: 'team-x', lifecycle: 'implemented', kind: 'value', fields: [{ name: 'qty', type: 'int' }] }, component: 'c1' });
     m.objects.push({ data: { id: 'order_total', name: 'Order total', owner: 'team-x', lifecycle: 'implemented', kind: 'computed', computedBy: ['shop.order.create'], fields: [{ name: 'sum', type: 'decimal' }] }, component: 'c1' });
     m.objects[0] = { ...m.objects[0], data: { ...m.objects[0].data, fields: [...m.objects[0].data.fields, { name: 'lines', type: 'order.line[]' }] } };
-    const md = generateSpec(project(), m).files['spec.md'];
+    const md = generateSpec(project(), m).files['en/spec.md'];
     expect(md).toContain('| lines | `order.line[]` — Order line |');
     expect(md).toContain('*implemented* · value object (part of other objects, not stored on its own)');
     expect(md).toContain('**Computed by:** order create (`shop.order.create`)');
     expect(md).toContain('*implemented* · stored entity · Component: API');
+  });
+
+  it('a human spec per project language: translated texts, untranslated ones marked, labels of the language (PRODUCTCREATOR-37)', () => {
+    const m = model();
+    const create = m.features[0].data;
+    m.features[0] = { ...m.features[0], data: { ...create, i18n: { ru: { name: 'Создать заказ', requirements: { R1: { text: 'Покупатель создаёт заказ' } } } }, screens: [{ id: 'S1', title: 'Order form', path: '/orders/new' }] } };
+    fs.mkdirSync(path.join(root, 'docs/spec/screens/ru/shop.order.create'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs/spec/screens/ru/shop.order.create/S1.png'), 'png');
+    const p = project({ languages: ['en', 'ru', 'de'], i18n: { ru: { vision: 'Продавать' } } });
+    const { files, languages } = generateSpec(p, m);
+    expect(Object.keys(files).filter((f) => f.endsWith('spec.md')).sort()).toEqual(['de/spec.md', 'en/spec.md', 'ru/spec.md']);
+    const ru = files['ru/spec.md'];
+    expect(ru).toMatch(/^# Shop: Техническое задание/);
+    expect(ru).toContain('#### Создать заказ (`shop.order.create`)');
+    expect(ru).toContain('- **R1** Покупатель создаёт заказ');
+    expect(ru).toContain('### Видение\n\nПродавать');
+    expect(ru).toContain('order refund [EN]'); // not translated: primary text, marked
+    expect(ru).toContain('](../screens/ru/shop.order.create/S1.png)'); // screenshot of its language
+    expect(ru).toMatch(/текст\(ов\) ещё не переведены/);
+    expect(files['de/spec.md']).toMatch(/^# Shop: Spezifikation/);
+    expect(files['en/spec.md']).not.toContain('[EN]');
+    expect(languages.find((l) => l.language === 'en')?.untranslated).toBe(0);
+    expect(languages.find((l) => l.language === 'ru')?.untranslated).toBeGreaterThan(0);
   });
 
   it('labels follow spec.language and fall back to English when there is no catalog for it', () => {
@@ -122,7 +145,7 @@ describe('spec generation (PRODUCTCREATOR-35)', () => {
     fs.writeFileSync(path.join(dir, 'agent/features/gone.json'), '{}');
     fs.writeFileSync(path.join(dir, 'notes.md'), 'mine');
     const { files } = writeSpec(p, generateSpec(p, model()));
-    expect(files).toContain('spec.md');
+    expect(files).toContain('en/spec.md');
     expect(fs.existsSync(path.join(dir, 'agent/features/gone.json'))).toBe(false);
     expect(fs.readFileSync(path.join(dir, 'notes.md'), 'utf8')).toBe('mine');
 

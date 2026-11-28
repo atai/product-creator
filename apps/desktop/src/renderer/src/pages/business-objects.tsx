@@ -6,6 +6,7 @@ import { BusinessObject } from '@pc/core/types';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 import ImpactPanel from '@/components/ImpactPanel';
 import LifecycleBadge from '../components/LifecycleBadge';
+import { t } from '@/i18n';
 
 export default function BusinessObjectsPage() {
   const searchParams = useSearchParams();
@@ -29,7 +30,7 @@ export default function BusinessObjectsPage() {
           setBusinessObjects(data);
         }
       } catch (error) {
-        console.error('Failed to load business objects', error);
+        console.error(t('objects.loadFailed'), error);
       } finally {
         setLoading(false);
       }
@@ -80,26 +81,26 @@ export default function BusinessObjectsPage() {
 
   return (
     <CatalogPageLayout
-      title="Business Objects"
-      description="Доменные сущности с полями, таблицами и описаниями. Используйте поиск, чтобы быстро найти нужный объект."
+      title={t('objects.title')}
+      description={t('objects.description')}
       hintKey="businessObjects"
       actions={
         <div className="flex flex-col gap-2 text-right">
           <div className="text-sm text-meta">
-            {selectedApp ? `App: ${selectedApp}` : 'All apps'}
+            {selectedApp ? `App: ${selectedApp}` : t('nav.allApps')}
           </div>
           <a
             className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-on text-sm font-medium rounded-md hover:bg-accent-hover"
             href={`/business-objects/new${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
           >
-            New Object
+            {t('objects.new')}
           </a>
         </div>
       }
       search={
         <input
           type="text"
-          placeholder="Search by name, owner, lifecycle, field, or table..."
+          placeholder={t('objects.search')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
@@ -107,12 +108,12 @@ export default function BusinessObjectsPage() {
       }
     >
       {loading ? (
-        <div className="text-center py-12 text-muted">Loading business objects...</div>
+        <div className="text-center py-12 text-muted">{t('objects.loading')}</div>
       ) : filteredItems.length === 0 ? (
         <div className="text-center py-12 text-muted">
           {businessObjects.length === 0
-            ? 'No business objects found in the selected app.'
-            : 'No matches for your search.'}
+            ? t('objects.noneInApp')
+            : t('objects.noMatch')}
         </div>
       ) : (
         <div className="bg-surface rounded-lg shadow overflow-hidden">
@@ -120,22 +121,22 @@ export default function BusinessObjectsPage() {
             <thead className="bg-bg">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Object ID
+                  {t('objects.colId')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Name
+                  {t('common.name')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Owner
+                  {t('common.owner')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Lifecycle
+                  {t('common.lifecycle')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Description
+                  {t('common.description')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Details
+                  {t('objects.colDetails')}
                 </th>
               </tr>
             </thead>
@@ -150,7 +151,7 @@ export default function BusinessObjectsPage() {
                         {bo.id}
                         {hasChildren && (
                           <span className="ml-2 text-xs text-meta">
-                            ({bo.childObjects!.length} table part{bo.childObjects!.length !== 1 ? 's' : ''})
+                            {t('objects.childCount', { count: bo.childObjects!.length })}
                           </span>
                         )}
                       </td>
@@ -171,7 +172,7 @@ export default function BusinessObjectsPage() {
                           onClick={() => toggleExpanded(bo.id)}
                           className="text-accent hover:text-accent-fg font-medium"
                         >
-                          {isExpanded ? 'Hide' : 'View'} structure
+                          {isExpanded ? t('objects.hideStructure') : t('objects.viewStructure')}
                         </button>
                       </td>
                     </tr>
@@ -181,10 +182,10 @@ export default function BusinessObjectsPage() {
                           <div className="grid gap-6 md:grid-cols-2">
                             <section>
                               <h3 className="text-sm font-semibold text-fg mb-3">
-                                Fields ({bo.fields.length})
+                                {t('objects.fields', { count: bo.fields.length })}
                               </h3>
                               {bo.fields.length === 0 ? (
-                                <div className="text-sm text-meta">No fields documented.</div>
+                                <div className="text-sm text-meta">{t('objects.noFieldsDocumented')}</div>
                               ) : (
                                 <div className="space-y-2">
                                   {bo.fields.map((field) => (
@@ -211,7 +212,7 @@ export default function BusinessObjectsPage() {
 
                             <section>
                               <h3 className="text-sm font-semibold text-fg mb-3">
-                                Tables ({bo.tables?.length || 0})
+                                {t('objects.tables', { count: bo.tables?.length || 0 })}
                               </h3>
                               {bo.tables && bo.tables.length > 0 ? (
                                 <div className="space-y-4">
@@ -235,9 +236,9 @@ export default function BusinessObjectsPage() {
                                           <table className="w-full text-sm">
                                             <thead>
                                               <tr className="text-left text-xs uppercase text-meta">
-                                                <th className="pb-1">Column</th>
-                                                <th className="pb-1">Type</th>
-                                                <th className="pb-1">Description</th>
+                                                <th className="pb-1">{t('objects.column')}</th>
+                                                <th className="pb-1">{t('objects.type')}</th>
+                                                <th className="pb-1">{t('common.description')}</th>
                                               </tr>
                                             </thead>
                                             <tbody>
@@ -260,7 +261,7 @@ export default function BusinessObjectsPage() {
                                   ))}
                                 </div>
                               ) : (
-                                <div className="text-sm text-meta">No tables mapped.</div>
+                                <div className="text-sm text-meta">{t('objects.noTables')}</div>
                               )}
                             </section>
                           </div>
@@ -271,7 +272,7 @@ export default function BusinessObjectsPage() {
                           {hasChildren && (
                             <section className="mt-6 pt-6 border-t border-border-strong">
                               <h3 className="text-sm font-semibold text-fg mb-3">
-                                Table Parts ({bo.childObjects!.length})
+                                {t('objects.nested', { count: bo.childObjects!.length })}
                               </h3>
                               <div className="space-y-3">
                                 {bo.childObjects!.map((child) => {
@@ -285,7 +286,7 @@ export default function BusinessObjectsPage() {
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center gap-2">
                                             <span className="text-xs text-accent font-medium">
-                                              {child.kind === 'value' ? 'Value object' : child.kind === 'computed' ? 'Computed' : 'Table Part'}
+                                              {t(`objects.kind.${child.kind ?? 'entity'}`)}
                                             </span>
                                             <span className="text-sm font-medium text-fg">
                                               {child.id}
@@ -299,7 +300,7 @@ export default function BusinessObjectsPage() {
                                             onClick={() => toggleChildExpanded(bo.id, child.id)}
                                             className="text-xs text-accent hover:text-accent-fg font-medium"
                                           >
-                                            {childExpanded ? 'Hide' : 'Show'} details
+                                            {childExpanded ? t('objects.hideDetails') : t('objects.showDetails')}
                                           </button>
                                         </div>
                                         {child.description && (
@@ -313,7 +314,7 @@ export default function BusinessObjectsPage() {
                                           <div className="grid gap-4 md:grid-cols-2">
                                             <div>
                                               <h4 className="text-xs font-semibold text-fg-2 mb-2">
-                                                Fields ({child.fields.length})
+                                                {t('objects.fields', { count: child.fields.length })}
                                               </h4>
                                               {child.fields.length > 0 ? (
                                                 <div className="space-y-1">
@@ -333,13 +334,13 @@ export default function BusinessObjectsPage() {
                                                 </div>
                                               ) : (
                                                 <div className="text-xs text-meta">
-                                                  No fields
+                                                  {t('objects.noFields')}
                                                 </div>
                                               )}
                                             </div>
                                             <div>
                                               <h4 className="text-xs font-semibold text-fg-2 mb-2">
-                                                Tables ({child.tables?.length || 0})
+                                                {t('objects.tables', { count: child.tables?.length || 0 })}
                                               </h4>
                                               {child.tables && child.tables.length > 0 ? (
                                                 <div className="space-y-2">
@@ -361,7 +362,7 @@ export default function BusinessObjectsPage() {
                                                 </div>
                                               ) : (
                                                 <div className="text-xs text-meta">
-                                                  No tables
+                                                  {t('objects.noTablesShort')}
                                                 </div>
                                               )}
                                             </div>

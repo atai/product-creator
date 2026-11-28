@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Feature } from '@pc/core/types';
+import { t } from '@/i18n';
 
 /**
  * Issue link template of the open projects (PRODUCTCREATOR-33). Used only when exactly one tracker is configured:
@@ -37,7 +38,7 @@ export function FeatureLinksView({ feature }: { feature: Feature }) {
     <>
       {tickets.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-sm font-medium text-meta mb-2">Tickets</h3>
+          <h3 className="text-sm font-medium text-meta mb-2">{t('spec.tickets')}</h3>
           <div className="flex flex-wrap gap-2">
             {tickets.map((t) =>
               issueUrl ? (
@@ -55,7 +56,7 @@ export function FeatureLinksView({ feature }: { feature: Feature }) {
       )}
       {code_refs.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-sm font-medium text-meta mb-2">Also implemented in</h3>
+          <h3 className="text-sm font-medium text-meta mb-2">{t('spec.alsoImplementedIn')}</h3>
           <ul className="space-y-1 text-sm">
             {code_refs.map((c) => (
               <li key={`${c.component}:${c.file}:${c.symbol ?? ''}`}>
@@ -89,7 +90,7 @@ export default function FeatureSpecView({ feature }: { feature: Feature }) {
     <>
       {actors.length > 0 &&
         section(
-          'Actors',
+          t('spec.actors'),
           <p className="text-fg-2">
             {actors.map((id, i) => (
               <span key={id} title={id}>
@@ -101,41 +102,41 @@ export default function FeatureSpecView({ feature }: { feature: Feature }) {
         )}
       {requirements.length > 0 &&
         section(
-          'Requirements',
+          t('spec.requirements'),
           <ul className="space-y-1">
             {requirements.map((r) => (
               <li key={r.id} id={r.id}>
                 {tag(r.id)}
                 {r.text}
-                {r.priority && r.priority !== 'must' && <span className="ml-2 text-xs text-meta">({r.priority})</span>}
+                {r.priority && r.priority !== 'must' && <span className="ml-2 text-xs text-meta">({t(`spec.priority.${r.priority}`)})</span>}
               </li>
             ))}
           </ul>
         )}
       {acceptance.length > 0 &&
         section(
-          'Acceptance criteria',
+          t('spec.acceptance'),
           <ul className="space-y-2">
             {acceptance.map((a) => (
               <li key={a.id} id={a.id}>
                 {tag(a.id)}
-                {a.covers?.length ? <span className="text-xs text-meta mr-2">covers {a.covers.join(', ')}</span> : null}
+                {a.covers?.length ? <span className="text-xs text-meta mr-2">{t('spec.covers', { ids: a.covers.join(', ') })}</span> : null}
                 {a.text && <span>{a.text}</span>}
                 {(a.given || a.when || a.then) && (
                   <div className="ml-6 text-sm text-fg-2">
-                    {a.given && <div><b>Given</b> {a.given}</div>}
-                    {a.when && <div><b>When</b> {a.when}</div>}
-                    {a.then && <div><b>Then</b> {a.then}</div>}
+                    {a.given && <div><b>{t('spec.given')}</b> {a.given}</div>}
+                    {a.when && <div><b>{t('spec.when')}</b> {a.when}</div>}
+                    {a.then && <div><b>{t('spec.then')}</b> {a.then}</div>}
                   </div>
                 )}
-                {a.verify && <div className="ml-6 font-mono text-xs text-meta">verify: {a.verify}</div>}
+                {a.verify && <div className="ml-6 font-mono text-xs text-meta">{t('spec.verify', { command: a.verify })}</div>}
               </li>
             ))}
           </ul>
         )}
       {constraints.length > 0 &&
         section(
-          'Constraints',
+          t('spec.constraints'),
           <ul className="space-y-1">
             {constraints.map((c) => (
               <li key={c.id}>
@@ -148,7 +149,7 @@ export default function FeatureSpecView({ feature }: { feature: Feature }) {
         )}
       {decisions.length > 0 &&
         section(
-          'Decisions',
+          t('spec.decisions'),
           <ul className="space-y-2">
             {decisions.map((d) => (
               <li key={d.id} className={d.status === 'superseded' ? 'line-through text-meta' : undefined}>
@@ -162,7 +163,7 @@ export default function FeatureSpecView({ feature }: { feature: Feature }) {
         )}
       {open_questions.length > 0 &&
         section(
-          'Open questions',
+          t('spec.openQuestions'),
           <ul className="space-y-1">
             {open_questions.map((q) => (
               <li key={q.id}>

@@ -4,6 +4,7 @@ import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import Header from '@/components/Header';
+import { setUiLanguage } from '@/i18n';
 import Home from '@/pages/home';
 import Features from '@/pages/features';
 import FeatureView from '@/pages/features-id';
@@ -35,7 +36,8 @@ function LegacyFunction() {
 // Header and pages read apps/projects once; reload when the set of opened projects changes
 window.pc.onWorkspaceChanged(() => window.location.reload());
 
-createRoot(document.getElementById('root')!).render(
+function render() {
+  createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HashRouter>
       <Suspense fallback={null}>
@@ -72,3 +74,11 @@ createRoot(document.getElementById('root')!).render(
     </HashRouter>
   </StrictMode>
 );
+}
+
+// the interface language comes from the app settings (PRODUCTCREATOR-37); a change reloads the window
+void window.pc.ui
+  .language()
+  .then(({ language }) => setUiLanguage(language))
+  .catch(() => setUiLanguage('en'))
+  .finally(render);

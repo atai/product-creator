@@ -121,11 +121,12 @@ name from ``list_projects``) as an argument.
      - Match code (or the Prisma schema) with the catalog and show what a sync would do; writes nothing
    * - ``get_project``
      - read
-     - Product context of a project: vision, goals, actors, glossary, tracker, components
+     - Product context of a project: vision, goals, actors, glossary, tracker, languages and their
+       translations (``i18n``), components
    * - ``get_spec``
      - read
      - The generated spec: the agent manifest, one entry (``entry``: a file from the manifest), or the
-       human Markdown (``human: true``); see :doc:`spec`
+       human Markdown (``human: true``, in ``language``: one of the project languages); see :doc:`spec`
    * - ``apply_plan``
      - read-write
      - Write several changes at once (same input as ``validate_plan``). The plan is checked as a whole,
@@ -137,14 +138,16 @@ name from ``list_projects``) as an argument.
        for the end and return the report (see :ref:`spec-screenshots`)
    * - ``update_project``
      - read-write
-     - Change name, description, vision, goals, actors, glossary or tracker of a project
+     - Change name, description, vision, goals, actors, glossary, tracker, ``languages`` or the
+       translations of the product context (``i18n``, see :ref:`spec-languages`)
    * - ``create_catalog_entry``
      - read-write
      - Create a feature, business object, workflow or stream. Rejected with the list of problems if
        it would add a validation error
    * - ``update_catalog_entry``
      - read-write
-     - Change fields of an entry (merge patch; the id cannot change; rejected like create)
+     - Change fields of an entry (merge patch; the id cannot change; rejected like create). A
+       translation is a patch of ``i18n`` (see :ref:`spec-languages`)
    * - ``sync_code_apply`` / ``sync_schema_apply``
      - read-write
      - Run the sync with the default actions. Code sync: links proposed features; creates features

@@ -45,7 +45,12 @@ export interface Feature {
   tickets?: string[];
   /** Screenshots of the UI for the spec (PRODUCTCREATOR-36) */
   screens?: FeatureScreen[];
+  /** Translations: i18n.<language> (PRODUCTCREATOR-37) */
+  i18n?: Translations;
 }
+
+/** i18n block of a card: language → translated fields (+ _source fingerprints) */
+export type Translations = Record<string, Record<string, unknown>>;
 
 /** One step before a screenshot: exactly one of click / fill / wait */
 export interface FeatureScreenAction {
@@ -163,6 +168,7 @@ export interface Workflow {
   emits?: string[];
   compensations?: Record<string, string>;
   tickets?: string[];
+  i18n?: Translations;
 }
 
 export interface StreamStage {
@@ -216,6 +222,7 @@ export interface BusinessObject {
   kind?: BusinessObjectKind;
   /** Features that produce a computed object */
   computedBy?: string[];
+  i18n?: Translations;
 }
 
 export const BUSINESS_OBJECT_KINDS = ['entity', 'value', 'computed'] as const;

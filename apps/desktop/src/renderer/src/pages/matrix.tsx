@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Feature } from '@pc/core/types';
 import FormHelpHint from '@/components/FormHelpHint';
+import { t } from '@/i18n';
 
 interface MatrixCell {
   exists: boolean;
@@ -44,7 +45,7 @@ export default function MatrixPage() {
         }
       })
       .catch((err) => {
-        console.error('Failed to load functions', err);
+        console.error(t('features.loadFailed'), err);
         setLoading(false);
       });
   }, [searchParams]);
@@ -92,7 +93,7 @@ export default function MatrixPage() {
   if (loading) {
     return (
       <div className="min-h-full p-8">
-        <p className="text-muted">Loading...</p>
+        <p className="text-muted">{t('common.loading')}</p>
       </div>
     );
   }
@@ -102,21 +103,21 @@ export default function MatrixPage() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="mb-4 flex items-center">
-            <h1 className="text-2xl font-bold">Feature Matrix</h1>
+            <h1 className="text-2xl font-bold">{t('matrix.title')}</h1>
             <FormHelpHint hintKey="matrix" />
           </div>
           <p className="text-muted mb-4">
-            Verb/Noun matrix showing which actions are implemented for each entity
+            {t('matrix.lead')}
           </p>
 
           <div className="flex gap-4 items-center">
-            <label className="text-sm font-medium text-fg-2">Bounded Context:</label>
+            <label className="text-sm font-medium text-fg-2">{t('matrix.context')}</label>
             <select
               value={selectedContext}
               onChange={(e) => setSelectedContext(e.target.value)}
               className="px-4 py-2 border border-border-strong rounded bg-surface text-fg"
             >
-              <option value="">Select Context</option>
+              <option value="">{t('matrix.selectContext')}</option>
               {uniqueContexts.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -128,11 +129,11 @@ export default function MatrixPage() {
 
         {!selectedContext ? (
           <div className="bg-warn-soft border border-warn-border rounded p-4">
-            <p className="text-warn-fg">Please select a Bounded Context to view the matrix</p>
+            <p className="text-warn-fg">{t('matrix.pleaseSelect')}</p>
           </div>
         ) : entities.length === 0 ? (
           <div className="bg-bg border border-border rounded p-4">
-            <p className="text-muted">No functions found for this context</p>
+            <p className="text-muted">{t('matrix.none')}</p>
           </div>
         ) : (
           <div className="bg-surface rounded shadow overflow-x-auto">
@@ -140,7 +141,7 @@ export default function MatrixPage() {
               <thead>
                 <tr className="bg-surface-muted">
                   <th className="border border-border-strong px-4 py-3 text-left font-semibold text-fg-2 sticky left-0 bg-surface-muted z-10">
-                    Action \ Entity
+                    {t('matrix.corner')}
                   </th>
                   {entities.map((entity) => (
                     <th
@@ -195,7 +196,7 @@ export default function MatrixPage() {
 
         {selectedContext && entities.length > 0 && (
           <div className="mt-4 bg-accent-soft border border-accent-border rounded p-4">
-            <h3 className="font-semibold text-accent-fg-strong mb-2">Legend:</h3>
+            <h3 className="font-semibold text-accent-fg-strong mb-2">{t('matrix.legend')}</h3>
             <div className="text-sm text-accent-fg space-y-1">
               <p>
                 <span className="inline-block w-4 h-4 bg-success-muted border border-border-strong mr-2"></span>

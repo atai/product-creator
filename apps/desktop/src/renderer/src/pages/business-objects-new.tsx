@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BUSINESS_OBJECT_KINDS, LIFECYCLES, type BusinessObject, type BusinessObjectField, type BusinessObjectKind, type BusinessObjectTable, type BusinessObjectTableColumn } from '@pc/core/types';
 import { BASE_FIELD_TYPES, buildTypeOptions } from '@pc/core/businessObjectTypeCatalog';
+import { t } from '@/i18n';
+import businessObjectSchema from '@pc/core/schema/business-object.schema.json';
+import { LanguageTabs, TranslationEditor, useProjectLanguages } from '@/components/TranslationEditor';
 
 type BusinessObjectFormState = {
   id: string;
@@ -21,11 +24,6 @@ type BusinessObjectFormState = {
 const lifecycleOptions = LIFECYCLES;
 
 /** PRODUCTCREATOR-39 */
-const KIND_LABELS: Record<BusinessObjectKind, string> = {
-  entity: 'entity — stored, has its own identity',
-  value: 'value — a structure inside other objects (use it as a field type)',
-  computed: 'computed — produced at runtime, not stored',
-};
 
 const defaultField = (): BusinessObjectField => ({
   name: '',
@@ -38,6 +36,12 @@ export default function NewBusinessObjectPage() {
   const searchParams = useSearchParams();
   const selectedApp = searchParams.get('app') || '';
 
+  // translations of name, description and field descriptions (PRODUCTCREATOR-37)
+  const [i18n, setI18n] = useState<BusinessObject['i18n']>(undefined);
+  const [language, setLanguage] = useState('');
+  const languages = useProjectLanguages(selectedApp || undefined);
+  const primary = languages[0];
+  const translating = Boolean(language && language !== primary);
   const [form, setForm] = useState<BusinessObjectFormState>({
     id: '',
     name: '',
@@ -171,16 +175,16 @@ export default function NewBusinessObjectPage() {
   };
 
   const validateForm = () => {
-    if (!form.id.trim()) return 'ID is required';
-    if (!form.name.trim()) return 'Name is required';
-    if (!form.owner.trim()) return 'Owner is required';
-    if (!selectedApp) return 'Please select an app in the header before creating objects.';
-    if (!form.fields.length) return 'At least one field is required';
+    if (!form.id.trim()) return t('bo.idRequired');
+    if (!form.name.trim()) return t('bo.nameRequired');
+    if (!form.owner.trim()) return t('bo.ownerRequired');
+    if (!selectedApp) return t('bo.selectApp');
+    if (!form.fields.length) return t('bo.fieldRequired');
     if (form.fields.some((field) => !field.name.trim() || !field.type.trim())) {
-      return 'Each field needs name and type';
+      return t('bo.fieldNameType');
     }
     if (form.tables.some((table) => !table.name.trim())) {
-      return 'Each table needs a name';
+      return t('bo.tableName');
     }
     if (
       form.tables.some(
@@ -189,7 +193,7 @@ export default function NewBusinessObjectPage() {
           table.columns.some((column) => !column.name?.trim() || !column.type?.trim())
       )
     ) {
-      return 'Each column needs name and type';
+      return t('bo.columnNameType');
     }
     return null;
   };
@@ -211,6 +215,7 @@ export default function NewBusinessObjectPage() {
         body: JSON.stringify({
           businessObject: {
             ...form,
+            i18n,
             // entity is the default: not written (PRODUCTCREATOR-39)
             kind: form.kind === 'entity' ? undefined : form.kind,
             computedBy: form.kind === 'computed' && form.computedBy.trim() ? form.computedBy.split(/[\s,]+/).filter(Boolean) : undefined,
@@ -241,7 +246,7 @@ export default function NewBusinessObjectPage() {
 
       if (!response.ok) {
         const result = await response.json();
-        throw new Error(result.error || 'Failed to save business object');
+        throw new Error(result.error || t('bo.saveFailed'));
       }
 
       const redirectUrl = selectedApp
@@ -250,7 +255,7 @@ export default function NewBusinessObjectPage() {
       router.push(redirectUrl);
     } catch (err: unknown) {
       console.error('Failed to save business object', err);
-      const message = err instanceof Error ? err.message : 'Failed to save business object';
+      const message = err instanceof Error ? err.message : t('bo.saveFailed');
       setError(message);
     } finally {
       setSaving(false);
@@ -287,9 +292,9 @@ export default function NewBusinessObjectPage() {
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-fg">Create Business Object</h1>
+            <h1 className="text-3xl font-bold text-fg">{t('bo.createTitle')}</h1>
             <p className="text-muted mt-2">
-              Describe canonical fields and how they map into physical tables.
+              {t('bo.lead')}
             </p>
           </div>
           <button
@@ -302,13 +307,13 @@ export default function NewBusinessObjectPage() {
             }}
             className="text-sm text-accent hover:text-accent-fg"
           >
-            Back to list
+            {t('bo.backToList')}
           </button>
         </div>
 
         {!selectedApp && (
           <div className="mb-4 rounded border border-warn-border-strong bg-warn-soft px-4 py-3 text-sm text-warn-fg">
-            Select an app from the header to choose where the YAML file will be written.
+            {t('bo.selectAppHint')}
           </div>
         )}
 
@@ -319,12 +324,19 @@ export default function NewBusinessObjectPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          <LanguageTabs languages={languages} value={language || primary} onChange={setLanguage} />
+          {translating && (
+            <section className="bg-surface rounded-lg shadow p-6">
+              <TranslationEditor schema={businessObjectSchema} entry={form} i18n={i18n} language={language} primary={primary} onChange={(next) => setI18n(next as BusinessObject['i18n'])} />
+            </section>
+          )}
+          <div className={translating ? 'hidden' : 'space-y-8'}>
           <section className="bg-surface rounded-lg shadow p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-fg">Overview</h2>
+            <h2 className="text-lg font-semibold text-fg">{t('bo.overview')}</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <label htmlFor="object-id" className="text-sm font-medium text-fg-2">
-                  Object ID
+                  {t('bo.objectId')}
                 </label>
                 <input
                   id="object-id"
@@ -336,31 +348,31 @@ export default function NewBusinessObjectPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label htmlFor="object-name" className="text-sm font-medium text-fg-2">
-                  Name
+                  {t('common.name')}
                 </label>
                 <input
                   id="object-name"
                   value={form.name}
                   onChange={(e) => updateForm('name', e.target.value)}
-                  placeholder="Customer Profile"
+                  placeholder={t('bo.namePlaceholder')}
                   className="border border-border-strong rounded px-3 py-2"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label htmlFor="object-owner" className="text-sm font-medium text-fg-2">
-                  Owner
+                  {t('common.owner')}
                 </label>
                 <input
                   id="object-owner"
                   value={form.owner}
                   onChange={(e) => updateForm('owner', e.target.value)}
-                  placeholder="Growth Intelligence"
+                  placeholder={t('bo.ownerPlaceholder')}
                   className="border border-border-strong rounded px-3 py-2"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label htmlFor="object-lifecycle" className="text-sm font-medium text-fg-2">
-                  Lifecycle
+                  {t('common.lifecycle')}
                 </label>
                 <select
                   id="object-lifecycle"
@@ -377,12 +389,12 @@ export default function NewBusinessObjectPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label htmlFor="object-kind" className="text-sm font-medium text-fg-2">
-                  Kind
+                  {t('bo.kind')}
                 </label>
                 <select id="object-kind" value={form.kind} onChange={(e) => updateForm('kind', e.target.value as BusinessObjectKind)} className="border border-border-strong rounded px-3 py-2">
                   {BUSINESS_OBJECT_KINDS.map((k) => (
                     <option key={k} value={k}>
-                      {KIND_LABELS[k]}
+                      {t(`bo.kindLabel.${k}`)}
                     </option>
                   ))}
                 </select>
@@ -390,39 +402,39 @@ export default function NewBusinessObjectPage() {
               {form.kind === 'computed' && (
                 <div className="flex flex-col gap-1">
                   <label htmlFor="object-computed-by" className="text-sm font-medium text-fg-2">
-                    Computed by
+                    {t('bo.computedBy')}
                   </label>
-                  <input id="object-computed-by" value={form.computedBy} onChange={(e) => updateForm('computedBy', e.target.value)} placeholder="feature ids, e.g. validation.model.validate" className="border border-border-strong rounded px-3 py-2 font-mono text-sm" />
+                  <input id="object-computed-by" value={form.computedBy} onChange={(e) => updateForm('computedBy', e.target.value)} placeholder={t('bo.computedByPlaceholder')} className="border border-border-strong rounded px-3 py-2 font-mono text-sm" />
                 </div>
               )}
             </div>
             <div className="flex flex-col gap-1">
               <label htmlFor="object-description" className="text-sm font-medium text-fg-2">
-                Description
+                {t('common.description')}
               </label>
               <textarea
                 id="object-description"
                 value={form.description}
                 onChange={(e) => updateForm('description', e.target.value)}
                 rows={3}
-                placeholder="Explain the business purpose and downstream consumers."
+                placeholder={t('bo.descriptionPlaceholder')}
                 className="border border-border-strong rounded px-3 py-2"
               />
             </div>
             <div className="text-sm text-meta">
-              Target app: {selectedApp ? <span className="font-semibold">{selectedApp}</span> : 'Not selected'}
+              {t('bo.targetApp')} {selectedApp ? <span className="font-semibold">{selectedApp}</span> : t('bo.notSelected')}
             </div>
           </section>
 
           <section className="bg-surface rounded-lg shadow p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-fg">Fields</h2>
+              <h2 className="text-lg font-semibold text-fg">{t('bo.fields')}</h2>
               <div className="flex items-center gap-3 text-sm text-meta">
-                {loadingTypes ? 'Loading types…' : `${typeOptions.length} types available`}
+                {loadingTypes ? t('bo.loadingTypes') : t('bo.typesAvailable', { count: typeOptions.length })}
               </div>
             </div>
             <p className="text-sm text-meta">
-              Describe the canonical data contract. Type options include base primitives and other business objects.
+              {t('bo.fieldsLead')}
             </p>
             <div className="space-y-6">
               {form.fields.map((field, index) => (
@@ -435,14 +447,14 @@ export default function NewBusinessObjectPage() {
                         onClick={() => removeField(index)}
                         className="text-sm text-danger hover:text-danger-fg-strong"
                       >
-                        Remove
+                        {t('common.remove')}
                       </button>
                     )}
                   </div>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-1">
                       <label className="text-sm font-medium text-fg-2" htmlFor={`field-name-${index}`}>
-                        Name
+                        {t('common.name')}
                       </label>
                       <input
                         id={`field-name-${index}`}
@@ -452,16 +464,16 @@ export default function NewBusinessObjectPage() {
                         className="border border-border-strong rounded px-3 py-2 text-sm"
                       />
                     </div>
-                    {renderTypeSelect(field.type, (value) => updateField(index, { type: value }), `field-type-${index}`, 'Type')}
+                    {renderTypeSelect(field.type, (value) => updateField(index, { type: value }), `field-type-${index}`, t('bo.type'))}
                     <div className="flex flex-col gap-1">
                       <label className="text-sm font-medium text-fg-2" htmlFor={`field-desc-${index}`}>
-                        Description
+                        {t('common.description')}
                       </label>
                       <input
                         id={`field-desc-${index}`}
                         value={field.description || ''}
                         onChange={(e) => updateField(index, { description: e.target.value })}
-                        placeholder="What does this field represent?"
+                        placeholder={t('bo.fieldDescriptionPlaceholder')}
                         className="border border-border-strong rounded px-3 py-2 text-sm"
                       />
                     </div>
@@ -474,21 +486,21 @@ export default function NewBusinessObjectPage() {
               onClick={addField}
               className="inline-flex items-center px-4 py-2 text-sm font-medium text-accent hover:text-accent-fg"
             >
-              + Add field
+              {t('bo.addField')}
             </button>
           </section>
 
   <section className="bg-surface rounded-lg shadow p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-fg">Tables</h2>
+              <h2 className="text-lg font-semibold text-fg">{t('bo.tables')}</h2>
               <p className="text-sm text-meta">
-                Map the business definition to physical storage. Optional but helpful for data engineers.
+                {t('bo.tablesLead')}
               </p>
             </div>
 
             {form.tables.length === 0 ? (
               <div className="text-sm text-meta border border-dashed border-border-strong rounded-lg p-6 text-center">
-                No tables added yet.
+                {t('bo.noTables')}
               </div>
             ) : (
               <div className="space-y-6">
@@ -501,13 +513,13 @@ export default function NewBusinessObjectPage() {
                         onClick={() => removeTable(tableIndex)}
                         className="text-sm text-danger hover:text-danger-fg-strong"
                       >
-                        Remove table
+                        {t('bo.removeTable')}
                       </button>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1">
                         <label htmlFor={`table-name-${tableIndex}`} className="text-sm font-medium text-fg-2">
-                          Name
+                          {t('common.name')}
                         </label>
                         <input
                           id={`table-name-${tableIndex}`}
@@ -519,23 +531,23 @@ export default function NewBusinessObjectPage() {
                       </div>
                       <div className="flex flex-col gap-1">
                         <label htmlFor={`table-desc-${tableIndex}`} className="text-sm font-medium text-fg-2">
-                          Description
+                          {t('common.description')}
                         </label>
                         <input
                           id={`table-desc-${tableIndex}`}
                           value={table.description || ''}
                           onChange={(e) => updateTable(tableIndex, { description: e.target.value })}
-                          placeholder="Purpose of this table"
+                          placeholder={t('bo.tableDescriptionPlaceholder')}
                           className="border border-border-strong rounded px-3 py-2 text-sm"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-4">
-                      <h3 className="text-sm font-semibold text-fg-2">Columns</h3>
+                      <h3 className="text-sm font-semibold text-fg-2">{t('bo.columns')}</h3>
                       {(table.columns || []).length === 0 ? (
                         <div className="text-sm text-meta border border-dashed border-border rounded p-4">
-                          No columns defined yet.
+                          {t('bo.noColumns')}
                         </div>
                       ) : (
                         <div className="space-y-4">
@@ -543,7 +555,7 @@ export default function NewBusinessObjectPage() {
                             <div key={`column-${tableIndex}-${columnIndex}`} className="grid md:grid-cols-3 gap-4">
                               <div className="flex flex-col gap-1">
                                 <label className="text-sm font-medium text-fg-2" htmlFor={`column-name-${tableIndex}-${columnIndex}`}>
-                                  Column name
+                                  {t('bo.columnName')}
                                 </label>
                                 <input
                                   id={`column-name-${tableIndex}-${columnIndex}`}
@@ -557,11 +569,11 @@ export default function NewBusinessObjectPage() {
                                 column.type,
                                 (value) => updateColumn(tableIndex, columnIndex, { type: value }),
                                 `column-type-${tableIndex}-${columnIndex}`,
-                                'Type'
+                                t('bo.type')
                               )}
                               <div className="flex flex-col gap-1">
                                 <label className="text-sm font-medium text-fg-2" htmlFor={`column-desc-${tableIndex}-${columnIndex}`}>
-                                  Description
+                                  {t('common.description')}
                                 </label>
                                 <div className="flex gap-2">
                                   <input
@@ -570,7 +582,7 @@ export default function NewBusinessObjectPage() {
                                     onChange={(e) =>
                                       updateColumn(tableIndex, columnIndex, { description: e.target.value })
                                     }
-                                    placeholder="How this column maps to the object"
+                                    placeholder={t('bo.columnDescriptionPlaceholder')}
                                     className="border border-border-strong rounded px-3 py-2 text-sm flex-1"
                                   />
                                   <button
@@ -578,7 +590,7 @@ export default function NewBusinessObjectPage() {
                                     onClick={() => removeColumn(tableIndex, columnIndex)}
                                     className="text-xs text-danger hover:text-danger-fg-strong px-3"
                                   >
-                                    Remove
+                                    {t('common.remove')}
                                   </button>
                                 </div>
                               </div>
@@ -591,7 +603,7 @@ export default function NewBusinessObjectPage() {
                         onClick={() => addColumn(tableIndex)}
                         className="text-sm text-accent hover:text-accent-fg"
                       >
-                        + Add column
+                        {t('bo.addColumn')}
                       </button>
                     </div>
                   </div>
@@ -604,9 +616,10 @@ export default function NewBusinessObjectPage() {
               onClick={addTable}
               className="inline-flex items-center px-4 py-2 text-sm font-medium text-accent hover:text-accent-fg"
             >
-              + Add table
+              {t('bo.addTable')}
             </button>
           </section>
+          </div>
 
           <div className="flex justify-end gap-3">
             <button
@@ -619,7 +632,7 @@ export default function NewBusinessObjectPage() {
               }}
               className="px-4 py-2 border border-border-strong rounded-md text-sm text-fg-2 hover:bg-bg"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -630,7 +643,7 @@ export default function NewBusinessObjectPage() {
                   : 'bg-accent hover:bg-accent-hover'
               }`}
             >
-              {saving ? 'Saving…' : 'Save object'}
+              {saving ? t('common.saving') : t('bo.save')}
             </button>
           </div>
         </form>

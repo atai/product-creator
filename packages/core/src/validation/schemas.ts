@@ -10,7 +10,7 @@ import streamSchema from '../../schema/stream.schema.json';
  * verbose: errors carry their schema, so messages can quote the field's description (model.ts).
  */
 export const ajv = new Ajv({ allErrors: true, verbose: true });
-ajv.addVocabulary(['x-audience']);
+ajv.addVocabulary(['x-audience', 'x-translatable', 'x-i18n-key']);
 
 export type SchemaKind = 'feature' | 'workflow' | 'business_object' | 'stream';
 

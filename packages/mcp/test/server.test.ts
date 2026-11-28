@@ -297,6 +297,35 @@ describe('tools (read-write token)', () => {
     await client.close();
   });
 
+  it('project languages, translations and the spec per language (PRODUCTCREATOR-37)', async () => {
+    const { client } = await connect(bearer());
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    expect((await call('update_project', { languages: ['en', 'ru'], vision: 'Checked plans', i18n: { ru: { vision: 'Проверяемые планы' } } })).isError).toBeFalsy();
+    const ctx = json(await call('get_project', {}));
+    expect(ctx.languages).toEqual(['en', 'ru']);
+    expect(ctx.i18n.ru.vision).toBe('Проверяемые планы');
+    expect((await call('update_project', { languages: ['en', 'English'] })).isError).toBe(true);
+
+    const f = { id: 'shop.order.place', name: 'Place an order', bounded_context: 'shop', entity: 'order', action: 'place', owner: 'team-a', lifecycle: 'draft', requirements: [{ id: 'R1', text: 'The buyer sees the total' }, { id: 'R2', text: 'Taxes are shown' }] };
+    expect((await call('apply_plan', { changes: [{ kind: 'feature', data: f, component: 'svc' }] })).isError).toBeFalsy();
+    const translated = await call('update_catalog_entry', { kind: 'feature', id: f.id, patch: { i18n: { ru: { name: 'Оформить заказ', requirements: { R1: { text: 'Покупатель видит сумму' } } } } } });
+    expect(translated.isError).toBeFalsy();
+    const card = json(await call('get_catalog_entry', { kind: 'feature', id: f.id }));
+    expect(card.entry.i18n.ru._source.name).toMatch(/^[0-9a-f]{8}$/);
+
+    const ru = json(await call('get_spec', { human: true, language: 'ru' }));
+    expect(ru.language).toBe('ru');
+    expect(ru.languages).toEqual(['en', 'ru']);
+    expect(ru.markdown).toContain('Оформить заказ');
+    expect(ru.markdown).toContain('Покупатель видит сумму');
+    expect(ru.markdown).toContain('Проверяемые планы');
+    expect(ru.untranslated).toBeGreaterThan(0); // R2 stays in English, marked
+    const en = json(await call('get_spec', { human: true }));
+    expect(en.language).toBe('en');
+    expect(en.markdown).toContain('Place an order');
+    await client.close();
+  });
+
   it('reads and updates the product context (PRODUCTCREATOR-33)', async () => {
     const { client } = await connect(bearer());
     const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });

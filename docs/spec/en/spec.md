@@ -119,11 +119,11 @@ Creates or changes a feature card with its spec; the save is validated before wr
 
 **Screens**
 
-![S1 — New feature form: links and spec](screens/catalog.feature.edit/S1.png)
+![S1 — New feature form: links and spec](../screens/catalog.feature.edit/S1.png)
 
 *S1 — New feature form: links and spec*
 
-![S2 — A feature page with its spec, tickets and impact](screens/catalog.feature.edit/S2.png)
+![S2 — A feature page with its spec, tickets and impact](../screens/catalog.feature.edit/S2.png)
 
 *S2 — A feature page with its spec, tickets and impact*
 
@@ -148,7 +148,7 @@ Features and the links between them: calls, consecutive workflow steps and event
 
 **Screens**
 
-![S1 — Feature graph: calls, workflow steps and events](screens/catalog.graph.show/S1.png)
+![S1 — Feature graph: calls, workflow steps and events](../screens/catalog.graph.show/S1.png)
 
 *S1 — Feature graph: calls, workflow steps and events*
 
@@ -170,7 +170,7 @@ Entity × action coverage per bounded context.
 
 **Screens**
 
-![S1 — Entity × action matrix](screens/catalog.matrix.show/S1.png)
+![S1 — Entity × action matrix](../screens/catalog.matrix.show/S1.png)
 
 *S1 — Entity × action matrix*
 
@@ -212,7 +212,7 @@ The Problems page lists validation errors and warnings with links to the entries
 
 **Screens**
 
-![S1 — Problems of the catalog](screens/catalog.problems.show/S1.png)
+![S1 — Problems of the catalog](../screens/catalog.problems.show/S1.png)
 
 *S1 — Problems of the catalog*
 
@@ -237,6 +237,27 @@ Creates or changes a stream: a business process with stages, KPIs and workflows 
 
 - **D1** Streams stay and are validated: schema, stage workflows, stage events — They describe the business process the workflows serve (2026-11-28)
 
+#### Translate the catalog content (`catalog.translation.edit`)
+
+*implemented* · Component: Core package · Tickets: [PRODUCTCREATOR-37](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-37)
+
+Texts of features, business objects, workflows and the product context in the other project languages, stored in i18n.<language> of the same file.
+
+**Actors:** Product owner, AI agent
+
+**Requirements**
+
+- **R1** The project lists its languages; the first is primary and holds the normal fields
+- **R2** Translatable fields are declared in the schemas (x-translatable); list items are keyed by id
+- **R3** A translation remembers the primary text it was made from; a changed primary text marks it stale
+- **R4** Stale translations, translations of removed items and unknown languages are reported by the checks
+
+**Acceptance criteria**
+
+- **A1** (covers R1, R2): Languages are saved in product-creator.yml; translatable paths come from the schemas
+- **A2** (covers R3, R4): A changed primary text makes the translation stale; removed items and unknown languages are reported
+- **A3** (covers R1): An agent sets languages, writes a translation and reads the spec in that language
+
 #### Create and edit a workflow (`catalog.workflow.edit`)
 
 *implemented* · Component: Core package · Tickets: [PRODUCTCREATOR-7](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-7), [PRODUCTCREATOR-33](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-33)
@@ -253,7 +274,7 @@ Creates or changes a workflow: ordered steps (features) with compensations.
 
 **Screens**
 
-![S1 — Workflow form with lifecycle and steps](screens/catalog.workflow.edit/S1.png)
+![S1 — Workflow form with lifecycle and steps](../screens/catalog.workflow.edit/S1.png)
 
 *S1 — Workflow form with lifecycle and steps*
 
@@ -452,7 +473,7 @@ Edits the project and its components in the app; the YAML files are the database
 
 **Screens**
 
-![S1 — Projects, services and libraries in the workspace](screens/project.component.edit/S1.png)
+![S1 — Projects, services and libraries in the workspace](../screens/project.component.edit/S1.png)
 
 *S1 — Projects, services and libraries in the workspace*
 
@@ -481,7 +502,7 @@ Vision, goals, actors, glossary and tracker of a project, stored in product-crea
 
 **Screens**
 
-![S1 — Workspace with the project and its components](screens/project.context.edit/S1.png)
+![S1 — Workspace with the project and its components](../screens/project.context.edit/S1.png)
 
 *S1 — Workspace with the project and its components*
 
@@ -1142,7 +1163,7 @@ Manifest and small chunks per feature, component and interface group, with ids, 
 
 #### Render the spec for people (`spec.document.render`)
 
-*draft* · Component: Desktop app (Electron) · Tickets: [PRODUCTCREATOR-19](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-19), [PRODUCTCREATOR-35](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35)
+*draft* · Component: Desktop app (Electron) · Tickets: [PRODUCTCREATOR-19](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-19), [PRODUCTCREATOR-35](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35), [PRODUCTCREATOR-37](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-37)
 
 The Doc page renders the human spec (ТЗ) from the model and exports Markdown/HTML/PDF.
 
@@ -1153,14 +1174,15 @@ The Doc page renders the human spec (ТЗ) from the model and exports Markdown/H
 - **R1** A spec with errors says so on top
 - **R2** Problems are shown next to the affected feature
 - **R3** Fields marked x-audience: agent are left out
+- **R4** The spec is shown in every project language; untranslated text is marked with the primary language
 
-**Open questions**
+**Decisions**
 
-- **Q1** Language of the human spec: one per project, or Russian for people and English for agents? — atai
+- **D1** One human spec per project language; one agent bundle in the primary language — People read their language, agents need one stable source; translations are optional, so missing ones fall back to the primary text (PRODUCTCREATOR-37) (2026-11-28)
 
 **Screens**
 
-![S1 — The generated spec on the Doc page](screens/spec.document.render/S1.png)
+![S1 — The generated spec on the Doc page](../screens/spec.document.render/S1.png)
 
 *S1 — The generated spec on the Doc page*
 

@@ -1,0 +1,131 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "catalog.translation.edit",
+    "name": "Translate the catalog content",
+    "bounded_context": "catalog",
+    "entity": "translation",
+    "action": "edit",
+    "lifecycle": "implemented",
+    "description": "Texts of features, business objects, workflows and the product context in the other project languages, stored in i18n.<language> of the same file.",
+    "source_file": "i18n/index.ts",
+    "actors": [
+      "product_owner",
+      "ai_agent"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "The project lists its languages; the first is primary and holds the normal fields"
+      },
+      {
+        "id": "R2",
+        "text": "Translatable fields are declared in the schemas (x-translatable); list items are keyed by id"
+      },
+      {
+        "id": "R3",
+        "text": "A translation remembers the primary text it was made from; a changed primary text marks it stale"
+      },
+      {
+        "id": "R4",
+        "text": "Stale translations, translations of removed items and unknown languages are reported by the checks"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2"
+        ],
+        "text": "Languages are saved in product-creator.yml; translatable paths come from the schemas",
+        "verify": "pnpm --filter @pc/core test i18n"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R3",
+          "R4"
+        ],
+        "text": "A changed primary text makes the translation stale; removed items and unknown languages are reported",
+        "verify": "pnpm --filter @pc/core test i18n"
+      },
+      {
+        "id": "A3",
+        "covers": [
+          "R1"
+        ],
+        "text": "An agent sets languages, writes a translation and reads the spec in that language",
+        "verify": "pnpm --filter @pc/mcp test server"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-37"
+    ],
+    "i18n": {
+      "ru": {
+        "name": "Перевод содержимого каталога",
+        "description": "Тексты функций, бизнес-объектов, процессов и контекста продукта на других языках проекта, в i18n.<язык> того же файла.",
+        "requirements": {
+          "R1": {
+            "text": "Проект перечисляет свои языки; первый — основной, он хранится в обычных полях"
+          },
+          "R2": {
+            "text": "Переводимые поля объявлены в схемах (x-translatable); элементы списков адресуются по id"
+          },
+          "R3": {
+            "text": "Перевод помнит основной текст, с которого сделан; изменение основного текста делает перевод устаревшим"
+          },
+          "R4": {
+            "text": "Проверки сообщают об устаревших переводах, переводах удалённых элементов и неизвестных языках"
+          }
+        },
+        "acceptance": {
+          "A1": {
+            "text": "Языки сохраняются в product-creator.yml; переводимые пути берутся из схем"
+          },
+          "A2": {
+            "text": "Изменённый основной текст делает перевод устаревшим; удалённые элементы и неизвестные языки обнаруживаются"
+          },
+          "A3": {
+            "text": "Агент задаёт языки, пишет перевод и читает ТЗ на этом языке"
+          }
+        },
+        "_source": {
+          "name": "e414141c",
+          "description": "3843cbe7",
+          "requirements": {
+            "R1": {
+              "text": "eda28263"
+            },
+            "R2": {
+              "text": "90f8729f"
+            },
+            "R3": {
+              "text": "d83fe91f"
+            },
+            "R4": {
+              "text": "780fb5a1"
+            }
+          },
+          "acceptance": {
+            "A1": {
+              "text": "92b46a57"
+            },
+            "A2": {
+              "text": "4d346100"
+            },
+            "A3": {
+              "text": "39536edc"
+            }
+          }
+        }
+      }
+    }
+  },
+  "objects": [],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

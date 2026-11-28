@@ -5,6 +5,7 @@ import { Project, AppEntity } from '@pc/core/types';
 import { useRoots } from '@/hooks/useRoots';
 import type { MatchedObject, SyncAction as SyncActionType } from '@pc/core/sync/matcher';
 import type { MatchedFunction, SyncAction as CodeSyncAction } from '@pc/core/sync/codeMatcher';
+import { t } from '@/i18n';
 
 /** Actions of the schema sync and of the code sync (link / unlink, PRODUCTCREATOR-30) */
 type AnySyncAction = SyncActionType | CodeSyncAction;
@@ -100,10 +101,10 @@ export default function ProjectsManagementPage() {
       setLoading(true);
       const [projectRes, appRes] = await Promise.all([fetch('/api/projects'), fetch('/api/apps')]);
       if (!projectRes.ok) {
-        throw new Error('Failed to load projects');
+        throw new Error(t('pr.loadProjectsFailed'));
       }
       if (!appRes.ok) {
-        throw new Error('Failed to load apps');
+        throw new Error(t('pr.loadAppsFailed'));
       }
       const projectData = await projectRes.json();
       const appData = await appRes.json();
@@ -119,7 +120,7 @@ export default function ProjectsManagementPage() {
       resetAppForm(resolvedSelection, '', false);
       setError('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unexpected error');
+      setError(err instanceof Error ? err.message : t('pr.unexpected'));
     } finally {
       setLoading(false);
     }
@@ -132,7 +133,7 @@ export default function ProjectsManagementPage() {
   const handleProjectSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!projectForm.name.trim()) {
-      setError('Project name is required');
+      setError(t('pr.projectNameRequired'));
       return;
     }
 
@@ -159,18 +160,18 @@ export default function ProjectsManagementPage() {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to save project');
+        throw new Error(data.error || t('pr.saveProjectFailed'));
       }
 
       setStatusMessage(
         projectForm.mode === 'create'
-          ? `Project ${data.project.id} created`
-          : `Project ${data.project.id} updated`
+          ? t('pr.projectCreated', { id: data.project.id })
+          : t('pr.projectUpdated', { id: data.project.id })
       );
       setShowProjectForm(false);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save project');
+      setError(err instanceof Error ? err.message : t('pr.saveProjectFailed'));
     }
   };
 
@@ -185,35 +186,35 @@ export default function ProjectsManagementPage() {
   };
 
   const handleProjectDelete = async (project: Project) => {
-    if (!confirm(`Delete project ${project.name}?`)) return;
+    if (!confirm(t('pr.deleteProjectConfirm', { name: project.name }))) return;
     try {
       const response = await fetch(`/api/projects/${project.id}`, {
         method: 'DELETE',
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete project');
+        throw new Error(data.error || t('pr.deleteProjectFailed'));
       }
-      setStatusMessage(`Project ${project.id} deleted`);
+      setStatusMessage(t('pr.projectDeleted', { id: project.id }));
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete project');
+      setError(err instanceof Error ? err.message : t('pr.deleteProjectFailed'));
     }
   };
 
   const handleAppSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!appForm.name.trim()) {
-      setError('App name is required');
+      setError(t('pr.appNameRequired'));
       return;
     }
     if (!selectedProjectId) {
-      setError('Please select a project first');
+      setError(t('pr.selectProjectFirst'));
       return;
     }
     const rootDirectory = appForm.directory || roots[0]?.path || '';
     if (!rootDirectory) {
-      setError('Directory is required');
+      setError(t('pr.directoryRequired'));
       return;
     }
 
@@ -238,15 +239,15 @@ export default function ProjectsManagementPage() {
       );
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to save app');
+        throw new Error(data.error || t('pr.saveAppFailed'));
       }
       setStatusMessage(
-        appForm.mode === 'create' ? `App ${data.app.id} created` : `App ${data.app.id} updated`
+        appForm.mode === 'create' ? t('pr.appCreated', { id: data.app.id }) : t('pr.appUpdated', { id: data.app.id })
       );
       setShowAppForm(false);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save app');
+      setError(err instanceof Error ? err.message : t('pr.saveAppFailed'));
     }
   };
 
@@ -263,23 +264,23 @@ export default function ProjectsManagementPage() {
   };
 
   const handleAppDelete = async (app: AppEntity) => {
-    if (!confirm(`Delete app ${app.name}?`)) return;
+    if (!confirm(t('pr.deleteAppConfirm', { name: app.name }))) return;
     try {
       const response = await fetch(`/api/apps/${app.id}`, { method: 'DELETE' });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete app');
+        throw new Error(data.error || t('pr.deleteAppFailed'));
       }
-      setStatusMessage(`App ${app.id} deleted`);
+      setStatusMessage(t('pr.appDeleted', { id: app.id }));
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete app');
+      setError(err instanceof Error ? err.message : t('pr.deleteAppFailed'));
     }
   };
 
   const handleSyncFromCode = async (app: AppEntity) => {
     if (!app.codeBasePath) {
-      setError('Code base path is not set for this application');
+      setError(t('pr.noCodeBase'));
       return;
     }
     try {
@@ -288,7 +289,7 @@ export default function ProjectsManagementPage() {
       setSyncType('code');
       setShowSyncForm(true);
       setSyncStage('loading');
-      setSyncProgress({ current: 0, total: 1, message: 'Starting synchronization...' });
+      setSyncProgress({ current: 0, total: 1, message: t('pr.starting') });
       setMatchedFunctions([]);
       setMatchedObjects([]);
       setSyncActions({});
@@ -302,28 +303,28 @@ export default function ProjectsManagementPage() {
       try {
         data = await response.json();
       } catch {
-        throw new Error(`Failed to start sync: ${response.statusText || 'Unknown error'}`);
+        throw new Error(t('pr.startFailedStatus', { status: response.statusText || t('pr.unknown') }));
       }
       
       if (!response.ok) {
-        throw new Error(data.error || data.message || `Failed to start sync: ${response.statusText}`);
+        throw new Error(data.error || data.message || t('pr.startFailedStatus', { status: response.statusText }));
       }
 
       if (!data.syncId) {
-        throw new Error('Server did not return syncId');
+        throw new Error(t('pr.noSyncId'));
       }
       setSyncId(data.syncId);
       
       // Start polling for status
       pollCodeSyncStatus(app.id, data.syncId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to start sync from code';
+      const errorMessage = err instanceof Error ? err.message : t('pr.startCodeFailed');
       setError(errorMessage);
       setSyncStage('error');
       setSyncProgress({
         current: 0,
         total: 1,
-        message: 'Не удалось запустить синхронизацию',
+        message: t('pr.startFailed'),
         error: errorMessage,
       });
     }
@@ -331,7 +332,7 @@ export default function ProjectsManagementPage() {
 
   const handleSyncFromSchema = async (app: AppEntity) => {
     if (!app.dbSchemaPath) {
-      setError('DB schema path is not set for this application');
+      setError(t('pr.noDbSchema'));
       return;
     }
     try {
@@ -340,7 +341,7 @@ export default function ProjectsManagementPage() {
       setSyncType('schema');
       setShowSyncForm(true);
       setSyncStage('loading');
-      setSyncProgress({ current: 0, total: 1, message: 'Starting synchronization...' });
+      setSyncProgress({ current: 0, total: 1, message: t('pr.starting') });
       setMatchedObjects([]);
       setMatchedFunctions([]);
       setSyncActions({});
@@ -355,28 +356,28 @@ export default function ProjectsManagementPage() {
         data = await response.json();
       } catch {
         // If response is not JSON, use the status text
-        throw new Error(`Failed to start sync: ${response.statusText || 'Unknown error'}`);
+        throw new Error(t('pr.startFailedStatus', { status: response.statusText || t('pr.unknown') }));
       }
       
       if (!response.ok) {
-        throw new Error(data.error || data.message || `Failed to start sync: ${response.statusText}`);
+        throw new Error(data.error || data.message || t('pr.startFailedStatus', { status: response.statusText }));
       }
 
       if (!data.syncId) {
-        throw new Error('Server did not return syncId');
+        throw new Error(t('pr.noSyncId'));
       }
       setSyncId(data.syncId);
       
       // Start polling for status
       pollSyncStatus(app.id, data.syncId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to start sync from schema';
+      const errorMessage = err instanceof Error ? err.message : t('pr.startSchemaFailed');
       setError(errorMessage);
       setSyncStage('error');
       setSyncProgress({
         current: 0,
         total: 1,
-        message: 'Не удалось запустить синхронизацию',
+        message: t('pr.startFailed'),
         error: errorMessage,
       });
       // Don't hide the form - show error instead
@@ -392,12 +393,12 @@ export default function ProjectsManagementPage() {
             // State was lost - show error to user
             console.error('Sync state not found (404)', { syncId: currentSyncId });
             setSyncStage('error');
-            setError('Состояние синхронизации потеряно. Попробуйте запустить синхронизацию заново.');
+            setError(t('pr.stateLost'));
             setSyncProgress({
               current: 0,
               total: 1,
-              message: 'Ошибка: состояние синхронизации не найдено',
-              error: 'Состояние синхронизации потеряно',
+              message: t('pr.stateNotFound'),
+              error: t('pr.stateLostShort'),
             });
             return; // Stop polling
           }
@@ -448,25 +449,25 @@ export default function ProjectsManagementPage() {
         if (effectiveStage === 'loading' || (effectiveStage === 'matching' && hasMatchedFunctions) || effectiveStage === 'executing') {
           setTimeout(poll, 500);
         } else if (effectiveStage === 'error') {
-          const errorMsg = data.progress.error || data.progress.message || 'Произошла ошибка при синхронизации';
+          const errorMsg = data.progress.error || data.progress.message || t('pr.syncError');
           setError(errorMsg);
           setSyncProgress((prev) => ({
             ...prev,
             error: errorMsg,
-            message: `Ошибка: ${errorMsg}`,
+            message: t('pr.errorPrefix', { message: errorMsg }),
           }));
         } else if (effectiveStage === 'completed') {
           // Stop polling on completion
           console.log('Sync completed successfully');
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to poll sync status';
+        const errorMessage = err instanceof Error ? err.message : t('pr.pollFailed');
         console.error('Failed to poll code sync status', err);
         setSyncStage('error');
         setSyncProgress({
           current: 0,
           total: 1,
-          message: 'Не удалось получить статус синхронизации',
+          message: t('pr.pollFailed'),
           error: errorMessage,
         });
         setError(errorMessage);
@@ -509,16 +510,16 @@ export default function ProjectsManagementPage() {
           setTimeout(poll, 500);
         } else if (data.stage === 'error') {
           // Stop polling on error, error is already displayed
-          setError(data.progress.error || 'Произошла ошибка при синхронизации');
+          setError(data.progress.error || t('pr.syncError'));
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to poll sync status';
+        const errorMessage = err instanceof Error ? err.message : t('pr.pollFailed');
         console.error('Failed to poll sync status', err);
         setSyncStage('error');
         setSyncProgress({
           current: 0,
           total: 1,
-          message: 'Не удалось получить статус синхронизации',
+          message: t('pr.pollFailed'),
           error: errorMessage,
         });
         setError(errorMessage);
@@ -578,7 +579,7 @@ export default function ProjectsManagementPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to execute sync');
+        throw new Error(data.error || t('pr.executeFailed'));
       }
 
       // Start polling for execution progress
@@ -588,7 +589,7 @@ export default function ProjectsManagementPage() {
         pollSyncStatus(syncApp.id, syncId);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to execute sync');
+      setError(err instanceof Error ? err.message : t('pr.executeFailed'));
       setSyncStage('error');
     }
   };
@@ -663,7 +664,7 @@ export default function ProjectsManagementPage() {
           ref={buttonRef}
           onClick={() => setIsOpen(!isOpen)}
           className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border-strong bg-surface text-xs font-semibold text-muted hover:bg-bg focus:outline-none"
-          aria-label="Help"
+          aria-label={t('pr.help')}
         >
           ?
         </button>
@@ -682,31 +683,28 @@ export default function ProjectsManagementPage() {
   return (
     <div className="px-4 py-6 sm:px-8">
       <div className="bg-surface rounded-lg shadow px-6 py-5 mb-6">
-        <h1 className="text-2xl font-semibold text-fg">Projects & Apps</h1>
-        <p className="mt-2 text-muted">
-          Manage projects and their associated applications. IDs are generated automatically, but
-          you can set them when creating. After creation, identifiers become immutable.
-        </p>
+        <h1 className="text-2xl font-semibold text-fg">{t('pr.title')}</h1>
+        <p className="mt-2 text-muted">{t('pr.lead')}</p>
         {statusMessage && <div className="mt-3 text-sm text-success">{statusMessage}</div>}
         {error && <div className="mt-3 text-sm text-danger">{error}</div>}
       </div>
 
       {loading ? (
-        <div className="text-center text-muted py-12">Loading projects and apps...</div>
+        <div className="text-center text-muted py-12">{t('pr.loading')}</div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2 h-[calc(100vh-12rem)]">
           <section className="bg-surface rounded-lg shadow p-6 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-semibold text-fg">Projects</h2>
-                <p className="text-sm text-muted">Total: {projects.length}</p>
+                <h2 className="text-xl font-semibold text-fg">{t('pr.projects')}</h2>
+                <p className="text-sm text-muted">{t('pr.total', { count: projects.length })}</p>
               </div>
               <button
                 type="button"
                 className="text-sm text-accent hover:text-accent-fg"
                 onClick={() => resetProjectForm(true)}
               >
-                + New Project
+                {t('pr.newProject')}
               </button>
             </div>
 
@@ -732,7 +730,7 @@ export default function ProjectsManagementPage() {
                         appForm.id.trim() !== defaultAppForm.id
                       );
                       if (hasChanges) {
-                        if (!confirm('You have unsaved changes in the Create App form. Changing the project will discard these changes. Continue?')) {
+                        if (!confirm(t('pr.unsavedApp'))) {
                           return;
                         }
                       }
@@ -747,7 +745,7 @@ export default function ProjectsManagementPage() {
                         <p className="text-sm text-muted mt-1">{project.description}</p>
                       )}
                       <div className="text-xs text-meta mt-2">
-                        Apps: {projectApps.length}
+                        {t('pr.apps', { count: projectApps.length })}
                       </div>
                     </div>
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
@@ -758,14 +756,14 @@ export default function ProjectsManagementPage() {
                           handleProjectEdit(project);
                         }}
                       >
-                        Edit
+                        {t('common.edit')}
                       </button>
                       <button
                         type="button"
                         className="px-3 py-1 text-sm border border-danger-border-soft text-danger rounded hover:bg-danger-muted"
                         onClick={() => handleProjectDelete(project)}
                       >
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
                   </div>
@@ -773,7 +771,7 @@ export default function ProjectsManagementPage() {
               })}
               {projects.length === 0 && (
                   <div className="text-sm text-meta text-center py-6">
-                  No projects yet. Create the first project to add applications.
+                  {t('pr.noProjects')}
                 </div>
               )}
             </div>
@@ -781,21 +779,21 @@ export default function ProjectsManagementPage() {
             {((projectForm.mode === 'create' && showProjectForm) || projectForm.mode === 'edit') && (
               <form className="mt-6 space-y-4" onSubmit={handleProjectSubmit}>
                 <h3 className="text-lg font-semibold text-fg">
-                  {projectForm.mode === 'create' ? 'Create Project' : `Edit Project ${projectForm.id}`}
+                  {projectForm.mode === 'create' ? t('pr.createProject') : t('pr.editProject', { id: projectForm.id })}
                 </h3>
                 <div>
-                  <label className="block text-sm font-medium text-fg-2">ID (5 letters)</label>
+                  <label className="block text-sm font-medium text-fg-2">{t('pr.idLetters')}</label>
                   <input
                     type="text"
                     value={projectForm.id}
                     disabled={projectForm.mode === 'edit'}
                     onChange={(e) => setProjectForm((prev) => ({ ...prev, id: e.target.value }))}
-                    placeholder="auto"
+                    placeholder={t('pr.auto')}
                     className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm disabled:bg-surface-muted"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-fg-2">Name</label>
+                  <label className="block text-sm font-medium text-fg-2">{t('common.name')}</label>
                   <input
                     type="text"
                     value={projectForm.name}
@@ -805,7 +803,7 @@ export default function ProjectsManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-fg-2">Description</label>
+                  <label className="block text-sm font-medium text-fg-2">{t('common.description')}</label>
                   <textarea
                     value={projectForm.description}
                     onChange={(e) =>
@@ -820,7 +818,7 @@ export default function ProjectsManagementPage() {
                     type="submit"
                     className="px-4 py-2 bg-accent text-on rounded text-sm hover:bg-accent-hover"
                   >
-                    {projectForm.mode === 'create' ? 'Create' : 'Save'}
+                    {projectForm.mode === 'create' ? t('pr.create') : t('common.save')}
                   </button>
                   {(projectForm.mode === 'edit' || showProjectForm) && (
                     <button
@@ -828,7 +826,7 @@ export default function ProjectsManagementPage() {
                       className="px-4 py-2 border border-border-strong rounded text-sm hover:bg-bg"
                       onClick={() => resetProjectForm(false)}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   )}
                 </div>
@@ -839,11 +837,11 @@ export default function ProjectsManagementPage() {
           <section className="bg-surface rounded-lg shadow p-6 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-semibold text-fg">Applications</h2>
+                <h2 className="text-xl font-semibold text-fg">{t('pr.applications')}</h2>
                 <p className="text-sm text-muted">
                   {selectedProjectId
-                    ? `Project: ${selectedProjectId} (${appsByProject.length})`
-                    : `Select a project to view applications`}
+                    ? t('pr.projectCount', { id: selectedProjectId, count: appsByProject.length })
+                    : t('pr.selectProject')}
                 </p>
               </div>
               <button
@@ -851,14 +849,14 @@ export default function ProjectsManagementPage() {
                 className="text-sm text-accent hover:text-accent-fg"
                 onClick={() => {
                   if (!selectedProjectId) {
-                    alert('Please select a project first');
+                    alert(t('pr.selectProjectFirst'));
                     return;
                   }
                   resetAppForm(selectedProjectId, '', true);
                 }}
                 disabled={!selectedProjectId}
               >
-                + New Application
+                {t('pr.newApp')}
               </button>
             </div>
 
@@ -872,10 +870,10 @@ export default function ProjectsManagementPage() {
                     <div className="text-sm text-meta uppercase tracking-wide">{app.id}</div>
                     <div className="text-lg font-semibold text-fg">{app.name}</div>
                     <div className="text-xs text-meta mt-2">
-                      Directory: <span className="font-mono">{app.directory}</span>
+                      {t('pr.directory', { path: app.directory })}
                     </div>
                     <div className="text-xs text-meta">
-                      Code: {app.codeBasePath || '-'} | DB: {app.dbSchemaPath || '-'}
+                      {t('pr.paths', { code: app.codeBasePath || '-', db: app.dbSchemaPath || '-' })}
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -884,39 +882,39 @@ export default function ProjectsManagementPage() {
                       className="px-3 py-1 text-sm border border-border-strong rounded hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() => handleSyncFromCode(app)}
                       disabled={!app.codeBasePath}
-                      title={app.codeBasePath ? 'Synchronize objects from code' : 'Code base path is not set'}
+                      title={app.codeBasePath ? t('pr.syncCodeTitle') : t('pr.noCodeBaseShort')}
                     >
-                      Sync from Code
+                      {t('pr.syncCode')}
                     </button>
                     <button
                       type="button"
                       className="px-3 py-1 text-sm border border-border-strong rounded hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() => handleSyncFromSchema(app)}
                       disabled={!app.dbSchemaPath}
-                      title={app.dbSchemaPath ? 'Synchronize objects from DB schema' : 'DB schema path is not set'}
+                      title={app.dbSchemaPath ? t('pr.syncSchemaTitle') : t('pr.noDbSchemaShort')}
                     >
-                      Sync from Schema
+                      {t('pr.syncSchema')}
                     </button>
                     <button
                       type="button"
                       className="px-3 py-1 text-sm border border-border-strong rounded hover:bg-bg"
                       onClick={() => handleAppEdit(app)}
                     >
-                      Edit
+                      {t('common.edit')}
                     </button>
                     <button
                       type="button"
                       className="px-3 py-1 text-sm border border-danger-border-soft text-danger rounded hover:bg-danger-muted"
                       onClick={() => handleAppDelete(app)}
                     >
-                      Delete
+                      {t('common.delete')}
                     </button>
                   </div>
                 </div>
               ))}
               {appsByProject.length === 0 && (
                 <div className="text-sm text-meta text-center py-6">
-                  No applications for the selected project.
+                  {t('pr.noApps')}
                 </div>
               )}
             </div>
@@ -924,11 +922,11 @@ export default function ProjectsManagementPage() {
             {((appForm.mode === 'create' && showAppForm) || appForm.mode === 'edit') && (
               <form className="mt-6 space-y-4" onSubmit={handleAppSubmit}>
                 <h3 className="text-lg font-semibold text-fg">
-                  {appForm.mode === 'create' ? 'Create App' : `Edit App ${appForm.id}`}
+                  {appForm.mode === 'create' ? t('pr.createApp') : t('pr.editApp', { id: appForm.id })}
                 </h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-fg-2">App ID</label>
+                  <label className="block text-sm font-medium text-fg-2">{t('pr.appId')}</label>
                   <input
                     type="text"
                     value={appForm.id}
@@ -939,7 +937,7 @@ export default function ProjectsManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-fg-2">Name</label>
+                  <label className="block text-sm font-medium text-fg-2">{t('common.name')}</label>
                   <input
                     type="text"
                     value={appForm.name}
@@ -951,7 +949,7 @@ export default function ProjectsManagementPage() {
               </div>
               {selectedProjectId && (
                 <div>
-                  <label className="block text-sm font-medium text-fg-2">Project</label>
+                  <label className="block text-sm font-medium text-fg-2">{t('pr.project')}</label>
                   <input
                     type="text"
                     value={projects.find(p => p.id === selectedProjectId)?.name || selectedProjectId}
@@ -962,19 +960,19 @@ export default function ProjectsManagementPage() {
               )}
               
               <div className="mt-4 space-y-4 rounded-lg border border-border bg-bg p-4">
-                <h4 className="text-sm font-semibold text-fg">Paths Configuration</h4>
+                <h4 className="text-sm font-semibold text-fg">{t('pr.pathsConfig')}</h4>
                 
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-fg-2">
-                    Directory
-                    <HelpTooltip text="YAML files describing all project entities will be created at this path." />
+                    {t('pr.directoryLabel')}
+                    <HelpTooltip text={t('pr.directoryHelp')} />
                   </label>
                   <input
                     type="text"
                     value={appForm.directory}
                     disabled={appForm.mode === 'edit'}
                     onChange={(e) => setAppForm((prev) => ({ ...prev, directory: e.target.value }))}
-                    placeholder="/absolute/path/to/directory"
+                    placeholder={t('pr.directoryPlaceholder')}
                     className="mt-1 w-full rounded border border-border-strong px-3 py-2 text-sm disabled:bg-surface-muted font-mono text-xs"
                     required
                   />
@@ -982,8 +980,8 @@ export default function ProjectsManagementPage() {
                 
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-fg-2">
-                    Code base
-                    <HelpTooltip text="This path is used for application code analysis and should point to the root folder containing the application code." />
+                    {t('pr.codeBase')}
+                    <HelpTooltip text={t('pr.codeBaseHelp')} />
                   </label>
                   <input
                     type="text"
@@ -998,8 +996,8 @@ export default function ProjectsManagementPage() {
                 
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-fg-2">
-                    DB schema
-                    <HelpTooltip text="This path points to the database schema and is used for analyzing the application's database schema." />
+                    {t('pr.dbSchema')}
+                    <HelpTooltip text={t('pr.dbSchemaHelp')} />
                   </label>
                   <input
                     type="text"
@@ -1017,7 +1015,7 @@ export default function ProjectsManagementPage() {
                   type="submit"
                   className="px-4 py-2 bg-accent text-on rounded text-sm hover:bg-accent-hover"
                 >
-                  {appForm.mode === 'create' ? 'Create' : 'Save'}
+                  {appForm.mode === 'create' ? t('pr.create') : t('common.save')}
                 </button>
                 {(appForm.mode === 'edit' || showAppForm) && (
                   <button
@@ -1027,7 +1025,7 @@ export default function ProjectsManagementPage() {
                       resetAppForm(selectedProjectId, '', false);
                     }}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                 )}
               </div>
@@ -1038,14 +1036,14 @@ export default function ProjectsManagementPage() {
               <div className="mt-6 space-y-4 border-t border-border pt-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-fg">
-                    Sync From {syncType === 'code' ? 'Code' : 'Schema'}: {syncApp.name}
+                    {syncType === 'code' ? t('pr.syncFromCode', { name: syncApp.name }) : t('pr.syncFromSchema', { name: syncApp.name })}
                   </h3>
                   <button
                     type="button"
                     className="px-3 py-1 text-sm border border-border-strong rounded hover:bg-bg"
                     onClick={resetSyncForm}
                   >
-                    Close
+                    {t('ws.close')}
                   </button>
                 </div>
 
@@ -1054,7 +1052,7 @@ export default function ProjectsManagementPage() {
                   <div className="space-y-4">
                     <div>
                       <div className="flex items-center justify-between text-sm text-muted mb-2">
-                        <span>Загрузка данных {syncType === 'code' ? 'из кода' : 'из схемы'}</span>
+                        <span>{syncType === 'code' ? t('pr.loadingFromCode') : t('pr.loadingFromSchema')}</span>
                         <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
                       </div>
                       <div className="w-full bg-surface-strong rounded-full h-2">
@@ -1075,8 +1073,8 @@ export default function ProjectsManagementPage() {
                   <div className="space-y-4">
                     <div>
                       <div className="flex items-center justify-between text-sm text-muted mb-2">
-                        <span>Сопоставление данных</span>
-                        <span>{syncType === 'code' ? matchedFunctions.length : matchedObjects.length} {syncType === 'code' ? 'функций' : 'объектов'}</span>
+                        <span>{t('pr.matching')}</span>
+                        <span>{syncType === 'code' ? t('pr.functionsCount', { count: matchedFunctions.length }) : t('pr.objectsCount', { count: matchedObjects.length })}</span>
                       </div>
                       {syncProgress.message && (
                         <p className="text-sm text-meta mb-4">{syncProgress.message}</p>
@@ -1087,7 +1085,7 @@ export default function ProjectsManagementPage() {
                     <div className="flex gap-4">
                       <input
                         type="text"
-                        placeholder="Поиск по имени..."
+                        placeholder={t('pr.searchName')}
                         value={syncSearchQuery}
                         onChange={(e) => setSyncSearchQuery(e.target.value)}
                         className="flex-1 px-3 py-2 border border-border-strong rounded text-sm"
@@ -1097,20 +1095,20 @@ export default function ProjectsManagementPage() {
                         onChange={(e) => setSyncStatusFilter(e.target.value)}
                         className="px-3 py-2 border border-border-strong rounded text-sm"
                       >
-                        <option value="all">Все статусы</option>
+                        <option value="all">{t('pr.allStatuses')}</option>
                         {syncType === 'code' ? (
                           <>
-                            <option value="proposed">Предложена связь</option>
-                            <option value="linked">Связана</option>
-                            <option value="candidate">Кандидат (нет фичи)</option>
-                            <option value="stale">Файл удалён</option>
+                            <option value="proposed">{t('pr.status.proposed')}</option>
+                            <option value="linked">{t('pr.status.linked')}</option>
+                            <option value="candidate">{t('pr.status.candidate')}</option>
+                            <option value="stale">{t('pr.status.stale')}</option>
                           </>
                         ) : (
                           <>
-                            <option value="new">Новый</option>
-                            <option value="matched">Сопоставлен</option>
-                            <option value="needs_matching">Нужно сопоставить</option>
-                            <option value="delete">Удалить</option>
+                            <option value="new">{t('pr.status.new')}</option>
+                            <option value="matched">{t('pr.status.matched')}</option>
+                            <option value="needs_matching">{t('pr.status.needs_matching')}</option>
+                            <option value="delete">{t('pr.status.delete')}</option>
                           </>
                         )}
                       </select>
@@ -1125,18 +1123,18 @@ export default function ProjectsManagementPage() {
                             <tr>
                               {syncType === 'code' ? (
                                 <>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Функция в коде</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Файл</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Фича</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Статус</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Действие</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">{t('pr.colCodeFunction')}</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">{t('pr.colFile')}</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">{t('pr.colFeature')}</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">{t('pr.colStatus')}</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">{t('pr.colAction')}</th>
                                 </>
                               ) : (
                                 <>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Модель</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Бизнес-объект</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Статус</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">Действие</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">{t('pr.colModel')}</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">{t('pr.colObject')}</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">{t('pr.colStatus')}</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-fg-2">{t('pr.colAction')}</th>
                                 </>
                               )}
                             </tr>
@@ -1167,7 +1165,7 @@ export default function ProjectsManagementPage() {
                                         {func.functionCard ? (
                                           <span className="text-fg-2">{func.functionCard.name} ({func.functionCard.id})</span>
                                         ) : (
-                                          <span className="text-meta" title="create would use this id">— {func.functionId && <span className="font-mono text-xs">({func.functionId})</span>}</span>
+                                          <span className="text-meta" title={t('pr.createWouldUse')}>— {func.functionId && <span className="font-mono text-xs">({func.functionId})</span>}</span>
                                         )}
                                         {func.reason && <div className="text-xs text-meta">{func.reason}</div>}
                                       </td>
@@ -1178,10 +1176,10 @@ export default function ProjectsManagementPage() {
                                           func.status === 'candidate' ? 'bg-surface-muted text-fg' :
                                           'bg-danger-soft text-danger-fg-strong'
                                         }`}>
-                                          {func.status === 'proposed' ? 'Предложена связь' :
-                                           func.status === 'linked' ? 'Связана' :
-                                           func.status === 'candidate' ? 'Кандидат' :
-                                           'Файл удалён'}
+                                          {func.status === 'proposed' ? t('pr.status.proposed') :
+                                           func.status === 'linked' ? t('pr.status.linked') :
+                                           func.status === 'candidate' ? t('pr.status.candidate') :
+                                           t('pr.status.stale')}
                                         </span>
                                       </td>
                                       <td className="px-4 py-2">
@@ -1190,10 +1188,10 @@ export default function ProjectsManagementPage() {
                                           onChange={(e) => handleSyncActionChange(key, e.target.value as CodeSyncAction)}
                                           className="px-2 py-1 border border-border-strong rounded text-xs"
                                         >
-                                          <option value="skip">Пропустить</option>
-                                          {func.functionCard && func.status !== 'stale' && <option value="link">Связать с фичей</option>}
-                                          {!func.functionCard && <option value="create">Создать фичу</option>}
-                                          {func.status === 'stale' && <option value="unlink">Снять связь (source_file)</option>}
+                                          <option value="skip">{t('pr.action.skip')}</option>
+                                          {func.functionCard && func.status !== 'stale' && <option value="link">{t('pr.action.link')}</option>}
+                                          {!func.functionCard && <option value="create">{t('pr.action.createFeature')}</option>}
+                                          {func.status === 'stale' && <option value="unlink">{t('pr.action.unlink')}</option>}
                                         </select>
                                       </td>
                                     </tr>
@@ -1223,10 +1221,10 @@ export default function ProjectsManagementPage() {
                                         obj.status === 'needs_matching' ? 'bg-warn-muted text-warn-fg' :
                                         'bg-danger-soft text-danger-fg-strong'
                                       }`}>
-                                        {obj.status === 'new' ? 'Новый' :
-                                         obj.status === 'matched' ? 'Сопоставлен' :
-                                         obj.status === 'needs_matching' ? 'Нужно сопоставить' :
-                                         'Удалить'}
+                                        {obj.status === 'new' ? t('pr.status.new') :
+                                         obj.status === 'matched' ? t('pr.status.matched') :
+                                         obj.status === 'needs_matching' ? t('pr.status.needs_matching') :
+                                         t('pr.status.delete')}
                                       </span>
                                     </td>
                                     <td className="px-4 py-2">
@@ -1235,10 +1233,10 @@ export default function ProjectsManagementPage() {
                                         onChange={(e) => handleSyncActionChange(obj.prismaModel.name, e.target.value as SyncActionType)}
                                         className="px-2 py-1 border border-border-strong rounded text-xs"
                                       >
-                                        <option value="skip">Пропустить</option>
-                                        <option value="update">Обновить</option>
-                                        <option value="create">Создать</option>
-                                        <option value="delete">Удалить</option>
+                                        <option value="skip">{t('pr.action.skip')}</option>
+                                        <option value="update">{t('pr.action.update')}</option>
+                                        <option value="create">{t('pr.action.create')}</option>
+                                        <option value="delete">{t('pr.status.delete')}</option>
                                       </select>
                                     </td>
                                   </tr>
@@ -1252,7 +1250,7 @@ export default function ProjectsManagementPage() {
 
                     {((syncType === 'code' && matchedFunctions.length === 0) || (syncType === 'schema' && matchedObjects.length === 0)) && syncStage === 'matching' && (
                       <div className="text-center py-8 text-meta">
-                        <p>Ожидание данных...</p>
+                        <p>{t('pr.waiting')}</p>
                       </div>
                     )}
 
@@ -1262,14 +1260,14 @@ export default function ProjectsManagementPage() {
                         className="px-4 py-2 bg-accent text-on rounded text-sm hover:bg-accent-hover"
                         onClick={handleExecuteSync}
                       >
-                        Выполнить синхронизацию
+                        {t('pr.run')}
                       </button>
                       <button
                         type="button"
                         className="px-4 py-2 border border-border-strong rounded text-sm hover:bg-bg"
                         onClick={resetSyncForm}
                       >
-                        Отмена
+                        {t('common.cancel')}
                       </button>
                     </div>
                   </div>
@@ -1280,7 +1278,7 @@ export default function ProjectsManagementPage() {
                   <div className="space-y-4">
                     <div>
                       <div className="flex items-center justify-between text-sm text-muted mb-2">
-                        <span>Создание и удаление данных</span>
+                        <span>{t('pr.executing')}</span>
                         <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
                       </div>
                       <div className="w-full bg-surface-strong rounded-full h-2">
@@ -1300,7 +1298,7 @@ export default function ProjectsManagementPage() {
                 {syncStage === 'completed' && (
                   <div className="space-y-4">
                     <div className="bg-success-muted border border-success-border rounded-lg p-4">
-                      <p className="text-sm text-success-fg font-semibold">Синхронизация завершена успешно</p>
+                      <p className="text-sm text-success-fg font-semibold">{t('pr.done')}</p>
                       <p className="text-sm text-success mt-1">{syncProgress.message}</p>
                     </div>
                     <div className="flex gap-3">
@@ -1312,7 +1310,7 @@ export default function ProjectsManagementPage() {
                           loadData();
                         }}
                       >
-                        Закрыть и обновить
+                        {t('pr.closeRefresh')}
                       </button>
                     </div>
                   </div>
@@ -1322,13 +1320,13 @@ export default function ProjectsManagementPage() {
                 {syncStage === 'error' && (
                   <div className="space-y-4">
                     <div className="bg-danger-muted border border-danger-border-soft rounded-lg p-4">
-                      <p className="text-sm text-danger-fg-strong font-semibold">Ошибка синхронизации</p>
+                      <p className="text-sm text-danger-fg-strong font-semibold">{t('pr.failed')}</p>
                       <p className="text-sm text-danger mt-1">
-                        {syncProgress.error || syncProgress.message || 'Произошла ошибка при синхронизации'}
+                        {syncProgress.error || syncProgress.message || t('pr.syncError')}
                       </p>
                       {(syncProgress.error || syncProgress.message) && (
                         <details className="mt-2">
-                          <summary className="text-sm text-danger-fg cursor-pointer hover:text-danger-fg-strong">Подробности ошибки</summary>
+                          <summary className="text-sm text-danger-fg cursor-pointer hover:text-danger-fg-strong">{t('pr.details')}</summary>
                           <pre className="mt-2 text-xs text-danger bg-danger-soft p-2 rounded overflow-auto max-h-48 whitespace-pre-wrap break-words">
                             {syncProgress.error || syncProgress.message}
                           </pre>
@@ -1341,7 +1339,7 @@ export default function ProjectsManagementPage() {
                         className="px-4 py-2 border border-border-strong rounded text-sm hover:bg-bg"
                         onClick={resetSyncForm}
                       >
-                        Закрыть
+                        {t('ws.close')}
                       </button>
                     </div>
                   </div>

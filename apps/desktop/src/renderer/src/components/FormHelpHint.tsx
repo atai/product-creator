@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { getHelpHint, HelpHintKey, HelpHint } from '@pc/core/helpTexts';
+import { getHelpHint, type HelpHintKey, type HelpHint } from '@/i18n/help';
+import { t } from '@/i18n';
 
 interface FormHelpHintProps {
   hintKey?: HelpHintKey;
@@ -14,7 +15,7 @@ export default function FormHelpHint({ hintKey, title, description, className }:
   const popoverRef = useRef<HTMLDivElement>(null);
   const dialogId = useId();
 
-  const hint: HelpHint = hintKey ? getHelpHint(hintKey) : { title: title || 'Подсказка', description: description || '' };
+  const hint: HelpHint = hintKey ? getHelpHint(hintKey) : { title: title || t('common.hint'), description: description || '' };
 
   useEffect(() => {
     if (!open) {
@@ -79,7 +80,7 @@ export default function FormHelpHint({ hintKey, title, description, className }:
             onClick={() => setOpen(false)}
             className="mt-3 text-xs font-medium text-accent hover:text-accent-fg"
           >
-            Понятно
+            {t('common.gotIt')}
           </button>
         </div>
       )}

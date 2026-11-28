@@ -1,4 +1,5 @@
 import type { Lifecycle } from '@pc/core/types';
+import { t, type MessageKey } from '@/i18n';
 
 /** Lifecycle badge of a feature or business object (PRODUCTCREATOR-32) */
 const CLASSES: Record<Lifecycle, string> = {
@@ -11,5 +12,6 @@ const CLASSES: Record<Lifecycle, string> = {
 
 export default function LifecycleBadge({ lifecycle, className = 'px-2 py-1' }: { lifecycle: string; className?: string }) {
   const tone = CLASSES[lifecycle as Lifecycle] ?? 'bg-danger-soft text-danger-fg-strong';
-  return <span className={`inline-block text-xs rounded ${className} ${tone}`}>{lifecycle}</span>;
+  const known = lifecycle in CLASSES;
+  return <span className={`inline-block text-xs rounded ${className} ${tone}`}>{known ? t(`lifecycle.${lifecycle}` as MessageKey) : lifecycle}</span>;
 }

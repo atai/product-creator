@@ -7,6 +7,7 @@ import Fuse from 'fuse.js';
 import { LIFECYCLES, Feature } from '@pc/core/types';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 import LifecycleBadge from '../components/LifecycleBadge';
+import { t } from '@/i18n';
 
 export default function FeaturesPage() {
   const searchParams = useSearchParams();
@@ -33,7 +34,7 @@ export default function FeaturesPage() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error('Failed to load functions', err);
+        console.error(t('features.loadFailed'), err);
         setLoading(false);
       });
   }, [searchParams]);
@@ -71,29 +72,29 @@ export default function FeaturesPage() {
   if (loading) {
     return (
       <div className="min-h-full p-8">
-        <p className="text-muted">Loading...</p>
+        <p className="text-muted">{t('common.loading')}</p>
       </div>
     );
   }
 
   return (
     <CatalogPageLayout
-      title="Features"
-      description="Каталог фич (бизнес-возможностей): ищите по имени, тегам и API, фильтруйте по контексту, владельцу и статусу, чтобы быстро найти нужный сценарий."
+      title={t('features.title')}
+      description={t('features.description')}
       hintKey="home"
       actions={
         <Link
           href="/features/new"
           className="px-4 py-2 bg-accent text-on rounded hover:bg-accent-hover text-sm font-medium whitespace-nowrap"
         >
-          New Feature
+          {t('features.new')}
         </Link>
       }
       search={
         <div className="space-y-4">
           <input
             type="text"
-            placeholder="Search functions..."
+            placeholder={t('features.search')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full px-4 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta"
@@ -105,7 +106,7 @@ export default function FeaturesPage() {
               onChange={(e) => setFilters({ ...filters, bounded_context: e.target.value })}
               className="px-4 py-2 border border-border-strong rounded bg-surface text-fg"
             >
-              <option value="">All Contexts</option>
+              <option value="">{t('features.allContexts')}</option>
               {uniqueContexts.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -118,7 +119,7 @@ export default function FeaturesPage() {
               onChange={(e) => setFilters({ ...filters, owner: e.target.value })}
               className="px-4 py-2 border border-border-strong rounded bg-surface text-fg"
             >
-              <option value="">All Owners</option>
+              <option value="">{t('features.allOwners')}</option>
               {uniqueOwners.map((o) => (
                 <option key={o} value={o}>
                   {o}
@@ -131,10 +132,10 @@ export default function FeaturesPage() {
               onChange={(e) => setFilters({ ...filters, lifecycle: e.target.value })}
               className="px-4 py-2 border border-border-strong rounded bg-surface text-fg"
             >
-              <option value="">All Lifecycles</option>
+              <option value="">{t('features.allLifecycles')}</option>
               {lifecycles.map((l) => (
                 <option key={l} value={l}>
-                  {l}
+                  {t(`lifecycle.${l}`)}
                 </option>
               ))}
             </select>
@@ -144,7 +145,7 @@ export default function FeaturesPage() {
     >
       <div className="bg-surface rounded shadow">
         {filteredFunctions.length === 0 ? (
-          <p className="p-8 text-muted">No functions found</p>
+          <p className="p-8 text-muted">{t('features.none')}</p>
         ) : (
           <div className="divide-y">
             {filteredFunctions.map((func) => (

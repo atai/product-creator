@@ -5,6 +5,8 @@ import * as path from 'path';
 import yaml from 'js-yaml';
 import type { AppEntity, Project } from '../types';
 import { discoverComponents, guessKind, isDir, readJson, readYaml, slugify, type DiscoveredComponent } from './discovery';
+import { stampTranslations } from '../i18n';
+import productSchema from '../../schema/product.schema.json';
 
 /**
  * Project model — YAML files laid out in the project folder are the database
@@ -124,6 +126,8 @@ export interface ScreenshotSettings {
   start?: ScreenshotService[];
   capture: ScreenshotCommand;
   teardown?: ScreenshotCommand[];
+  /** Capture once per project language (PC_SCREENS_LANGUAGE), images in screens/<lang>/ (PRODUCTCREATOR-37) */
+  perLanguage?: boolean;
 }
 
 export const DEFAULT_SCREENSHOT_TIMEOUT_SEC = 300;
@@ -151,6 +155,12 @@ export function readChecksSettings(raw: unknown): ChecksSettings | undefined {
 }
 
 export const DEFAULT_SPEC_LANGUAGE = 'en';
+const LANGUAGE_TAG = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
+
+/** Languages of the project content (PRODUCTCREATOR-37); the first is the primary one. Old projects: spec.language */
+export const projectLanguages = (p: { languages?: string[]; spec?: SpecSettings }): string[] =>
+  p.languages?.length ? p.languages : [p.spec?.language ?? DEFAULT_SPEC_LANGUAGE];
+export const primaryLanguage = (p: { languages?: string[]; spec?: SpecSettings }): string => projectLanguages(p)[0];
 export const DEFAULT_SPEC_OUTPUT = 'docs/spec';
 
 /** Product-level context of a spec (PRODUCTCREATOR-33), stored in product-creator.yml */
@@ -163,6 +173,10 @@ export interface ProductContext {
   spec?: SpecSettings;
   screenshots?: ScreenshotSettings;
   checks?: ChecksSettings;
+  /** Languages of the content, first = primary (PRODUCTCREATOR-37) */
+  languages?: string[];
+  /** Translations of the product context: i18n.<lang>.{vision, goals, actors, glossary} (PRODUCTCREATOR-37) */
+  i18n?: Record<string, unknown>;
 }
 
 export const PRODUCT_KEYS = ['vision', 'goals', 'actors', 'glossary', 'tracker'] as const;
@@ -215,6 +229,8 @@ interface RawProjectFile {
   spec?: unknown;
   screenshots?: unknown;
   checks?: unknown;
+  languages?: unknown;
+  i18n?: unknown;
   /** v1 format: inline services */
   services?: Array<Record<string, unknown>>;
 }
@@ -364,7 +380,13 @@ export function readScreenshotSettings(raw: unknown): ScreenshotSettings | undef
     ...(start.length ? { start } : {}),
     capture,
     ...(teardown.length ? { teardown } : {}),
+    ...(r.perLanguage === true ? { perLanguage: true } : {}),
   };
+}
+
+function readLanguages(raw: unknown): string[] | undefined {
+  const list = (Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',') : []).map((l) => String(l).trim()).filter((l) => LANGUAGE_TAG.test(l));
+  return list.length ? [...new Set(list)] : undefined;
 }
 
 /** Rejects a product context that cannot be saved: ids, duplicates, tracker URL */
@@ -381,6 +403,10 @@ export function assertProductContext(c: ProductContext) {
   unique((c.goals ?? []).map((g) => g.id), 'Goal id');
   unique((c.actors ?? []).map((a) => a.id), 'Actor id');
   unique((c.glossary ?? []).map((t) => t.term), 'Glossary term');
+  if (c.languages) {
+    for (const l of c.languages) if (!LANGUAGE_TAG.test(l)) throw new Error(`Language "${l}" must be a tag like en, ru or pt-BR`);
+    if (new Set(c.languages).size !== c.languages.length) throw new Error('languages must not repeat');
+  }
   if (c.spec?.language && !/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(c.spec.language)) {
     throw new Error(`spec.language "${c.spec.language}" must be a language tag like en, ru or pt-BR`);
   }
@@ -428,6 +454,8 @@ export function readProject(rootDir: string): ProjectModel | null {
     ...readProductContext(raw),
     screenshots: readScreenshotSettings(raw.screenshots),
     checks: readChecksSettings(raw.checks),
+    languages: readLanguages(raw.languages),
+    i18n: typeof raw.i18n === 'object' && raw.i18n !== null ? (raw.i18n as Record<string, unknown>) : undefined,
     root,
     components,
   };
@@ -468,6 +496,8 @@ export function projectFileContent(project: ProjectModel): string {
       spec: project.spec,
       screenshots: project.screenshots,
       checks: project.checks,
+      languages: project.languages,
+      i18n: project.i18n,
     })
   );
 }
@@ -654,6 +684,9 @@ export type ProjectPatch = Partial<Pick<ProjectModel, 'slug' | 'name' | 'descrip
   spec?: SpecSettings | null;
   screenshots?: ScreenshotSettings | null;
   checks?: ChecksSettings | null;
+  /** [] or null: back to the default (en) */
+  languages?: string[] | null;
+  i18n?: Record<string, unknown> | null;
 };
 export type ComponentInput = Omit<ComponentModel, 'id' | 'catalog'> & { id?: string; catalog?: string };
 
@@ -676,6 +709,10 @@ export function updateProject(rootDir: string, patch: ProjectPatch): ProjectMode
   // product context (PRODUCTCREATOR-33): normalised like on read, then checked
   const product = readProductContext({ goals: patch.goals, actors: patch.actors, glossary: patch.glossary, tracker: patch.tracker, spec: patch.spec });
   if (patch.spec !== undefined) next.spec = product.spec;
+  if (patch.languages !== undefined) next.languages = patch.languages?.length ? patch.languages.map((l) => l.trim()).filter(Boolean) : undefined;
+  if (patch.i18n !== undefined) next.i18n = patch.i18n ?? undefined;
+  // translations of the product context get fingerprints of their primary texts (PRODUCTCREATOR-37)
+  if (next.i18n) next.i18n = (stampTranslations(project, { ...next }, productSchema) as ProjectModel).i18n;
   if (patch.checks !== undefined) next.checks = patch.checks ? readChecksSettings(patch.checks) : undefined;
   if (patch.screenshots !== undefined) next.screenshots = patch.screenshots ? readScreenshotSettings(patch.screenshots) : undefined;
   if (patch.goals !== undefined) next.goals = product.goals;

@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Product context",
+  "description": "Translatable part of product-creator.yml (PRODUCTCREATOR-37); used to find what i18n.<language> may hold. The file itself is read by project/model.ts.",
+  "type": "object",
+  "properties": {
+    "description": {
+      "type": "string",
+      "x-translatable": true
+    },
+    "vision": {
+      "type": "string",
+      "x-translatable": true
+    },
+    "goals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "x-translatable": true
+          }
+        }
+      }
+    },
+    "actors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "x-translatable": true
+          },
+          "description": {
+            "type": "string",
+            "x-translatable": true
+          }
+        }
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "x-i18n-key": "term",
+      "items": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string",
+            "x-translatable": true
+          }
+        }
+      }
+    }
+  }
+}

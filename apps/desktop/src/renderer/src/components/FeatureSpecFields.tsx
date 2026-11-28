@@ -1,5 +1,6 @@
 import { useFieldArray, type Control, type UseFormRegister } from 'react-hook-form';
 import type { Feature, FeatureAcceptance, FeatureCodeRef, FeatureConstraint, FeatureDecision, FeatureQuestion, FeatureRequirement, FeatureScreen } from '@pc/core/types';
+import { t } from '@/i18n';
 
 /**
  * Spec fields of a feature (PRODUCTCREATOR-32): actors, requirements, acceptance, constraints, decisions, open questions.
@@ -133,21 +134,21 @@ export default function FeatureSpecFields({ control, register }: Form) {
 
   return (
     <div className="space-y-4 border-t border-border pt-4">
-      <h2 className="text-lg font-semibold">Links</h2>
+      <h2 className="text-lg font-semibold">{t('sf.links')}</h2>
 
       <div>
-        <label className="block text-sm font-medium mb-1 text-fg-2">Tickets</label>
-        <p className="text-xs text-meta mb-2">Tracker issues the feature is planned or built in.</p>
+        <label className="block text-sm font-medium mb-1 text-fg-2">{t('sf.tickets')}</label>
+        <p className="text-xs text-meta mb-2">{t('sf.ticketsHint')}</p>
         <input {...register('tickets')} className={input} placeholder="PRODUCTCREATOR-34, #12" />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1 text-fg-2">Also implemented in</label>
-        <p className="text-xs text-meta mb-2">Other places of the implementation (UI page, API route, CLI), in this or another component. The main file is Source file, set by code sync.</p>
+        <label className="block text-sm font-medium mb-1 text-fg-2">{t('sf.alsoIn')}</label>
+        <p className="text-xs text-meta mb-2">{t('sf.alsoInHint')}</p>
         <div className="space-y-2">
           {codeRefs.fields.map((field, index) => (
             <div key={field.id} className="flex gap-2">
-              <input {...register(`code_refs.${index}.component`)} className="w-32 px-3 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta" placeholder="component" />
+              <input {...register(`code_refs.${index}.component`)} className="w-32 px-3 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta" placeholder={t('sf.component')} />
               <input {...register(`code_refs.${index}.file`)} className={`${input} font-mono text-sm`} placeholder="renderer/src/pages/doc.tsx" />
               <input {...register(`code_refs.${index}.role`)} className="w-28 px-3 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta" placeholder="UI" />
               <button type="button" onClick={() => codeRefs.remove(index)} className={removeBtn}>
@@ -156,106 +157,106 @@ export default function FeatureSpecFields({ control, register }: Form) {
             </div>
           ))}
           <button type="button" onClick={() => codeRefs.append({ component: '', file: '', role: '' })} className={addBtn}>
-            + Add place
+            {t('sf.addPlace')}
           </button>
         </div>
       </div>
 
-      <h2 className="text-lg font-semibold pt-2">Spec</h2>
+      <h2 className="text-lg font-semibold pt-2">{t('sf.spec')}</h2>
 
       <div>
-        <label className="block text-sm font-medium mb-1 text-fg-2">Actors</label>
-        <p className="text-xs text-meta mb-2">Who uses the feature: roles of people or systems.</p>
+        <label className="block text-sm font-medium mb-1 text-fg-2">{t('sf.actors')}</label>
+        <p className="text-xs text-meta mb-2">{t('sf.actorsHint')}</p>
         <div className="space-y-2">
           {actors.fields.map((field, index) => (
             <div key={field.id} className="flex gap-2">
-              <input {...register(`actors.${index}.value`)} className={input} placeholder="project owner, AI agent, CI…" />
+              <input {...register(`actors.${index}.value`)} className={input} placeholder={t('sf.actorPlaceholder')} />
               <button type="button" onClick={() => actors.remove(index)} className={removeBtn}>
                 ✕
               </button>
             </div>
           ))}
           <button type="button" onClick={() => actors.append({ value: '' })} className={addBtn}>
-            + Add actor
+            {t('sf.addActor')}
           </button>
         </div>
       </div>
 
-      <SpecList {...form} name="requirements" label="Requirements" hint="What the feature must do: one testable statement per item." addLabel="+ Add requirement">
+      <SpecList {...form} name="requirements" label={t('sf.requirements')} hint={t('sf.requirementsHint')} addLabel={t('sf.addRequirement')}>
         {(i) => (
           <div className="flex gap-2">
-            <textarea {...register(`requirements.${i}.text`)} className={input} rows={2} placeholder="The agent can …" />
+            <textarea {...register(`requirements.${i}.text`)} className={input} rows={2} placeholder={t('sf.requirementPlaceholder')} />
             <select {...register(`requirements.${i}.priority`)} className={select}>
-              <option value="must">must</option>
-              <option value="should">should</option>
-              <option value="could">could</option>
+              <option value="must">{t('sf.priority.must')}</option>
+              <option value="should">{t('sf.priority.should')}</option>
+              <option value="could">{t('sf.priority.could')}</option>
             </select>
           </div>
         )}
       </SpecList>
 
-      <SpecList {...form} name="acceptance" label="Acceptance criteria" hint="How to check that it is done: given / when / then, or one sentence. Covers: requirement ids (R1, R2)." addLabel="+ Add criterion">
+      <SpecList {...form} name="acceptance" label={t('sf.acceptance')} hint={t('sf.acceptanceHint')} addLabel={t('sf.addCriterion')}>
         {(i) => (
           <>
             {(['covers', 'given', 'when', 'then', 'text', 'verify'] as const).map((key) => (
               <label key={key} className="flex gap-2 items-center">
-                <span className="w-14 shrink-0 text-xs text-meta">{key}</span>
-                <input {...register(`acceptance.${i}.${key}`)} className={key === 'verify' ? `${input} font-mono text-sm` : input} placeholder={ACCEPTANCE_HINTS[key]} />
+                <span className="w-14 shrink-0 text-xs text-meta">{t(`sf.field.${key}`)}</span>
+                <input {...register(`acceptance.${i}.${key}`)} className={key === 'verify' ? `${input} font-mono text-sm` : input} placeholder={ACCEPTANCE_HINTS[key]()} />
               </label>
             ))}
           </>
         )}
       </SpecList>
 
-      <SpecList {...form} name="constraints" label="Constraints" hint="Non-functional requirements and limits, measurable where possible." addLabel="+ Add constraint">
+      <SpecList {...form} name="constraints" label={t('sf.constraints')} hint={t('sf.constraintsHint')} addLabel={t('sf.addConstraint')}>
         {(i) => (
           <div className="flex gap-2">
             <select {...register(`constraints.${i}.kind`)} className={select}>
               {CONSTRAINT_KINDS.map((k) => (
                 <option key={k} value={k}>
-                  {k}
+                  {t(`sf.kind.${k}`)}
                 </option>
               ))}
             </select>
-            <input {...register(`constraints.${i}.text`)} className={input} placeholder="responds in < 200 ms" />
+            <input {...register(`constraints.${i}.text`)} className={input} placeholder={t('sf.constraintPlaceholder')} />
           </div>
         )}
       </SpecList>
 
-      <SpecList {...form} name="decisions" label="Decisions" hint="What was decided for this feature and why." addLabel="+ Add decision">
+      <SpecList {...form} name="decisions" label={t('sf.decisions')} hint={t('sf.decisionsHint')} addLabel={t('sf.addDecision')}>
         {(i) => (
           <>
-            <input {...register(`decisions.${i}.decision`)} className={input} placeholder="decision" />
-            <textarea {...register(`decisions.${i}.reason`)} className={input} rows={2} placeholder="why; rejected alternatives" />
+            <input {...register(`decisions.${i}.decision`)} className={input} placeholder={t('sf.decisionPlaceholder')} />
+            <textarea {...register(`decisions.${i}.reason`)} className={input} rows={2} placeholder={t('sf.reasonPlaceholder')} />
             <div className="flex gap-2">
               <input {...register(`decisions.${i}.date`)} className={input} placeholder="YYYY-MM-DD" />
               <select {...register(`decisions.${i}.status`)} className={select}>
-                <option value="accepted">accepted</option>
-                <option value="superseded">superseded</option>
+                <option value="accepted">{t('sf.status.accepted')}</option>
+                <option value="superseded">{t('sf.status.superseded')}</option>
               </select>
             </div>
           </>
         )}
       </SpecList>
 
-      <SpecList {...form} name="screens" label="Screens" hint="Screenshots of the UI for the spec, captured by the project's capture command (screenshots in product-creator.yml). Click/fill actions and viewport: in the YAML." addLabel="+ Add screen">
+      <SpecList {...form} name="screens" label={t('sf.screens')} hint={t('sf.screensHint')} addLabel={t('sf.addScreen')}>
         {(i) => (
           <>
-            <input {...register(`screens.${i}.title`)} className={input} placeholder="caption: The feature form" />
-            <input {...register(`screens.${i}.path`)} className={`${input} font-mono text-sm`} placeholder="path: /features/new" />
+            <input {...register(`screens.${i}.title`)} className={input} placeholder={t('sf.screenTitle')} />
+            <input {...register(`screens.${i}.path`)} className={`${input} font-mono text-sm`} placeholder={t('sf.screenPath')} />
             <div className="flex gap-2">
-              <input {...register(`screens.${i}.wait`)} className={`${input} font-mono text-sm`} placeholder="wait for selector (optional)" />
-              <input {...register(`screens.${i}.element`)} className={`${input} font-mono text-sm`} placeholder="capture element (optional)" />
+              <input {...register(`screens.${i}.wait`)} className={`${input} font-mono text-sm`} placeholder={t('sf.screenWait')} />
+              <input {...register(`screens.${i}.element`)} className={`${input} font-mono text-sm`} placeholder={t('sf.screenElement')} />
             </div>
           </>
         )}
       </SpecList>
 
-      <SpecList {...form} name="open_questions" label="Open questions" hint="Not answered yet. When answered, turn the question into a decision." addLabel="+ Add question">
+      <SpecList {...form} name="open_questions" label={t('sf.questions')} hint={t('sf.questionsHint')} addLabel={t('sf.addQuestion')}>
         {(i) => (
           <div className="flex gap-2">
-            <input {...register(`open_questions.${i}.question`)} className={input} placeholder="question" />
-            <input {...register(`open_questions.${i}.owner`)} className="w-40 px-3 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta" placeholder="owner" />
+            <input {...register(`open_questions.${i}.question`)} className={input} placeholder={t('sf.questionPlaceholder')} />
+            <input {...register(`open_questions.${i}.owner`)} className="w-40 px-3 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta" placeholder={t('sf.ownerPlaceholder')} />
           </div>
         )}
       </SpecList>
@@ -263,13 +264,14 @@ export default function FeatureSpecFields({ control, register }: Form) {
   );
 }
 
+/** Placeholders, read at render time (the UI language is set before the first render) */
 const ACCEPTANCE_HINTS = {
-  covers: 'R1, R2',
-  given: 'precondition',
-  when: 'action',
-  then: 'expected result',
-  text: 'or the whole criterion as one sentence',
-  verify: 'pnpm --filter @pc/core test validation',
+  covers: () => 'R1, R2',
+  given: () => t('sf.hint.given'),
+  when: () => t('sf.hint.when'),
+  then: () => t('sf.hint.then'),
+  text: () => t('sf.hint.text'),
+  verify: () => 'pnpm --filter @pc/core test validation',
 } as const;
 
 const CONSTRAINT_KINDS: NonNullable<FeatureConstraint['kind']>[] = ['performance', 'security', 'reliability', 'compatibility', 'usability', 'compliance', 'other'];

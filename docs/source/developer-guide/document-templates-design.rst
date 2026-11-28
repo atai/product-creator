@@ -92,7 +92,7 @@ Generator (PRODUCTCREATOR-35)
 
 ``packages/core/src/spec`` (*exists*):
 
-* ``build.ts`` — ``buildSpec(project, model)``: the spec as data (product context, features, objects,
+* ``build.ts`` — ``buildSpec(project, model, { language, mark })``: the spec as data in one language (product context, features, objects,
   workflows of the project; ``removed`` left out; issues per entry; callers, workflows, users).
 * ``human.ts`` — ``renderHuman(spec, messages)``: one Markdown document.
 * ``agent.ts`` — ``renderAgent``: ``manifest.json`` (format ``product-creator.spec/1``) and chunks per
@@ -102,7 +102,9 @@ Generator (PRODUCTCREATOR-35)
 * ``messages.ts`` — label catalogs per language (``Messages``); ``messagesFor(tag)`` with fallback to
   English. No label is written in the renderers; a new language is a new catalog.
 * ``index.ts`` — ``generateSpec``, ``specOutputDir`` (inside the project, not overlapping the catalog),
-  ``writeSpec`` (replaces ``spec.md`` and ``agent/``).
+  ``writeSpec`` (replaces every ``<lang>/spec.md``, the old root ``spec.md`` and ``agent/``).
+  ``generateSpec`` renders the human view once per project language (``projectLanguages``) and the agent
+  bundle once, in the primary language.
 
 Screenshots (PRODUCTCREATOR-36, *exists*): ``packages/core/src/screens`` — ``screensRequest`` (screens of the
 features), ``captureScreens`` (setup → start + ``readyUrl`` → capture → teardown, always stopping services,
@@ -112,11 +114,48 @@ cancellable), ``readScreensResult``; contract files ``screens.request.json`` / `
 model (``SpecFeature.screens``) embeds images and reports ``screen_missing`` / ``screen_failed`` warnings.
 Routes: ``/api/screens`` (POST start, GET status/log, DELETE cancel), ``/api/spec?asset=`` (PNG as data URL
 for the Doc page). Product Creator's own capturer: ``scripts/capture-screens.mjs`` → smoke mode
-``PC_SMOKE_SCREENS`` → ``apps/desktop/src/main/screens.ts``.
+``PC_SMOKE_SCREENS`` → ``apps/desktop/src/main/screens.ts``. With ``screenshots.perLanguage`` the capture
+runs per language (``PC_SCREENS_LANGUAGE``, images in ``screens/<lang>/``); the capturer passes it on as
+``PC_UI_LANGUAGE``.
+
+Languages (PRODUCTCREATOR-37, *exists*)
+---------------------------------------
+
+Two independent parts.
+
+**Content and specs.** ``languages`` in ``product-creator.yml`` (``projectLanguages`` / ``primaryLanguage``
+in ``project/model.ts``; the older ``spec.language`` is a one-language fallback). The schemas mark
+translatable fields with ``x-translatable: true`` (registered in the shared Ajv vocabulary next to
+``x-audience``); list items are keyed by ``id``, or by the property named in ``x-i18n-key`` (business
+object fields: ``name``; glossary: ``term``). ``packages/core/src/i18n``:
+
+* ``text.ts`` (no Node imports, also used by the renderer) — ``translatablePaths(schema)``,
+  ``primaryTexts``, ``localize(entry, schema, lang, primary, mark?)``.
+* ``index.ts`` — ``fingerprint`` (sha256, 8 hex), ``stampTranslations(previous, next, schema)`` run by every
+  save (``storage.save*``, ``updateProject``): a new or changed translation gets the fingerprint of its
+  primary text in ``i18n.<lang>._source``; ``translationProblems`` → the design checks
+  ``translation_stale``, ``translation_orphan``, ``translation_unknown_language``.
+
+The renderer's ``components/TranslationEditor.tsx`` (``useProjectLanguages``, ``LanguageTabs``,
+``TranslationEditor``) edits ``i18n`` next to the normal form of features, business objects, workflows and
+the project.
+
+**Interface.** The app language is a user setting (``settings.json`` → ``uiLanguage``:
+``system | en | ru | de``), resolved by ``resolveUiLanguage`` in ``apps/desktop/src/main/i18n.ts``
+(``PC_UI_LANGUAGE``, the setting, the OS languages, English). The main process has its own small catalog
+(``tm``: menu, dialogs, notifications). The renderer loads the language over IPC (``pc:ui:language``)
+before the first render; ``t(key, params)`` reads ``renderer/src/i18n/{en,ru,de}.ts``. A change reloads the
+windows. ``i18n/i18n.test.ts`` fails when a catalog misses a key or a page has a hard-coded text (JSX text
+or a ``placeholder``/``title``/``label``/… attribute).
+
+**Adding a language.** Interface: a catalog ``renderer/src/i18n/<tag>.ts`` with every key of ``en.ts``,
+an entry in ``UI_LANGUAGES`` and the main catalog in ``main/i18n.ts``. Spec labels: a ``Messages`` catalog
+in ``packages/core/src/spec/messages.ts``. Content languages need no code: any BCP 47 tag works in
+``languages``; without spec labels the headings are English.
 
 Entry points: ``/api/spec`` (GET: human view or ``entry`` of the bundle; POST: write), CLI
 ``product-creator spec``, MCP ``get_spec``, the Doc page (``react-markdown``, raw HTML not rendered).
-Settings: ``spec.language`` / ``spec.output`` in ``product-creator.yml``.
+Settings: ``languages`` and ``spec.output`` in ``product-creator.yml``.
 
 Later: documents
 ----------------

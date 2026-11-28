@@ -18,11 +18,13 @@
     "name": {
       "type": "string",
       "minLength": 1,
-      "description": "Human readable name"
+      "description": "Human readable name",
+      "x-translatable": true
     },
     "description": {
       "type": "string",
-      "description": "Summary of the business object"
+      "description": "Summary of the business object",
+      "x-translatable": true
     },
     "owner": {
       "type": "string",
@@ -85,12 +87,14 @@
           },
           "description": {
             "type": "string",
-            "description": "Field purpose or behavior"
+            "description": "Field purpose or behavior",
+            "x-translatable": true
           }
         },
         "additionalProperties": false
       },
-      "description": "Atomic fields for the object"
+      "description": "Atomic fields for the object",
+      "x-i18n-key": "name"
     },
     "tables": {
       "type": "array",
@@ -147,6 +151,14 @@
         "type": "string",
         "pattern": "^([A-Z][A-Z0-9_]*-|#)[1-9][0-9]*$",
         "description": "Issue key: PROJECT-123 or #123"
+      }
+    },
+    "i18n": {
+      "type": "object",
+      "x-audience": "both",
+      "description": "Translations (PRODUCTCREATOR-37): i18n.<language> holds the translatable fields (x-translatable) in that language; list items are keyed by their id (or x-i18n-key); _source keeps fingerprints of the translated primary texts (set on save) to detect stale translations.",
+      "additionalProperties": {
+        "type": "object"
       }
     }
   },

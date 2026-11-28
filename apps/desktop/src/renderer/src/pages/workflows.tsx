@@ -6,6 +6,7 @@ import { Workflow } from '@pc/core/types';
 import { useEntityList } from '@/hooks/useEntityList';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 import LifecycleBadge from '../components/LifecycleBadge';
+import { t } from '@/i18n';
 
 export default function WorkflowsPage() {
   const searchParams = useSearchParams();
@@ -30,21 +31,21 @@ export default function WorkflowsPage() {
 
   return (
     <CatalogPageLayout
-      title="Workflows"
-      description="Workflow-сценарии, которые оркестрируют фичи и события. Проверяйте шаги, emitted events и переходите к редактированию."
+      title={t('workflows.title')}
+      description={t('workflows.description')}
       hintKey="workflows"
       actions={
         <Link
           href={`/workflows/new${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
           className="px-4 py-2 bg-accent text-on rounded hover:bg-accent-hover text-sm font-medium"
         >
-          New Workflow
+          {t('workflows.new')}
         </Link>
       }
       search={
         <input
           type="text"
-          placeholder="Search workflows..."
+          placeholder={t('workflows.search')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
@@ -53,12 +54,12 @@ export default function WorkflowsPage() {
     >
       {loading ? (
         <div className="text-center py-12">
-          <p className="text-muted">Loading workflows...</p>
+          <p className="text-muted">{t('workflows.loading')}</p>
         </div>
       ) : filteredWorkflows.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted">
-            {workflows.length === 0 ? 'No workflows found. Create your first workflow!' : 'No matching workflows found.'}
+            {workflows.length === 0 ? t('workflows.noneYet') : t('workflows.noMatch')}
           </p>
         </div>
       ) : (
@@ -67,22 +68,22 @@ export default function WorkflowsPage() {
             <thead className="bg-bg">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Workflow ID
+                  {t('workflows.colId')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Name
+                  {t('common.name')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Lifecycle
+                  {t('common.lifecycle')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Steps
+                  {t('workflows.colSteps')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Events Emitted
+                  {t('workflows.colEvents')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Actions
+                  {t('common.actions')}
                 </th>
               </tr>
             </thead>
@@ -101,11 +102,11 @@ export default function WorkflowsPage() {
                     {workflow.name || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {workflow.lifecycle ? <LifecycleBadge lifecycle={workflow.lifecycle} /> : <span className="text-xs text-danger">missing</span>}
+                    {workflow.lifecycle ? <LifecycleBadge lifecycle={workflow.lifecycle} /> : <span className="text-xs text-danger">{t('workflows.missing')}</span>}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-muted">
-                      {workflow.steps.length} step{workflow.steps.length !== 1 ? 's' : ''}
+                      {t('workflows.steps', { count: workflow.steps.length })}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -120,7 +121,7 @@ export default function WorkflowsPage() {
                           </span>
                         ))
                       ) : (
-                        <span className="text-sm text-meta">None</span>
+                        <span className="text-sm text-meta">{t('common.none')}</span>
                       )}
                     </div>
                   </td>
@@ -129,7 +130,7 @@ export default function WorkflowsPage() {
                       href={`/workflows/${workflow.workflow}${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
                       className="text-accent hover:text-accent-fg-strong"
                     >
-                      Edit
+                      {t('common.edit')}
                     </Link>
                   </td>
                 </tr>

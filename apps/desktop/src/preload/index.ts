@@ -3,6 +3,10 @@ import { IPC, type GenerateEvent, type McpStatus, type PcBridge, type RelayView,
 
 const bridge: PcBridge = {
   api: (request) => ipcRenderer.invoke(IPC.api, request),
+  ui: {
+    language: () => ipcRenderer.invoke(IPC.uiLanguageGet),
+    setLanguage: (value) => ipcRenderer.invoke(IPC.uiLanguageSet, value),
+  },
   workspace: {
     get: () => ipcRenderer.invoke(IPC.workspaceGet),
     openDialog: () => ipcRenderer.invoke(IPC.workspaceOpenDialog),

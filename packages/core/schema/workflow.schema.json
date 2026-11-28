@@ -18,12 +18,14 @@
     "name": {
       "type": "string",
       "description": "Human-readable name",
-      "x-audience": "both"
+      "x-audience": "both",
+      "x-translatable": true
     },
     "description": {
       "type": "string",
       "x-audience": "both",
-      "description": "What the workflow achieves and when it runs"
+      "description": "What the workflow achieves and when it runs",
+      "x-translatable": true
     },
     "lifecycle": {
       "type": "string",
@@ -72,6 +74,14 @@
         "type": "string",
         "pattern": "^([A-Z][A-Z0-9_]*-|#)[1-9][0-9]*$",
         "description": "Issue key: PROJECT-123 or #123"
+      }
+    },
+    "i18n": {
+      "type": "object",
+      "x-audience": "both",
+      "description": "Translations (PRODUCTCREATOR-37): i18n.<language> holds the translatable fields (x-translatable) in that language; list items are keyed by their id (or x-i18n-key); _source keeps fingerprints of the translated primary texts (set on save) to detect stale translations.",
+      "additionalProperties": {
+        "type": "object"
       }
     }
   }

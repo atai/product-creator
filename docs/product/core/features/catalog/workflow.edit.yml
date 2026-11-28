@@ -37,3 +37,28 @@ screens:
     title: Workflow form with lifecycle and steps
     path: /workflows/agent.plan_change
     wait: form
+i18n:
+  ru:
+    name: Создание и изменение процесса
+    description: 'Создаёт или меняет процесс: упорядоченные шаги (функции) с компенсациями.'
+    requirements:
+      R1:
+        text: Каждый шаг и каждая компенсация — существующая функция
+    acceptance:
+      A1:
+        text: Шаг, который не является функцией, отклоняется с unknown_feature
+    screens:
+      S1:
+        title: Форма процесса со статусом и шагами
+    _source:
+      name: 1ac479f2
+      description: f7b6d7d3
+      requirements:
+        R1:
+          text: 3fc814a3
+      acceptance:
+        A1:
+          text: a7a438aa
+      screens:
+        S1:
+          title: e9347f8c

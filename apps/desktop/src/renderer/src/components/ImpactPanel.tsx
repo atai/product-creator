@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { entryHref } from './ValidationIssues';
+import { t } from '@/i18n';
 
 interface Ref {
   id: string;
@@ -50,17 +51,17 @@ export default function ImpactPanel({ kind, id, app }: { kind: 'feature' | 'busi
   const empty = !impact.features.length && !impact.workflows.length && !impact.objects.length && !impact.calls.length;
   return (
     <section className="mt-6" data-testid="impact">
-      <h3 className="text-sm font-medium text-meta mb-2">Impact of a change</h3>
+      <h3 className="text-sm font-medium text-meta mb-2">{t('impact.title')}</h3>
       {empty ? (
         <p className="text-sm text-meta">
-          {kind === 'business_object' ? 'No feature uses this object (link it in a feature: objects).' : 'Not used by workflows or other features.'}
+          {kind === 'business_object' ? t('impact.noFeatureUsesObject') : t('impact.notUsed')}
         </p>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {section(kind === 'business_object' ? 'Features using it' : 'Features calling it', impact.features, 'feature')}
-          {section('Workflows', impact.workflows, 'workflow')}
-          {section(kind === 'business_object' ? 'Objects referencing it' : 'Business objects', impact.objects, 'business_object')}
-          {section('Calls', impact.calls, 'feature')}
+          {section(kind === 'business_object' ? t('impact.featuresUsing') : t('impact.featuresCalling'), impact.features, 'feature')}
+          {section(t('impact.workflows'), impact.workflows, 'workflow')}
+          {section(kind === 'business_object' ? t('impact.objectsReferencing') : t('impact.objects'), impact.objects, 'business_object')}
+          {section(t('impact.calls'), impact.calls, 'feature')}
         </div>
       )}
     </section>

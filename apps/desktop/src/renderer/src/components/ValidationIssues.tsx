@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import { t } from '@/i18n';
 
 /** One model problem as returned by /api/validation, /api/validate-plan and rejected saves (PRODUCTCREATOR-29) */
 export interface Issue {
   severity: 'error' | 'warning' | 'info';
   code: string;
-  kind: 'feature' | 'workflow' | 'business_object' | 'stream' | 'component';
+  kind: 'feature' | 'workflow' | 'business_object' | 'stream' | 'component' | 'project';
   id: string;
   field?: string;
   message: string;
@@ -26,7 +27,7 @@ export function entryHref(kind: Issue['kind'], id: string, app?: string): string
   if (kind === 'feature') return `/features/${encodeURIComponent(id)}${q}`;
   if (kind === 'workflow') return `/workflows/${encodeURIComponent(id)}${q}`;
   if (kind === 'stream') return `/streams/${encodeURIComponent(id)}${q}`;
-  if (kind === 'component') return `/workspace`;
+  if (kind === 'component' || kind === 'project') return `/workspace`;
   return `/business-objects${q}`;
 }
 
@@ -36,10 +37,11 @@ export default function ValidationIssues({ issues, app, showEntry = true }: { is
     <ul className="space-y-1 text-sm" data-testid="validation-issues">
       {issues.map((i, n) => (
         <li key={`${i.code}-${i.id}-${i.field}-${n}`} className="flex gap-2 items-baseline">
-          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${SEVERITY_CLASS[i.severity]}`}>{i.severity}</span>
+          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${SEVERITY_CLASS[i.severity]}`}>{t(`issues.severity.${i.severity}`)}</span>
           {i.check === 'design' && (
-            <span className="px-1.5 py-0.5 rounded text-xs text-meta border border-border" title={`Design check ${i.code}${i.intended && i.intended !== i.severity ? `; in strict mode: ${i.intended}` : ''}`}>
-              design{i.intended && i.intended !== i.severity ? ` · strict: ${i.intended}` : ''}
+            <span className="px-1.5 py-0.5 rounded text-xs text-meta border border-border" title={`${t('issues.designTitle', { code: i.code })}${i.intended && i.intended !== i.severity ? `; ${t('issues.strictTitle', { level: t(`issues.severity.${i.intended}`) })}` : ''}`}>
+              {t('issues.design')}
+              {i.intended && i.intended !== i.severity ? ` · ${t('issues.strict', { level: t(`issues.severity.${i.intended}`) })}` : ''}
             </span>
           )}
           {showEntry && (

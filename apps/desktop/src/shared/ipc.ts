@@ -85,8 +85,22 @@ export interface McpActionEntry {
   message?: string;
 }
 
+/** Interface language (PRODUCTCREATOR-37): the setting and the language it resolves to */
+export interface UiLanguageInfo {
+  setting: 'system' | 'en' | 'ru' | 'de';
+  language: 'en' | 'ru' | 'de';
+  /** what `system` resolves to on this machine */
+  system: 'en' | 'ru' | 'de';
+  /** PC_UI_LANGUAGE overrides the setting for this run */
+  forced: boolean;
+}
+
 export interface PcBridge {
   api(request: ApiRequest): Promise<ApiResponse>;
+  ui: {
+    language(): Promise<UiLanguageInfo>;
+    setLanguage(value: UiLanguageInfo['setting']): Promise<UiLanguageInfo>;
+  };
   workspace: {
     get(): Promise<WorkspaceInfo>;
     openDialog(): Promise<WorkspaceInfo>;
@@ -147,6 +161,8 @@ export const IPC = {
   openapiCancel: 'pc:openapi:cancel',
   openapiEvent: 'pc:openapi:event',
   mcpStatus: 'pc:mcp:status',
+  uiLanguageGet: 'pc:ui:language',
+  uiLanguageSet: 'pc:ui:set-language',
   mcpUpdate: 'pc:mcp:update',
   mcpRegenerate: 'pc:mcp:regenerate',
   mcpLog: 'pc:mcp:log',

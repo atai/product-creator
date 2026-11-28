@@ -84,4 +84,13 @@ describe('relay settings (PRODUCTCREATOR-20)', () => {
     expect(() => validateRelayUrl('https://relay.emperor.ecooz.net/tunnel')).toThrow(/wss/);
     expect(() => validateRelayUrl('nonsense')).toThrow();
   });
+
+  it('keeps the interface language; unknown values fall back to system (PRODUCTCREATOR-37)', () => {
+    const store = new SettingsStore(file, { mcpPort: DEFAULT_MCP_PORT }, codec());
+    expect(store.get().uiLanguage).toBe('system');
+    store.setUiLanguage('de');
+    expect(new SettingsStore(file, { mcpPort: DEFAULT_MCP_PORT }, codec()).get().uiLanguage).toBe('de');
+    fs.writeFileSync(file, JSON.stringify({ uiLanguage: 'klingon' }));
+    expect(new SettingsStore(file, { mcpPort: DEFAULT_MCP_PORT }, codec()).get().uiLanguage).toBe('system');
+  });
 });

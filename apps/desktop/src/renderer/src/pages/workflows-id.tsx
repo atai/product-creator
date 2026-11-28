@@ -5,6 +5,9 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { LIFECYCLES, type Lifecycle, type Workflow } from '@pc/core/types';
 import FormHelpHint from '@/components/FormHelpHint';
+import { t } from '@/i18n';
+import workflowSchema from '@pc/core/schema/workflow.schema.json';
+import { LanguageTabs, TranslationEditor, useProjectLanguages } from '@/components/TranslationEditor';
 
 type WorkflowFormData = {
   workflow: string;
@@ -31,12 +34,19 @@ export default function WorkflowEditPage() {
   const [selectedApp, setSelectedApp] = useState<string>('');
   /** The card as loaded: fields the form does not edit are saved back unchanged */
   const [loaded, setLoaded] = useState<Workflow | null>(null);
+  // translations of name/description (PRODUCTCREATOR-37), edited outside react-hook-form
+  const [i18n, setI18n] = useState<Workflow['i18n']>(undefined);
+  const [language, setLanguage] = useState('');
+  const languages = useProjectLanguages(selectedApp || undefined);
+  const primary = languages[0];
+  const translating = Boolean(language && language !== primary);
 
   const {
     register,
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<WorkflowFormData>({
     defaultValues: {
@@ -84,12 +94,13 @@ export default function WorkflowEditPage() {
       const response = await fetch(`/api/workflow?id=${encodeURIComponent(workflowId)}`);
 
       if (!response.ok) {
-        throw new Error('Workflow not found');
+        throw new Error(t('wf.notFound'));
       }
 
       const workflow: Workflow = await response.json();
 
       setLoaded(workflow);
+      setI18n(workflow.i18n);
       reset({
         workflow: workflow.workflow,
         name: workflow.name || '',
@@ -105,7 +116,7 @@ export default function WorkflowEditPage() {
       });
     } catch (error) {
       console.error('Error loading workflow:', error);
-      setError('Failed to load workflow');
+      setError(t('wf.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -130,6 +141,7 @@ export default function WorkflowEditPage() {
       const tickets = data.tickets.split(/[\s,]+/).filter(Boolean);
       const workflow: Workflow = {
         ...loaded,
+        i18n,
         workflow: data.workflow,
         name: data.name || undefined,
         description: data.description.trim() || undefined,
@@ -153,13 +165,13 @@ export default function WorkflowEditPage() {
 
       if (!response.ok) {
         const result = await response.json();
-        throw new Error(result.error || 'Failed to save workflow');
+        throw new Error(result.error || t('wf.saveFailed'));
       }
 
       router.push(`/workflows${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`);
     } catch (error: unknown) {
       console.error('Error saving workflow:', error);
-      setError((error as Error).message || 'Failed to save workflow');
+      setError((error as Error).message || t('wf.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -169,7 +181,7 @@ export default function WorkflowEditPage() {
     return (
       <div className="min-h-full bg-bg">
         <div className="max-w-4xl mx-auto px-8 py-8">
-          <p className="text-muted">Loading...</p>
+          <p className="text-muted">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -181,7 +193,7 @@ export default function WorkflowEditPage() {
       <div className="max-w-4xl mx-auto px-8 py-8">
         <div className="mb-6 flex items-center">
           <h1 className="text-3xl font-bold text-fg">
-            {isNew ? 'New Workflow' : 'Edit Workflow'}
+            {isNew ? t('wf.newTitle') : t('wf.editTitle')}
           </h1>
           <FormHelpHint hintKey="workflowDetail" />
         </div>
@@ -193,16 +205,23 @@ export default function WorkflowEditPage() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <LanguageTabs languages={languages} value={language || primary} onChange={setLanguage} />
+          {translating && (
+            <div className="bg-surface p-6 rounded-lg shadow">
+              <TranslationEditor schema={workflowSchema} entry={{ ...loaded, name: watch('name'), description: watch('description') }} i18n={i18n} language={language} primary={primary} onChange={(next) => setI18n(next as Workflow['i18n'])} />
+            </div>
+          )}
+          <div className={translating ? 'hidden' : 'space-y-6'}>
           <div className="bg-surface p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-fg mb-4">Basic Information</h2>
+            <h2 className="text-xl font-semibold text-fg mb-4">{t('wf.basic')}</h2>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg-2 mb-1">
-                  Workflow ID *
+                  {t('wf.id')}
                 </label>
                 <input
-                  {...register('workflow', { required: 'Workflow ID is required' })}
+                  {...register('workflow', { required: t('wf.idRequired') })}
                   disabled={!isNew}
                   placeholder="context.workflow_name"
                   className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent disabled:bg-surface-muted"
@@ -210,38 +229,38 @@ export default function WorkflowEditPage() {
                 {errors.workflow && (
                   <p className="mt-1 text-sm text-danger">{errors.workflow.message}</p>
                 )}
-                <p className="mt-1 text-sm text-meta">Format: context.name (e.g., identity.onboard)</p>
+                <p className="mt-1 text-sm text-meta">{t('wf.idFormat')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-fg-2 mb-1">
-                  Name
+                  {t('common.name')}
                 </label>
                 <input
                   {...register('name')}
-                  placeholder="Human-readable name"
+                  placeholder={t('wf.namePlaceholder')}
                   className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-fg-2 mb-1">Lifecycle *</label>
+                <label className="block text-sm font-medium text-fg-2 mb-1">{t('wf.lifecycle')}</label>
                 <select {...register('lifecycle', { required: true })} className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg">
                   {LIFECYCLES.map((l) => (
                     <option key={l} value={l}>
-                      {l}
+                      {t(`lifecycle.${l}`)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-fg-2 mb-1">Description</label>
-                <textarea {...register('description')} rows={2} placeholder="What the workflow achieves and when it runs" className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent" />
+                <label className="block text-sm font-medium text-fg-2 mb-1">{t('common.description')}</label>
+                <textarea {...register('description')} rows={2} placeholder={t('wf.descriptionPlaceholder')} className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-fg-2 mb-1">Tickets</label>
+                <label className="block text-sm font-medium text-fg-2 mb-1">{t('wf.tickets')}</label>
                 <input {...register('tickets')} placeholder="PRODUCTCREATOR-34, #12" className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent" />
               </div>
             </div>
@@ -249,13 +268,13 @@ export default function WorkflowEditPage() {
 
           <div className="bg-surface p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-fg">Steps *</h2>
+              <h2 className="text-xl font-semibold text-fg">{t('wf.steps')}</h2>
               <button
                 type="button"
                 onClick={() => appendStep({ value: '' })}
                 className="px-3 py-1 text-sm bg-accent text-on rounded hover:bg-accent-hover"
               >
-                Add Step
+                {t('wf.addStep')}
               </button>
             </div>
 
@@ -265,9 +284,9 @@ export default function WorkflowEditPage() {
                   <div className="flex-1">
                     <input
                       {...register(`steps.${index}.value` as const, {
-                        required: 'Step is required',
+                        required: t('wf.stepRequired'),
                       })}
-                      placeholder="Feature ID (e.g., identity.user.register)"
+                      placeholder={t('wf.stepPlaceholder')}
                       className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                     />
                   </div>
@@ -276,26 +295,26 @@ export default function WorkflowEditPage() {
                     onClick={() => removeStep(index)}
                     className="px-3 py-2 text-danger hover:text-danger-fg-strong"
                   >
-                    Remove
+                    {t('common.remove')}
                   </button>
                 </div>
               ))}
 
               {stepFields.length === 0 && (
-                <p className="text-sm text-meta italic">No steps added yet</p>
+                <p className="text-sm text-meta italic">{t('wf.noSteps')}</p>
               )}
             </div>
           </div>
 
           <div className="bg-surface p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-fg">Events Emitted</h2>
+              <h2 className="text-xl font-semibold text-fg">{t('wf.events')}</h2>
               <button
                 type="button"
                 onClick={() => appendEmit({ value: '' })}
                 className="px-3 py-1 text-sm bg-accent text-on rounded hover:bg-accent-hover"
               >
-                Add Event
+                {t('wf.addEvent')}
               </button>
             </div>
 
@@ -305,7 +324,7 @@ export default function WorkflowEditPage() {
                   <div className="flex-1">
                     <input
                       {...register(`emits.${index}.value` as const)}
-                      placeholder="Event name (e.g., user.registered)"
+                      placeholder={t('wf.eventPlaceholder')}
                       className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                     />
                   </div>
@@ -314,26 +333,26 @@ export default function WorkflowEditPage() {
                     onClick={() => removeEmit(index)}
                     className="px-3 py-2 text-danger hover:text-danger-fg-strong"
                   >
-                    Remove
+                    {t('common.remove')}
                   </button>
                 </div>
               ))}
 
               {emitFields.length === 0 && (
-                <p className="text-sm text-meta italic">No events added yet</p>
+                <p className="text-sm text-meta italic">{t('wf.noEvents')}</p>
               )}
             </div>
           </div>
 
           <div className="bg-surface p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-fg">Compensations</h2>
+              <h2 className="text-xl font-semibold text-fg">{t('wf.compensations')}</h2>
               <button
                 type="button"
                 onClick={() => appendCompensation({ stepId: '', compensationId: '' })}
                 className="px-3 py-1 text-sm bg-accent text-on rounded hover:bg-accent-hover"
               >
-                Add Compensation
+                {t('wf.addCompensation')}
               </button>
             </div>
 
@@ -344,14 +363,14 @@ export default function WorkflowEditPage() {
                     <div>
                       <input
                         {...register(`compensations.${index}.stepId` as const)}
-                        placeholder="Step function ID"
+                        placeholder={t('wf.stepFeature')}
                         className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                       />
                     </div>
                     <div>
                       <input
                         {...register(`compensations.${index}.compensationId` as const)}
-                        placeholder="Compensation function ID"
+                        placeholder={t('wf.compensationFeature')}
                         className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                       />
                     </div>
@@ -361,18 +380,19 @@ export default function WorkflowEditPage() {
                     onClick={() => removeCompensation(index)}
                     className="px-3 py-2 text-danger hover:text-danger-fg-strong"
                   >
-                    Remove
+                    {t('common.remove')}
                   </button>
                 </div>
               ))}
 
               {compensationFields.length === 0 && (
-                <p className="text-sm text-meta italic">No compensations defined</p>
+                <p className="text-sm text-meta italic">{t('wf.noCompensations')}</p>
               )}
             </div>
             <p className="mt-2 text-sm text-meta">
-              Define rollback functions for each step in case of failure
+              {t('wf.compensationsLead')}
             </p>
+          </div>
           </div>
 
           <div className="flex gap-4">
@@ -381,14 +401,14 @@ export default function WorkflowEditPage() {
               disabled={saving}
               className="px-6 py-2 bg-accent text-on rounded hover:bg-accent-hover disabled:bg-accent-disabled"
             >
-              {saving ? 'Saving...' : 'Save Workflow'}
+              {saving ? t('common.saving') : t('wf.save')}
             </button>
             <button
               type="button"
               onClick={() => router.back()}
               className="px-6 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </form>

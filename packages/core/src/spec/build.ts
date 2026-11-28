@@ -1,6 +1,9 @@
 import * as path from 'path';
 import type { ProjectModel, ProductContext } from '../project/model';
-import { DEFAULT_SPEC_LANGUAGE } from '../project/model';
+import { primaryLanguage } from '../project/model';
+import { localize } from '../i18n';
+import { catalogSchemas } from '../validation/schemas';
+import productSchema from '../../schema/product.schema.json';
 import type { BusinessObject, Feature, Workflow } from '../types';
 import { validateModel, type CatalogModel, type ValidationIssue } from '../validation/model';
 import { readScreensResult, screenFile, screensDir, SCREENS_DIR } from '../screens/index';
@@ -49,8 +52,12 @@ export interface SpecObject extends SpecEntry<BusinessObject> {
 
 export interface SpecModel {
   project: { id: string; slug: string; name: string; description?: string } & Omit<ProductContext, 'spec'>;
-  /** Language the catalog is written in (spec.language, default en) */
+  /** Language of this spec (PRODUCTCREATOR-37) */
   language: string;
+  /** Primary language of the project (its normal fields) */
+  primary: string;
+  /** Texts shown in the primary language because they are not translated into `language` */
+  untranslated: number;
   components: SpecComponent[];
   features: SpecFeature[];
   objects: SpecObject[];
@@ -64,7 +71,22 @@ const byId = <T extends { data: { id?: string; workflow?: string } }>(a: T, b: T
   String(a.data.id ?? a.data.workflow).localeCompare(String(b.data.id ?? b.data.workflow));
 
 /** `model` may hold several projects (references resolve across them); the spec holds the entries of `project` */
-export function buildSpec(project: ProjectModel, model: CatalogModel): SpecModel {
+export interface BuildOptions {
+  /** Language of the spec (default: the primary language) */
+  language?: string;
+  /** How an untranslated text is marked in a translated spec */
+  mark?: (text: string) => string;
+}
+
+export function buildSpec(project: ProjectModel, model: CatalogModel, options: BuildOptions = {}): SpecModel {
+  const primary = primaryLanguage(project);
+  const language = options.language ?? primary;
+  let untranslated = 0;
+  const tr = <T,>(data: T, schema: object): T => {
+    const l = localize(data, schema, language, primary, options.mark);
+    untranslated += l.untranslated;
+    return l.data;
+  };
   const components = new Map<string, SpecComponent>(project.components.map((c) => [c.id, { id: c.id, slug: c.slug, name: c.name, kind: c.kind }]));
   // issues of the project's entries; duplicate ids carry files instead of a component
   const inProject = (i: ValidationIssue) => (i.component !== undefined && components.has(i.component)) || (!!i.file && path.resolve(i.file).startsWith(path.resolve(project.root) + path.sep));
@@ -77,13 +99,16 @@ export function buildSpec(project: ProjectModel, model: CatalogModel): SpecModel
   } catch {
     outputDir = null;
   }
+  // a translated spec uses screenshots of its language when they were captured (screenshots.perLanguage)
+  const localDir = outputDir && language !== primary ? path.join(outputDir, language) : null;
   const captured = new Map(readScreensResultSafe(project).map((r) => [`${r.feature}#${r.id}`, r]));
   const screensOf = (e: { data: Feature; component: string }): SpecScreen[] =>
     (Array.isArray(e.data.screens) ? e.data.screens : []).map((screen) => {
       const file = screenFile(e.data.id, screen.id);
       const exists = outputDir ? fs.existsSync(path.join(outputDir, file)) : false;
+      const localized = localDir ? fs.existsSync(path.join(localDir, file)) : false;
       const result = captured.get(`${e.data.id}#${screen.id}`);
-      return { screen, file: `${SCREENS_DIR}/${file}`, exists, ...(result && !result.ok ? { error: result.error ?? 'capture failed' } : {}) };
+      return { screen, file: localized ? `${SCREENS_DIR}/${language}/${file}` : `${SCREENS_DIR}/${file}`, exists: exists || localized, ...(result && !result.ok ? { error: result.error ?? 'capture failed' } : {}) };
     });
   const issuesOf = (kind: ValidationIssue['kind'], id: string) => issues.filter((i) => i.kind === kind && i.id === id);
   const mine = <T>(entries: CatalogModel['features' | 'objects' | 'workflows']) =>
@@ -99,26 +124,34 @@ export function buildSpec(project: ProjectModel, model: CatalogModel): SpecModel
   const objects = mine<BusinessObject>(model.objects).filter((e) => e.data.lifecycle !== 'removed');
   const workflows = mine<Workflow>(model.workflows).filter((e) => e.data.lifecycle !== 'removed');
 
-  return {
+  const context = tr(project, productSchema);
+  const localFeature = new Map(features.map((e) => [e.data.id, tr(e.data, catalogSchemas.feature)]));
+  const localScreens = (e: { data: Feature; component: string }) => {
+    const titles = new Map((localFeature.get(e.data.id)?.screens ?? []).map((s) => [s.id, s.title]));
+    return screensOf(e).map((s) => ({ ...s, screen: { ...s.screen, title: titles.get(s.screen.id) ?? s.screen.title } }));
+  };
+  const result: SpecModel = {
     project: {
       id: project.id,
       slug: project.slug,
       name: project.name,
-      description: project.description,
-      vision: project.vision,
-      goals: project.goals,
-      actors: project.actors,
-      glossary: project.glossary,
+      description: context.description,
+      vision: context.vision,
+      goals: context.goals,
+      actors: context.actors,
+      glossary: context.glossary,
       tracker: project.tracker,
     },
-    language: project.spec?.language ?? DEFAULT_SPEC_LANGUAGE,
+    language,
+    primary,
+    untranslated: 0,
     components: [...components.values()].sort((a, b) => a.slug.localeCompare(b.slug)),
     features: features
       .map((e) => ({
-        data: e.data,
+        data: localFeature.get(e.data.id) as Feature,
         component: components.get(e.component) as SpecComponent,
         issues: issuesOf('feature', e.data.id),
-        screens: screensOf(e),
+        screens: localScreens(e),
         calledBy: features.filter((f) => f.data.calls?.includes(e.data.id)).map((f) => f.data.id).sort(),
         workflows: workflows
           .filter((w) => w.data.steps?.includes(e.data.id) || Object.entries(w.data.compensations ?? {}).some(([step, comp]) => step === e.data.id || comp === e.data.id))
@@ -128,7 +161,7 @@ export function buildSpec(project: ProjectModel, model: CatalogModel): SpecModel
       .sort((a, b) => a.data.bounded_context.localeCompare(b.data.bounded_context) || byId(a, b)),
     objects: objects
       .map((e) => ({
-        data: e.data,
+        data: tr(e.data, catalogSchemas.business_object),
         component: components.get(e.component) as SpecComponent,
         issues: issuesOf('business_object', e.data.id),
         usedBy: features
@@ -136,10 +169,12 @@ export function buildSpec(project: ProjectModel, model: CatalogModel): SpecModel
           .sort((a, b) => a.id.localeCompare(b.id)),
       }))
       .sort(byId),
-    workflows: workflows.map((e) => ({ data: e.data, component: components.get(e.component) as SpecComponent, issues: issuesOf('workflow', e.data.workflow) })).sort(byId),
+    workflows: workflows.map((e) => ({ data: tr(e.data, catalogSchemas.workflow), component: components.get(e.component) as SpecComponent, issues: issuesOf('workflow', e.data.workflow) })).sort(byId),
     issues,
     counts: { errors: issues.filter((i) => i.severity === 'error').length, warnings: issues.filter((i) => i.severity === 'warning').length, infos: issues.filter((i) => i.severity === 'info').length },
   };
+  result.untranslated = untranslated;
+  return result;
 }
 
 function readScreensResultSafe(project: ProjectModel) {

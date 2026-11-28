@@ -5,7 +5,7 @@
 // Command-line mode (no window; exit code reports the result):
 //   product-creator migrate [folder...] [--dry-run]
 //   product-creator lint [folder...] [--warnings] [--info] [--json] [--catalog <dir>]
-//   product-creator spec [folder...] [--strict] [--no-screens]
+//   product-creator spec [folder...] [--strict] [--no-screens] [--language <tag>]
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';

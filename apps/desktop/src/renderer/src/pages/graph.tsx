@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import { LIFECYCLES, type Lifecycle, type GraphNode, type GraphEdge, type Feature } from '@pc/core/types';
+import { t, type MessageKey } from '@/i18n';
 
 cytoscape.use(dagre);
 
@@ -16,10 +17,10 @@ const LIFECYCLE_COLORS: Record<Lifecycle, string> = {
   removed: '#718096',
 };
 
-const EDGE_KINDS: { kind: GraphEdge['kind']; title: string; color: string; lineStyle: 'solid' | 'dashed' | 'dotted' }[] = [
-  { kind: 'calls', title: 'calls', color: '#4a5568', lineStyle: 'solid' },
-  { kind: 'workflow', title: 'workflow step', color: '#805ad5', lineStyle: 'dashed' },
-  { kind: 'event', title: 'event', color: '#dd6b20', lineStyle: 'dotted' },
+const EDGE_KINDS: { kind: GraphEdge['kind']; title: MessageKey; color: string; lineStyle: 'solid' | 'dashed' | 'dotted' }[] = [
+  { kind: 'calls', title: 'graph.calls', color: '#4a5568', lineStyle: 'solid' },
+  { kind: 'workflow', title: 'graph.workflowStep', color: '#805ad5', lineStyle: 'dashed' },
+  { kind: 'event', title: 'graph.event', color: '#dd6b20', lineStyle: 'dotted' },
 ];
 
 const NODE_FONT_PX = 12;
@@ -215,7 +216,7 @@ export default function GraphPage() {
   if (loading) {
     return (
       <div className="min-h-full p-8">
-        <p className="text-muted">Loading...</p>
+        <p className="text-muted">{t('common.loading')}</p>
       </div>
     );
   }
@@ -230,7 +231,7 @@ export default function GraphPage() {
             onChange={(e) => setFilters({ ...filters, bounded_context: e.target.value })}
             className="px-4 py-2 border rounded"
           >
-            <option value="">All Contexts</option>
+            <option value="">{t('graph.allContexts')}</option>
             {uniqueContexts.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -243,10 +244,10 @@ export default function GraphPage() {
             onChange={(e) => setFilters({ ...filters, lifecycle: e.target.value })}
             className="px-4 py-2 border rounded"
           >
-            <option value="">All Lifecycles</option>
+            <option value="">{t('graph.allLifecycles')}</option>
             {lifecycles.map((l) => (
               <option key={l} value={l}>
-                {l}
+                {t(`lifecycle.${l}`)}
               </option>
             ))}
           </select>
@@ -257,12 +258,12 @@ export default function GraphPage() {
         </div>
 
         <div className="mt-4 bg-surface rounded shadow p-4">
-          <h3 className="font-semibold mb-2">Legend</h3>
+          <h3 className="font-semibold mb-2">{t('graph.legend')}</h3>
           <div className="flex flex-wrap gap-4 text-sm">
             {LIFECYCLES.map((l) => (
               <div key={l} className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: LIFECYCLE_COLORS[l] }} />
-                <span>{l}</span>
+                <span>{t(`lifecycle.${l}`)}</span>
               </div>
             ))}
             {EDGE_KINDS.map((k) => (
@@ -271,7 +272,7 @@ export default function GraphPage() {
                   <line x1="0" y1="5" x2="22" y2="5" stroke={k.color} strokeWidth="2" strokeDasharray={k.lineStyle === 'dashed' ? '5 3' : k.lineStyle === 'dotted' ? '2 3' : undefined} />
                   <polygon points="22,1 28,5 22,9" fill={k.color} />
                 </svg>
-                <span>{k.title}</span>
+                <span>{t(k.title)}</span>
               </div>
             ))}
           </div>

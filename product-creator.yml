@@ -64,3 +64,102 @@ screenshots:
   capture:
     command: node scripts/capture-screens.mjs
     timeoutSec: 300
+  perLanguage: true
+languages:
+  - en
+  - ru
+i18n:
+  ru:
+    description: Каталог функций и прослеживаемая документация продукта (ТЗ), связанная с кодом
+    vision: >-
+      Product Creator хранит логику продукта (функции, данные, процессы) в YAML рядом с кодом, чтобы люди и ИИ-агенты
+      планировали её вместе, видели ошибки планирования до написания кода и получали ТЗ из той же модели.
+    goals:
+      G1:
+        text: >-
+          Ошибки планирования и проектирования видны людям и агентам сразу, как только они записаны: в редакторе, через
+          MCP и в CI
+      G2:
+        text: ТЗ для людей и для агентов строятся из одной модели и никогда не пишутся дважды
+      G3:
+        text: Каждая функция прослеживается до кода, задач и тестов
+      G4:
+        text: Агенты безопасно планируют и меняют каталог через MCP
+    actors:
+      product_owner:
+        name: Владелец продукта
+        description: Планирует функции, утверждает ТЗ
+      developer:
+        name: Разработчик
+        description: Делает функции, связывает код, запускает синхронизацию
+      ai_agent:
+        name: ИИ-агент
+        description: Читает и меняет каталог через MCP, локально или через релей
+      ci:
+        name: CI
+        description: Проверяет каталог при каждом push
+      client:
+        name: Заказчик
+        description: Читает ТЗ для людей
+    glossary:
+      Feature:
+        definition: Бизнес-возможность продукта (раньше — function); один YAML-файл с её ТЗ и связями с кодом
+      Business object:
+        definition: Сущность данных продукта с типизированными полями
+      Workflow:
+        definition: Упорядоченная последовательность функций с компенсациями
+      Component:
+        definition: Сервис или библиотека проекта; у каждого своя папка каталога
+      Catalog:
+        definition: YAML-файлы функций, бизнес-объектов и процессов компонента
+      Lifecycle:
+        definition: draft → approved → implemented → deprecated → removed; у каждого статуса свои правила
+      Plan:
+        definition: Набор предлагаемых изменений каталога, который проверяется целиком до записи
+      Spec (ТЗ):
+        definition: 'Документ, построенный по модели: вид для людей и пакет для агентов'
+    _source:
+      description: 2e2b6d2b
+      vision: e8776b39
+      goals:
+        G1:
+          text: 40a8b19f
+        G2:
+          text: c105de92
+        G3:
+          text: 2068fc69
+        G4:
+          text: 5ed8dc7c
+      actors:
+        product_owner:
+          name: 59d2cb7e
+          description: e820f11c
+        developer:
+          name: 3fb7b394
+          description: fef65bca
+        ai_agent:
+          name: 92c7d7f8
+          description: 73629f3c
+        ci:
+          name: fe8ee15b
+          description: be5daae9
+        client:
+          name: 0c77fe09
+          description: d2ea7f80
+      glossary:
+        Feature:
+          definition: 2dfd18fa
+        Business object:
+          definition: dfa20372
+        Workflow:
+          definition: 70e14ada
+        Component:
+          definition: 9866193f
+        Catalog:
+          definition: f2ea1b30
+        Lifecycle:
+          definition: 91e4939c
+        Plan:
+          definition: 909c6443
+        Spec (ТЗ):
+          definition: f2e1fde1

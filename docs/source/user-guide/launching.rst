@@ -44,3 +44,14 @@ run from source uses a separate ``Product Creator Dev`` folder, see :doc:`/devel
 The **Apps** selector in the header lists all components of all opened projects as
 ``<project>: <name>`` (libraries are marked ``(lib)``); catalog pages are filtered by the selected
 component.
+
+Interface language
+------------------
+
+Menus, pages and forms are in English, Russian or German. **Settings → Interface language** picks one;
+*System* (the default) follows the language of the operating system and falls back to English. A change
+reloads the windows. The setting belongs to this installation (the dev build keeps its own), and the
+``PC_UI_LANGUAGE`` environment variable overrides it for one run (``en``, ``ru``, ``de``).
+
+The interface language does not change the content: features, specs and their languages are set per
+project (see :ref:`spec-languages`).

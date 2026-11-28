@@ -5,9 +5,10 @@ import { deleteComponent, importNewComponents, readProject, saveComponent, updat
 import { loginShellPath, OpenApiGenerationManager } from '@pc/core/interfaces/generator';
 import { setCommandEnv } from '@pc/core/process/command';
 import { captureAppScreens } from './screens';
+import { resolveUiLanguage, setMainLanguage, tm, type UiLanguageSetting } from './i18n';
 import { cancelAllCaptures, captureStopBudgetMs } from '@pc/core/screens/runs';
 import { migrateProject, summarizeMigration } from '@pc/core/catalog/migrate';
-import { IPC, type ApiRequest, type ApiResponse, type ComponentInput, type EditResult, type ProjectPatch } from '../shared/ipc';
+import { IPC, type ApiRequest, type ApiResponse, type ComponentInput, type EditResult, type ProjectPatch, type UiLanguageInfo } from '../shared/ipc';
 import { parseProjectArgs, defaultProjectFolder } from './args';
 import { Workspace } from './workspace';
 import { checkForUpdatesInteractive, startAutoUpdates } from './updater';
@@ -92,6 +93,17 @@ mcp.onChange(() => send(IPC.mcpChanged, mcp.status()));
 const relay = new RelayController(settings, mcp, app.getVersion(), (message) => console.log(message));
 relay.onChange(() => send(IPC.relayChanged, relay.status()));
 
+/** Interface language now: PC_UI_LANGUAGE, the setting, the OS languages, English */
+function currentUiLanguage() {
+  return resolveUiLanguage(settings.get().uiLanguage, app.getPreferredSystemLanguages());
+}
+
+function uiLanguageInfo(): UiLanguageInfo {
+  const system = resolveUiLanguage('system', app.getPreferredSystemLanguages(), {});
+  const language = currentUiLanguage();
+  return { setting: settings.get().uiLanguage, language, system, forced: language !== resolveUiLanguage(settings.get().uiLanguage, app.getPreferredSystemLanguages(), {}) };
+}
+
 async function shutdown() {
   clearTimeout(workspaceChangedTimer);
   generation.cancelAll();
@@ -138,7 +150,7 @@ function updateTitle() {
 
 async function openFolderDialog() {
   const options: Electron.OpenDialogOptions = {
-    title: 'Open project folder',
+    title: tm('openProjectTitle'),
     properties: ['openDirectory', 'multiSelections'],
   };
   const win = liveWindow();
@@ -164,6 +176,15 @@ function registerIpc() {
 
   // MCP server settings
   ipcMain.handle(IPC.mcpStatus, () => mcp.status());
+  // interface language (PRODUCTCREATOR-37): a change rebuilds the menu and reloads the windows
+  ipcMain.handle(IPC.uiLanguageGet, () => uiLanguageInfo());
+  ipcMain.handle(IPC.uiLanguageSet, (_e, value: UiLanguageSetting) => {
+    settings.setUiLanguage(value);
+    setMainLanguage(currentUiLanguage());
+    buildMenu();
+    for (const w of BrowserWindow.getAllWindows()) w.webContents.reload();
+    return uiLanguageInfo();
+  });
   ipcMain.handle(IPC.mcpUpdate, async (_e, patch: { enabled?: boolean; scope?: 'read' | 'write'; port?: number }) => {
     settings.updateMcp(patch);
     await mcp.apply();
@@ -249,11 +270,11 @@ function buildMenu() {
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(isMac ? [{ role: 'appMenu' as const }] : []),
     {
-      label: 'File',
+      label: tm('file'),
       submenu: [
-        { label: 'Open Project Folder…', accelerator: 'CmdOrCtrl+O', click: () => void openFolderDialog() },
+        { label: tm('openProject'), accelerator: 'CmdOrCtrl+O', click: () => void openFolderDialog() },
         { type: 'separator' },
-        { label: 'Check for Updates…', click: () => void checkForUpdatesInteractive() },
+        { label: tm('checkUpdates'), click: () => void checkForUpdatesInteractive() },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },
       ],
@@ -265,7 +286,7 @@ function buildMenu() {
       role: 'help',
       submenu: [
         { label: 'ecooz.net', click: () => void shell.openExternal(SITE_URL) },
-        { label: 'GitHub Repository', click: () => void shell.openExternal(REPO_URL) },
+        { label: tm('github'), click: () => void shell.openExternal(REPO_URL) },
       ],
     },
   ];
@@ -431,6 +452,7 @@ if (!app.requestSingleInstanceLock()) {
     // dev: open the folder `pnpm desktop` ran in; packaged app starts with the saved workspace or empty
     else if (workspace.getRoots().length === 0 && !app.isPackaged) workspace.add(defaultProjectFolder());
     await workspace.reload();
+    setMainLanguage(currentUiLanguage());
     registerIpc();
     await mcp.apply();
     void loginShellPath().then((p) => {
@@ -468,7 +490,7 @@ if (!app.requestSingleInstanceLock()) {
       try {
         const captureMs = captureStopBudgetMs();
         if (captureMs > 0 && Notification.isSupported()) {
-          new Notification({ title: 'Product Creator', body: 'Stopping the screenshot run: services and teardown commands are finishing.' }).show();
+          new Notification({ title: 'Product Creator', body: tm('stoppingScreenshots') }).show();
         }
         const timeout = new Promise<void>((resolve) => setTimeout(resolve, Math.max(SHUTDOWN_TIMEOUT_MS, captureMs)).unref());
         await Promise.race([shutdown(), timeout]);

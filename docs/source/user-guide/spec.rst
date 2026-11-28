@@ -7,7 +7,7 @@ a bundle for AI agents. The catalog is the source; the generated files are never
 What is in it
 -------------
 
-**For people** — ``spec.md``:
+**For people** — ``<language>/spec.md``, one per project language (see :ref:`spec-languages`):
 
 #. *Product*: description, vision, goals, actors and glossary (``product-creator.yml``, see
    :doc:`projects-and-services`).
@@ -36,9 +36,11 @@ Generate
 --------
 
 * In the app: **Presentation → Doc** shows the spec; **Write files** writes it.
-* In a terminal: ``product-creator spec [project-folder] [--strict]``. ``--strict`` exits with code 1
-  when the model has errors (the spec is written anyway, marked *Not ready*).
-* Agents: MCP ``get_spec`` (manifest, one entry, or the human view), generated on every call.
+* In a terminal: ``product-creator spec [project-folder] [--strict] [--language <tag>]``. ``--strict``
+  exits with code 1 when the model has errors (the spec is written anyway, marked *Not ready*);
+  ``--language`` writes only that language.
+* Agents: MCP ``get_spec`` (manifest, one entry, or the human view; ``language`` picks the language of
+  the human view), generated on every call.
 
 Settings
 --------
@@ -47,15 +49,53 @@ In ``product-creator.yml`` (or **Workspace → Edit project**):
 
 .. code-block:: yaml
 
+   languages: [en, ru]   # content and spec languages; the first is primary (default [en])
    spec:
-     language: en        # the language the catalog is written in (default en)
      output: docs/spec   # where the files are written, relative to the project (default docs/spec)
 
-``language`` selects the headings and labels of the spec; the content is the catalog itself, in the
-language it is written in. Languages without label translations use English labels (the manifest says
-so). ``output`` must be inside the project and must not overlap the catalog. Writing replaces
-``spec.md`` and ``agent/`` in that folder and keeps other files there. The folder is independent of
-the Sphinx documentation.
+``output`` must be inside the project and must not overlap the catalog. Writing replaces every
+``<language>/spec.md`` and ``agent/`` in that folder and keeps other files there. The folder is
+independent of the Sphinx documentation. The older ``spec.language`` is read as a one-language list.
+
+.. _spec-languages:
+
+Languages
+---------
+
+A project lists its languages in ``languages`` (**Workspace → Edit project → Languages**, or MCP
+``update_project``). The first is the *primary* language: the normal fields of every card are written in
+it. Other languages are optional translations.
+
+**Translating.** When a project has more than one language, the forms of features, business objects,
+workflows and the project show language tabs. The primary tab is the normal form. Another tab lists only
+the texts that can be translated — names, descriptions, requirement and acceptance texts, constraints,
+decisions, questions, screen captions, field descriptions, the vision, goals, actors and glossary — each
+with the primary text above its input. An empty input means *not translated*. Ids, links, types and the
+structure are edited on the primary tab only. The feature page has the same tabs to read a translation.
+
+Translations are stored in the same file, in ``i18n``; list items are addressed by their id:
+
+.. code-block:: yaml
+
+   name: Create order
+   requirements: [{ id: R1, text: The buyer sees the total }]
+   i18n:
+     ru:
+       name: Создать заказ
+       requirements: { R1: { text: Покупатель видит сумму } }
+       _source: { name: 3f2a91c0, requirements: { R1: { text: 9c1b77d2 } } }
+
+``_source`` is written by Product Creator: a fingerprint of the primary text each translation was made
+from. When the primary text changes, the translation is reported as stale (*Problems*,
+``translation_stale``) until it is updated. A translation of an item that no longer exists
+(``translation_orphan``) and a language that is not in ``languages`` (``translation_unknown_language``)
+are reported too. A missing translation is not a problem.
+
+**The spec per language.** ``product-creator spec`` writes ``<output>/<language>/spec.md`` for every
+language. Headings and labels exist in English, Russian and German; other languages get English labels.
+Text that has no translation is shown in the primary language and marked with it (``… [EN]``); the
+header of the spec counts these texts. The agent bundle is written once, in the primary language, and
+carries the ``i18n`` blocks as they are. The **Doc** page has a language select.
 
 .. _spec-screenshots:
 
@@ -124,6 +164,12 @@ Agents: MCP ``capture_screens``. Quitting the app during a capture cancels it bu
 background services are stopped and the teardown commands have run (up to their timeouts); a
 notification says so. The images are written to ``<spec.output>/screens`` and committed with
 the spec.
+
+**Per language.** With ``screenshots.perLanguage: true`` the capture runs once per project language:
+``screens.request.json`` gets ``"language"`` and the commands get ``PC_SCREENS_LANGUAGE``; images of the
+other languages go to ``screens/<language>/``. A spec uses the images of its language and falls back to
+those of the primary language. Product Creator's own capturer starts the app with that interface
+language (``PC_UI_LANGUAGE``).
 
 **In the spec** each screenshot appears under its feature with its caption. A declared screen without an
 image (never captured, or the capture failed) is shown as *no screenshot yet* and listed as a warning in

@@ -106,13 +106,24 @@ describe('capture (PRODUCTCREATOR-36)', () => {
     await expect(fetch(`http://127.0.0.1:${port}/`)).rejects.toThrow();
 
     const { files, spec } = generateSpec(p, model());
-    const md = files['spec.md'];
-    expect(md).toContain('![S1 — Order form](screens/shop.order.create/S1.png)');
+    const md = files['en/spec.md'];
+    expect(md).toContain('![S1 — Order form](../screens/shop.order.create/S1.png)');
     expect(md).toContain('S2 — Receipt: no screenshot yet');
     expect(spec.issues.filter((i) => i.code.startsWith('screen_')).map((i) => `${i.code}:${i.id}:${i.field}`)).toEqual(['screen_failed:shop.order.pay:screens.S2']);
     const chunk = JSON.parse(files['agent/features/shop.order.create.json']);
     expect(chunk.screenshots).toEqual([{ id: 'S1', title: 'Order form', path: '/orders/new', file: 'screens/shop.order.create/S1.png', exists: true }]);
   }, 40000);
+
+  it('screenshots.perLanguage captures once per project language into screens/<lang> (PRODUCTCREATOR-37)', async () => {
+    const p = { ...project({ capture: { command: CAPTURER }, perLanguage: true }), languages: ['en', 'ru'] };
+    const report = await captureScreens(p, model());
+    expect(report.state).toBe('ok');
+    expect(steps()).toEqual(['capture undefined 3', 'capture undefined 3']);
+    expect(fs.existsSync(path.join(out(), 'shop.order.create/S1.png'))).toBe(true);
+    expect(fs.existsSync(path.join(out(), 'ru/shop.order.create/S1.png'))).toBe(true);
+    const ru = generateSpec(p, model()).files['ru/spec.md'];
+    expect(ru).toContain('](../screens/ru/shop.order.create/S1.png)');
+  }, 30000);
 
   it('a failing capture still runs teardown; nothing captured = missing screens in the spec', async () => {
     const p = project({ capture: { command: node('process.exit(3)') }, teardown: [{ command: mark('teardown') }] });

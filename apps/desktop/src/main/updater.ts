@@ -1,5 +1,6 @@
 import { app, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
+import { tm } from './i18n';
 
 /**
  * Auto-update from GitHub Releases (PRODUCTCREATOR-21). electron-builder writes the feed
@@ -32,8 +33,8 @@ export async function checkForUpdatesInteractive(): Promise<void> {
   if (!canAutoUpdate()) {
     await dialog.showMessageBox({
       type: 'info',
-      message: 'Updates are not available for this build',
-      detail: 'Auto-update works in installed release builds (macOS .dmg/.zip, Windows installer, Linux AppImage).',
+      message: tm('updatesUnavailable'),
+      detail: tm('updatesUnavailableDetail'),
     });
     return;
   }
@@ -41,18 +42,18 @@ export async function checkForUpdatesInteractive(): Promise<void> {
     const result = await autoUpdater.checkForUpdates();
     const latest = result?.updateInfo.version;
     if (!result?.isUpdateAvailable || !latest) {
-      await dialog.showMessageBox({ type: 'info', message: `Product Creator ${app.getVersion()} is up to date` });
+      await dialog.showMessageBox({ type: 'info', message: tm('upToDate', { version: app.getVersion() }) });
       return;
     }
     await dialog.showMessageBox({
       type: 'info',
-      message: `Product Creator ${latest} is available`,
-      detail: 'It is downloading in the background and will be installed when you quit the app.',
+      message: tm('updateAvailable', { version: latest }),
+      detail: tm('updateAvailableDetail'),
     });
   } catch (error) {
     await dialog.showMessageBox({
       type: 'warning',
-      message: 'Could not check for updates',
+      message: tm('updateCheckFailed'),
       detail: error instanceof Error ? error.message : String(error),
     });
   }

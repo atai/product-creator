@@ -8,6 +8,9 @@ import * as yaml from 'js-yaml';
 import FormHelpHint from './FormHelpHint';
 import ValidationIssues, { type Issue } from './ValidationIssues';
 import FeatureSpecFields, { specFromForm, specToForm, type FeatureFormData } from './FeatureSpecFields';
+import { t } from '@/i18n';
+import featureSchema from '@pc/core/schema/feature.schema.json';
+import { LanguageTabs, TranslationEditor, useProjectLanguages } from './TranslationEditor';
 
 interface FeatureFormProps {
   existingCard?: Feature | null;
@@ -26,7 +29,7 @@ const toForm = (card: Feature | null | undefined): FeatureFormData =>
   }) as FeatureFormData;
 
 /** Form values → the card as it is checked, previewed and saved */
-function toPayload(data: FeatureFormData, id: string): Feature {
+function toPayload(data: FeatureFormData, id: string, i18n: Feature['i18n']): Feature {
   const { tags, emits, consumes, actors: _actors, requirements: _r, acceptance: _a, constraints: _c, decisions: _d, open_questions: _q, tickets: _t, code_refs: _cr, screens: _sc, ...rest } = data;
   const payload: Feature = {
     ...rest,
@@ -39,6 +42,9 @@ function toPayload(data: FeatureFormData, id: string): Feature {
     ...specFromForm(data),
   };
   if (!payload.objects?.length) delete payload.objects;
+  // translations are edited outside react-hook-form (TranslationEditor)
+  if (i18n) payload.i18n = i18n;
+  else delete payload.i18n;
   return payload;
 }
 
@@ -52,6 +58,8 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
   const [checked, setChecked] = useState(false);
   const [objectIds, setObjectIds] = useState<string[]>([]);
   const [selectedApp, setSelectedApp] = useState<string>('');
+  const [i18n, setI18n] = useState<Feature['i18n']>(existingCard?.i18n);
+  const [language, setLanguage] = useState('');
 
   const {
     register,
@@ -109,11 +117,14 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
   useEffect(() => {
     if (existingCard) {
       reset(toForm(existingCard));
+      setI18n(existingCard?.i18n);
     }
   }, [existingCard, reset]);
 
   const formData = watch();
   const isEditMode = mode === 'edit';
+  const languages = useProjectLanguages(selectedApp || undefined);
+  const primary = languages[0];
   const isFieldsReadOnly = isEditMode;
 
   const updatePreview = () => {
@@ -123,12 +134,12 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
         ? formData.id
         : `${formData.bounded_context || ''}.${formData.entity || ''}.${formData.action || ''}`;
 
-      const data = toPayload(formData, generatedId);
+      const data = toPayload(formData, generatedId, i18n);
 
       const yamlStr = yaml.dump(data, { lineWidth: -1 });
       setPreview(yamlStr);
     } catch (err) {
-      setPreview(`Error generating YAML: ${err}`);
+      setPreview(t('ff.yamlError', { error: String(err) }));
     }
   };
 
@@ -136,7 +147,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
   const checkPlan = async () => {
     const data = watch();
     const id = isEditMode ? data.id : `${data.bounded_context}.${data.entity}.${data.action}`;
-    const proposed = toPayload(data, id);
+    const proposed = toPayload(data, id, i18n);
     const response = await fetch('/api/validate-plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -154,7 +165,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
 
     // Validate app is selected
     if (!selectedApp) {
-      setError('Please select an app in the header');
+      setError(t('ff.selectApp'));
       setSaving(false);
       return;
     }
@@ -165,7 +176,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
         ? data.id
         : `${data.bounded_context}.${data.entity}.${data.action}`;
 
-      const payload = toPayload(data, generatedId);
+      const payload = toPayload(data, generatedId, i18n);
 
       const response = await fetch('/api/save-feature', {
         method: 'POST',
@@ -179,7 +190,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
       if (!response.ok) {
         const err = await response.json();
         setIssues(Array.isArray(err.issues) ? err.issues : []);
-        setError(Array.isArray(err.issues) && err.issues.length ? 'Not saved: the change breaks the model' : err.error || 'Failed to save');
+        setError(Array.isArray(err.issues) && err.issues.length ? t('ff.breaksModel') : err.error || t('ff.saveFailed'));
         setSaving(false);
         return;
       }
@@ -187,7 +198,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
       const result = await response.json();
       router.push(`/features/${result.id}`);
     } catch {
-      setError('Network error');
+      setError(t('common.networkError'));
       setSaving(false);
     }
   };
@@ -197,9 +208,9 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 flex items-center">
           <h1 className="text-2xl font-bold">
-            {isEditMode ? `Edit: ${existingCard?.name}` : 'New Feature'}
+            {isEditMode ? t('ff.editTitle', { name: existingCard?.name ?? '' }) : t('ff.newTitle')}
           </h1>
-          <FormHelpHint hintKey="functionForm" />
+          <FormHelpHint hintKey="featureForm" />
           {isEditMode && existingCard && (
             <p className="text-muted mt-2">{existingCard.id}</p>
           )}
@@ -210,7 +221,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
         )}
         {(issues.length > 0 || checked) && (
           <div className="mb-4 p-4 bg-surface rounded shadow">
-            {issues.length ? <ValidationIssues issues={issues} app={selectedApp || undefined} /> : <p className="text-sm text-success-fg">The change is consistent with the model.</p>}
+            {issues.length ? <ValidationIssues issues={issues} app={selectedApp || undefined} /> : <p className="text-sm text-success-fg">{t('ff.consistent')}</p>}
           </div>
         )}
 
@@ -219,40 +230,52 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {!isEditMode && !selectedApp && (
                 <div className="rounded border border-warn-border-strong bg-warn-soft px-4 py-3 text-sm text-warn-fg">
-                  Please select an app from the header to choose where the YAML file will be written.
+                  {t('ff.selectAppHint')}
                 </div>
               )}
 
+              <LanguageTabs languages={languages} value={language || primary} onChange={setLanguage} />
+              {language && language !== primary && (
+                <TranslationEditor
+                  schema={featureSchema}
+                  entry={toPayload(watch(), existingCard?.id ?? '', i18n)}
+                  i18n={i18n}
+                  language={language}
+                  primary={primary}
+                  onChange={(next) => setI18n(next as Feature['i18n'])}
+                />
+              )}
+              <div className={language && language !== primary ? 'hidden' : 'space-y-4'}>
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Bounded Context *</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.boundedContext')}</label>
                 <input
                   {...register('bounded_context', { required: true })}
                   className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg disabled:bg-surface-muted disabled:text-meta"
                   disabled={isFieldsReadOnly}
                 />
                 {errors.bounded_context && (
-                  <p className="text-sm text-danger">Required</p>
+                  <p className="text-sm text-danger">{t('common.required')}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Entity *</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.entity')}</label>
                 <input
                   {...register('entity', { required: true })}
                   className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg disabled:bg-surface-muted disabled:text-meta"
                   disabled={isFieldsReadOnly}
                 />
-                {errors.entity && <p className="text-sm text-danger">Required</p>}
+                {errors.entity && <p className="text-sm text-danger">{t('common.required')}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Action *</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.action')}</label>
                 <input
                   {...register('action', { required: true })}
                   className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg disabled:bg-surface-muted disabled:text-meta"
                   disabled={isFieldsReadOnly}
                 />
-                {errors.action && <p className="text-sm text-danger">Required</p>}
+                {errors.action && <p className="text-sm text-danger">{t('common.required')}</p>}
               </div>
 
               {isEditMode && (
@@ -267,39 +290,39 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Name *</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.name')}</label>
                 <input
                   {...register('name', { required: true })}
                   className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg"
                 />
-                {errors.name && <p className="text-sm text-danger">Required</p>}
+                {errors.name && <p className="text-sm text-danger">{t('common.required')}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Owner *</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.owner')}</label>
                 <input
                   {...register('owner', { required: true })}
                   className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg"
                 />
-                {errors.owner && <p className="text-sm text-danger">Required</p>}
+                {errors.owner && <p className="text-sm text-danger">{t('common.required')}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Lifecycle *</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.lifecycle')}</label>
                 <select
                   {...register('lifecycle', { required: true })}
                   className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg"
                 >
                   {LIFECYCLES.map((l) => (
                     <option key={l} value={l}>
-                      {l}
+                      {t(`lifecycle.${l}`)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Description</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('common.description')}</label>
                 <textarea
                   {...register('description')}
                   className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg"
@@ -309,7 +332,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Tags</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.tags')}</label>
                 <div className="space-y-2">
                   {tagFields.map((field, index) => (
                     <div key={field.id} className="flex gap-2">
@@ -332,14 +355,14 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                     onClick={() => appendTag({ value: '' })}
                     className="px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm"
                   >
-                    + Add Tag
+                    {t('ff.addTag')}
                   </button>
                 </div>
               </div>
 
               {/* Emits Events */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Emits Events</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.emits')}</label>
                 <div className="space-y-2">
                   {emitFields.map((field, index) => (
                     <div key={field.id} className="flex gap-2">
@@ -362,14 +385,14 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                     onClick={() => appendEmit({ value: '' })}
                     className="px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm"
                   >
-                    + Add Event
+                    {t('ff.addEvent')}
                   </button>
                 </div>
               </div>
 
               {/* Consumes Events */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Consumes Events</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.consumes')}</label>
                 <div className="space-y-2">
                   {consumeFields.map((field, index) => (
                     <div key={field.id} className="flex gap-2">
@@ -392,14 +415,14 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                     onClick={() => appendConsume({ value: '' })}
                     className="px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm"
                   >
-                    + Add Event
+                    {t('ff.addEvent')}
                   </button>
                 </div>
               </div>
 
               {/* APIs */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">APIs</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.apis')}</label>
                 <div className="space-y-2">
                   {apiFields.map((field, index) => (
                     <div key={field.id} className="flex gap-2">
@@ -407,7 +430,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                         {...register(`apis.${index}.method` as const)}
                         className="px-3 py-2 border border-border-strong rounded bg-surface text-fg"
                       >
-                        <option value="">Method</option>
+                        <option value="">{t('ff.method')}</option>
                         <option value="GET">GET</option>
                         <option value="POST">POST</option>
                         <option value="PUT">PUT</option>
@@ -433,14 +456,14 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                     onClick={() => appendApi({ method: 'GET', path: '' })}
                     className="px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm"
                   >
-                    + Add API
+                    {t('ff.addApi')}
                   </button>
                 </div>
               </div>
 
               {/* Business objects (PRODUCTCREATOR-29) */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-fg-2">Business objects</label>
+                <label className="block text-sm font-medium mb-1 text-fg-2">{t('ff.objects')}</label>
                 <datalist id="feature-object-ids">
                   {objectIds.map((id) => (
                     <option key={id} value={id} />
@@ -453,11 +476,11 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                         {...register(`objects.${index}.id` as const)}
                         list="feature-object-ids"
                         className="flex-1 px-3 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta"
-                        placeholder="business object id"
+                        placeholder={t('ff.objectId')}
                       />
                       <select {...register(`objects.${index}.access` as const)} className="px-3 py-2 border border-border-strong rounded bg-surface text-fg">
-                        <option value="read">read</option>
-                        <option value="write">write</option>
+                        <option value="read">{t('feature.access.read')}</option>
+                        <option value="write">{t('feature.access.write')}</option>
                       </select>
                       <button type="button" onClick={() => removeObject(index)} className="px-3 py-2 bg-danger-fill text-on rounded hover:bg-danger-fill-hover">
                         ✕
@@ -469,12 +492,13 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                     onClick={() => appendObject({ id: '', access: 'read' })}
                     className="px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm"
                   >
-                    + Add object
+                    {t('ff.addObject')}
                   </button>
                 </div>
               </div>
 
               <FeatureSpecFields control={control} register={register} />
+              </div>
 
               <div className="flex gap-4">
                 <button
@@ -482,30 +506,30 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                   onClick={() => void checkPlan()}
                   className="px-4 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger"
                 >
-                  Check
+                  {t('common.check')}
                 </button>
                 <button
                   type="button"
                   onClick={updatePreview}
                   className="px-4 py-2 bg-surface-neutral text-on rounded hover:bg-surface-neutral-hover"
                 >
-                  Preview YAML
+                  {t('ff.previewYaml')}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="px-4 py-2 bg-accent text-on rounded hover:bg-accent-hover disabled:bg-surface-disabled"
                 >
-                  {saving ? 'Saving...' : 'Save'}
+                  {saving ? t('common.saving') : t('common.save')}
                 </button>
               </div>
             </form>
           </div>
 
           <div className="bg-surface p-6 rounded shadow">
-            <h2 className="text-lg font-semibold mb-4">YAML Preview</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('ff.yamlPreview')}</h2>
             <pre className="bg-surface-muted p-4 rounded text-sm overflow-auto max-h-[600px]">
-              {preview || 'Click "Preview YAML" to generate'}
+              {preview || t('ff.clickPreview')}
             </pre>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { t } from '@/i18n';
 
 export default function Header() {
   const pathname = usePathname();
@@ -93,9 +94,9 @@ export default function Header() {
   };
 
   const presentationItems = [
-    { label: 'Graph', path: '/graph' },
-    { label: 'Matrix', path: '/matrix' },
-    { label: 'Doc', path: '/doc' },
+    { label: t('nav.graph'), path: '/graph' },
+    { label: t('nav.matrix'), path: '/matrix' },
+    { label: t('nav.doc'), path: '/doc' },
   ];
 
   const [presentationOpen, setPresentationOpen] = useState(false);
@@ -125,12 +126,12 @@ export default function Header() {
 
             <nav className="flex flex-wrap gap-1 relative">
               {[
-                { label: 'Objects', path: '/business-objects' },
-                { label: 'Workflows', path: '/workflows' },
-                { label: 'Features', path: '/features' },
-                { label: 'Streams', path: '/streams' },
-                { label: 'Interfaces', path: '/interfaces' },
-                { label: 'Problems', path: '/problems' },
+                { label: t('nav.objects'), path: '/business-objects' },
+                { label: t('nav.workflows'), path: '/workflows' },
+                { label: t('nav.features'), path: '/features' },
+                { label: t('nav.streams'), path: '/streams' },
+                { label: t('nav.interfaces'), path: '/interfaces' },
+                { label: t('nav.problems'), path: '/problems' },
               ].map((item) => (
                 <Link
                   key={item.path}
@@ -153,7 +154,7 @@ export default function Header() {
                     presentationItems.some((item) => isActive(item.path)) ? 'app-nav-link--active' : ''
                   }`}
                 >
-                  Presentation
+                  {t('nav.presentation')}
                   <span className="text-xs">{presentationOpen ? '▲' : '▼'}</span>
                 </button>
                 {presentationOpen && (
@@ -181,13 +182,13 @@ export default function Header() {
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-fg-2">Apps:</label>
+              <label className="text-sm font-medium text-fg-2">{t('nav.apps')}</label>
               <select
                 value={selectedApp}
                 onChange={(e) => handleAppChange(e.target.value)}
                 className="px-3 py-1.5 border border-border-strong rounded bg-surface text-fg text-sm min-w-[200px]"
               >
-                <option value="">All apps</option>
+                <option value="">{t('nav.allApps')}</option>
                 {apps.map((app) => {
                   const projectName = projectMap.get(app.projectId) || app.projectId;
                   return (
@@ -202,7 +203,7 @@ export default function Header() {
             <Link
               href="/workspace"
               className="inline-flex items-center justify-center rounded border border-border-strong bg-surface px-3 py-1.5 text-sm text-fg-2 hover:bg-bg"
-              title="Workspace: opened projects and services"
+              title={t('nav.workspaceTitle')}
             >
               <svg
                 className="w-4 h-4"
@@ -219,9 +220,9 @@ export default function Header() {
             <Link
               href="/settings"
               className="inline-flex items-center justify-center rounded border border-border-strong bg-surface px-3 py-1.5 text-sm text-fg-2 hover:bg-bg"
-              title="Settings: MCP server for AI agents"
+              title={t('nav.settingsTitle')}
             >
-              Settings
+              {t('nav.settings')}
             </Link>
           </div>
         </div>

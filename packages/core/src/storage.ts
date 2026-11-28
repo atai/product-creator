@@ -9,6 +9,8 @@ import type { CatalogModel, DesignContext, EntityKind, ModelEntry } from './vali
 import { readProject, type ProjectModel } from './project/model';
 import { loadOpenApiSpec } from './interfaces/openapi';
 import { operationKey } from './validation/design';
+import { stampTranslations } from './i18n';
+import { catalogSchemas } from './validation/schemas';
 
 /** Store table of each validated catalog kind */
 const CATALOG_TABLES: Record<EntityKind, string> = { feature: 'features', workflow: 'workflows', business_object: 'business_objects' };
@@ -402,7 +404,8 @@ class FunctionStorage {
   }
 
   async saveFeature(data: Feature, targetRoot?: string) {
-    const result = await this.featureRepo.save(data, targetRoot!);
+    // translations get the fingerprint of the primary text they were made from (PRODUCTCREATOR-37)
+    const result = await this.featureRepo.save(stampTranslations(this.getFeatureById(data.id), data, catalogSchemas.feature), targetRoot!);
     if (result.success) {
       this.buildEdges();
       this.indexEvents();
@@ -452,7 +455,7 @@ class FunctionStorage {
   }
 
   async saveWorkflow(data: Workflow, targetRoot?: string) {
-    return await this.workflowRepo.save(data, targetRoot!);
+    return await this.workflowRepo.save(stampTranslations(this.getWorkflowById(data.workflow), data, catalogSchemas.workflow), targetRoot!);
   }
 
   // Streams
@@ -478,7 +481,7 @@ class FunctionStorage {
   }
 
   async saveBusinessObject(data: BusinessObject, targetRoot?: string) {
-    return await this.businessObjectRepo.save(data, targetRoot!);
+    return await this.businessObjectRepo.save(stampTranslations(this.getBusinessObjectById(data.id), data, catalogSchemas.business_object), targetRoot!);
   }
 
   /** Component (app) id of a catalog file */

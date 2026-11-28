@@ -26,7 +26,8 @@ const userData = mkdtempSync(join(tmpdir(), 'pc-screens-'));
 
 const child = spawn(electron, [appDir, '--project', repo], {
   stdio: ['ignore', 'pipe', 'inherit'],
-  env: { ...process.env, PC_SMOKE_TEST: '1', PC_SMOKE_SCREENS: request, PC_USER_DATA_DIR: userData },
+  // the app interface in the language of this capture run (screenshots.perLanguage, PRODUCTCREATOR-37)
+  env: { ...process.env, PC_SMOKE_TEST: '1', PC_SMOKE_SCREENS: request, PC_USER_DATA_DIR: userData, ...(process.env.PC_SCREENS_LANGUAGE ? { PC_UI_LANGUAGE: process.env.PC_SCREENS_LANGUAGE } : {}) },
 });
 let out = '';
 child.stdout.setEncoding('utf8').on('data', (chunk) => (out += chunk));

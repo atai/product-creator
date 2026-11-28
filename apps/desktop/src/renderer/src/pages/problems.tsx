@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 import ValidationIssues, { type Issue } from '@/components/ValidationIssues';
+import { t } from '@/i18n';
 
 /** Model problems of the catalog (GET /api/validation, PRODUCTCREATOR-29) */
 export default function ProblemsPage() {
@@ -23,31 +24,30 @@ export default function ProblemsPage() {
   const issues = (data?.issues ?? []).filter((i) => rank[i.severity] <= rank[level] && (!designOnly || i.check === 'design')).sort((a, b) => rank[a.severity] - rank[b.severity]);
   return (
     <CatalogPageLayout
-      title="Problems"
-      description="Проверка модели: ссылки, типы, дубли и проверки проектирования (архитектура, события, объекты, статусы, полнота, код). Проверки проектирования пока рекомендательные (advisory): их уровень на ступень ниже, чем в strict-режиме, и они ничего не блокируют. Сохранение, которое добавляет ошибку, отклоняется."
+      title={t('problems.title')}
+      description={t('problems.description')}
       actions={
         <div className="flex items-center gap-4 text-sm">
           <select value={level} onChange={(e) => setLevel(e.target.value as Issue['severity'])} className="border border-border-strong rounded px-2 py-1 bg-surface">
-            <option value="error">Errors</option>
-            <option value="warning">Errors and warnings</option>
-            <option value="info">Everything (info too)</option>
+            <option value="error">{t('problems.errors')}</option>
+            <option value="warning">{t('problems.errorsWarnings')}</option>
+            <option value="info">{t('problems.everything')}</option>
           </select>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={designOnly} onChange={(e) => setDesignOnly(e.target.checked)} />
-            Design checks only
+            {t('problems.designOnly')}
           </label>
         </div>
       }
     >
       {!data ? (
-        <div className="text-center py-12 text-muted">Checking the model...</div>
+        <div className="text-center py-12 text-muted">{t('problems.checking')}</div>
       ) : (
         <div className="bg-surface rounded-lg shadow p-6 space-y-4">
           <div className="text-sm" data-testid="problem-counts">
-            <strong>{data.errors}</strong> error(s), <strong>{data.warnings}</strong> warning(s), <strong>{data.infos ?? 0}</strong> info
-            {app ? ' in the selected component' : ' in all open projects'}
+            <strong>{t('problems.counts', { errors: data.errors, warnings: data.warnings, infos: data.infos ?? 0 })}</strong> {app ? t('problems.inComponent') : t('problems.inAll')}
           </div>
-          {issues.length === 0 ? <div className="text-sm text-meta">No problems.</div> : <ValidationIssues issues={issues} app={app || undefined} />}
+          {issues.length === 0 ? <div className="text-sm text-meta">{t('problems.none')}</div> : <ValidationIssues issues={issues} app={app || undefined} />}
         </div>
       )}
     </CatalogPageLayout>

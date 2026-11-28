@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Stream } from '@pc/core/types';
 import FormHelpHint from '@/components/FormHelpHint';
+import { t } from '@/i18n';
 
 type StreamFormData = {
   stream: string;
@@ -77,7 +78,7 @@ export default function StreamEditPage() {
       const response = await fetch(`/api/stream?id=${encodeURIComponent(streamId)}`);
 
       if (!response.ok) {
-        throw new Error('Stream not found');
+        throw new Error(t('st.notFound'));
       }
 
       const stream: Stream = await response.json();
@@ -99,7 +100,7 @@ export default function StreamEditPage() {
       });
     } catch (error) {
       console.error('Error loading stream:', error);
-      setError('Failed to load stream');
+      setError(t('st.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -145,13 +146,13 @@ export default function StreamEditPage() {
 
       if (!response.ok) {
         const result = await response.json();
-        throw new Error(result.error || 'Failed to save stream');
+        throw new Error(result.error || t('st.saveFailed'));
       }
 
       router.push(`/streams${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`);
     } catch (error: unknown) {
       console.error('Error saving stream:', error);
-      setError((error as Error).message || 'Failed to save stream');
+      setError((error as Error).message || t('st.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -161,7 +162,7 @@ export default function StreamEditPage() {
     return (
       <div className="min-h-full bg-bg">
         <div className="max-w-7xl mx-auto px-8 py-8">
-          <p className="text-muted">Loading...</p>
+          <p className="text-muted">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -173,7 +174,7 @@ export default function StreamEditPage() {
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="mb-6 flex items-center">
           <h1 className="text-3xl font-bold text-fg">
-            {isNew ? 'New Stream' : 'Edit Stream'}
+            {isNew ? t('st.newTitle') : t('st.editTitle')}
           </h1>
           <FormHelpHint hintKey="streamDetail" />
         </div>
@@ -186,17 +187,17 @@ export default function StreamEditPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="bg-surface p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-fg mb-4">Basic Information</h2>
+            <h2 className="text-xl font-semibold text-fg mb-4">{t('wf.basic')}</h2>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg-2 mb-1">
-                  Stream ID *
+                  {t('st.id')}
                 </label>
                 <input
-                  {...register('stream', { required: 'Stream ID is required' })}
+                  {...register('stream', { required: t('st.idRequired') })}
                   disabled={!isNew}
-                  placeholder="stream_name (lowercase, underscores only)"
+                  placeholder={t('st.idPlaceholder')}
                   className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent disabled:bg-surface-muted"
                 />
                 {errors.stream && (
@@ -206,22 +207,22 @@ export default function StreamEditPage() {
 
               <div>
                 <label className="block text-sm font-medium text-fg-2 mb-1">
-                  Name
+                  {t('common.name')}
                 </label>
                 <input
                   {...register('name')}
-                  placeholder="Human-readable name"
+                  placeholder={t('wf.namePlaceholder')}
                   className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-fg-2 mb-1">
-                  Goal *
+                  {t('st.goal')}
                 </label>
                 <textarea
-                  {...register('goal', { required: 'Goal is required' })}
-                  placeholder="What is the goal/purpose of this stream?"
+                  {...register('goal', { required: t('st.goalRequired') })}
+                  placeholder={t('st.goalPlaceholder')}
                   rows={2}
                   className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                 />
@@ -234,13 +235,13 @@ export default function StreamEditPage() {
 
           <div className="bg-surface p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-fg">KPIs</h2>
+              <h2 className="text-xl font-semibold text-fg">{t('st.kpis')}</h2>
               <button
                 type="button"
                 onClick={() => appendKpi({ value: '' })}
                 className="px-3 py-1 text-sm bg-accent text-on rounded hover:bg-accent-hover"
               >
-                Add KPI
+                {t('st.addKpi')}
               </button>
             </div>
 
@@ -250,7 +251,7 @@ export default function StreamEditPage() {
                   <div className="flex-1">
                     <input
                       {...register(`kpis.${index}.value` as const)}
-                      placeholder="KPI metric name"
+                      placeholder={t('st.kpiPlaceholder')}
                       className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                     />
                   </div>
@@ -259,20 +260,20 @@ export default function StreamEditPage() {
                     onClick={() => removeKpi(index)}
                     className="px-3 py-2 text-danger hover:text-danger-fg-strong"
                   >
-                    Remove
+                    {t('common.remove')}
                   </button>
                 </div>
               ))}
 
               {kpiFields.length === 0 && (
-                <p className="text-sm text-meta italic">No KPIs defined</p>
+                <p className="text-sm text-meta italic">{t('st.noKpis')}</p>
               )}
             </div>
           </div>
 
           <div className="bg-surface p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-fg">Stages *</h2>
+              <h2 className="text-xl font-semibold text-fg">{t('st.stages')}</h2>
               <button
                 type="button"
                 onClick={() =>
@@ -285,7 +286,7 @@ export default function StreamEditPage() {
                 }
                 className="px-3 py-1 text-sm bg-accent text-on rounded hover:bg-accent-hover"
               >
-                Add Stage
+                {t('st.addStage')}
               </button>
             </div>
 
@@ -301,13 +302,13 @@ export default function StreamEditPage() {
               ))}
 
               {stageFields.length === 0 && (
-                <p className="text-sm text-meta italic">No stages added yet</p>
+                <p className="text-sm text-meta italic">{t('st.noStages')}</p>
               )}
             </div>
           </div>
 
           <div className="bg-surface p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-fg mb-4">Rules</h2>
+            <h2 className="text-xl font-semibold text-fg mb-4">{t('st.rules')}</h2>
 
             <div className="flex items-center">
               <input
@@ -316,7 +317,7 @@ export default function StreamEditPage() {
                 className="h-4 w-4 text-accent rounded border-border-strong focus:ring-accent"
               />
               <label className="ml-2 text-sm text-fg-2">
-                Unique function per stage (a function cannot appear in multiple stages)
+                {t('st.uniqueFeature')}
               </label>
             </div>
           </div>
@@ -327,14 +328,14 @@ export default function StreamEditPage() {
               disabled={saving}
               className="px-6 py-2 bg-accent text-on rounded hover:bg-accent-hover disabled:bg-accent-disabled"
             >
-              {saving ? 'Saving...' : 'Save Stream'}
+              {saving ? t('common.saving') : t('st.save')}
             </button>
             <button
               type="button"
               onClick={() => router.back()}
               className="px-6 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </form>
@@ -384,37 +385,37 @@ function StageEditor({
   return (
     <div className="border border-border rounded p-4 bg-bg">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-medium text-fg">Stage {stageIndex + 1}</h3>
+        <h3 className="text-lg font-medium text-fg">{t('st.stage', { n: stageIndex + 1 })}</h3>
         <button
           type="button"
           onClick={() => removeStage(stageIndex)}
           className="text-danger hover:text-danger-fg-strong text-sm"
         >
-          Remove Stage
+          {t('st.removeStage')}
         </button>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-fg-2 mb-1">Stage Name *</label>
+          <label className="block text-sm font-medium text-fg-2 mb-1">{t('st.stageName')}</label>
           <input
             {...register(`stages.${stageIndex}.name` as const, {
-              required: 'Stage name is required',
+              required: t('st.stageNameRequired'),
             })}
-            placeholder="discover, qualify, convert, etc."
+            placeholder={t('st.stageNamePlaceholder')}
             className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent bg-surface"
           />
         </div>
 
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-fg-2">Entry Events *</label>
+            <label className="block text-sm font-medium text-fg-2">{t('st.entryEvents')}</label>
             <button
               type="button"
               onClick={() => appendEntryEvent({ value: '' })}
               className="text-sm text-accent hover:text-accent-fg"
             >
-              + Add
+              {t('st.add')}
             </button>
           </div>
           <div className="space-y-2">
@@ -439,13 +440,13 @@ function StageEditor({
 
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-fg-2">Exit Events *</label>
+            <label className="block text-sm font-medium text-fg-2">{t('st.exitEvents')}</label>
             <button
               type="button"
               onClick={() => appendExitEvent({ value: '' })}
               className="text-sm text-accent hover:text-accent-fg"
             >
-              + Add
+              {t('st.add')}
             </button>
           </div>
           <div className="space-y-2">
@@ -470,13 +471,13 @@ function StageEditor({
 
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-fg-2">Workflows (optional)</label>
+            <label className="block text-sm font-medium text-fg-2">{t('st.workflows')}</label>
             <button
               type="button"
               onClick={() => appendWorkflow({ value: '' })}
               className="text-sm text-accent hover:text-accent-fg"
             >
-              + Add
+              {t('st.add')}
             </button>
           </div>
           <div className="space-y-2">

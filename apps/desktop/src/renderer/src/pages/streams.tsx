@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Stream } from '@pc/core/types';
 import { useEntityList } from '@/hooks/useEntityList';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
+import { t } from '@/i18n';
 
 export default function StreamsPage() {
   const searchParams = useSearchParams();
@@ -29,21 +30,21 @@ export default function StreamsPage() {
 
   return (
     <CatalogPageLayout
-      title="Streams"
-      description="Потоки событий с целями, стадиями и KPI. Следите за тем, какие этапы и события уже описаны."
+      title={t('streams.title')}
+      description={t('streams.description')}
       hintKey="streams"
       actions={
         <Link
           href={`/streams/new${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
           className="px-4 py-2 bg-accent text-on rounded hover:bg-accent-hover text-sm font-medium"
         >
-          New Stream
+          {t('streams.new')}
         </Link>
       }
       search={
         <input
           type="text"
-          placeholder="Search streams..."
+          placeholder={t('streams.search')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
@@ -52,12 +53,12 @@ export default function StreamsPage() {
     >
       {loading ? (
         <div className="text-center py-12">
-          <p className="text-muted">Loading streams...</p>
+          <p className="text-muted">{t('streams.loading')}</p>
         </div>
       ) : filteredStreams.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted">
-            {streams.length === 0 ? 'No streams found. Create your first stream!' : 'No matching streams found.'}
+            {streams.length === 0 ? t('streams.noneYet') : t('streams.noMatch')}
           </p>
         </div>
       ) : (
@@ -66,22 +67,22 @@ export default function StreamsPage() {
             <thead className="bg-bg">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Stream ID
+                  {t('streams.colId')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Name
+                  {t('common.name')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Goal
+                  {t('streams.colGoal')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Stages
+                  {t('streams.colStages')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  KPIs
+                  {t('streams.colKpis')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
-                  Actions
+                  {t('common.actions')}
                 </th>
               </tr>
             </thead>
@@ -106,7 +107,7 @@ export default function StreamsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-muted">
-                      {stream.stages.length} stage{stream.stages.length !== 1 ? 's' : ''}
+                      {t('streams.stages', { count: stream.stages.length })}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -121,7 +122,7 @@ export default function StreamsPage() {
                           </span>
                         ))
                       ) : (
-                        <span className="text-sm text-meta">None</span>
+                        <span className="text-sm text-meta">{t('common.none')}</span>
                       )}
                     </div>
                   </td>
@@ -130,13 +131,13 @@ export default function StreamsPage() {
                       href={`/streams/${stream.stream}${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
                       className="text-accent hover:text-accent-fg-strong mr-4"
                     >
-                      Edit
+                      {t('common.edit')}
                     </Link>
                     <Link
                       href={`/streams/${stream.stream}/swimlanes${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
                       className="text-secondary hover:text-secondary-fg-strong"
                     >
-                      Swimlanes
+                      {t('streams.swimlanes')}
                     </Link>
                   </td>
                 </tr>

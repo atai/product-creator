@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { WorkspaceProjectInfo } from '../../../shared/ipc';
+import { t } from '@/i18n';
 
 /**
  * Doc page (PRODUCTCREATOR-35): the human view of the spec generated from the catalog, the same Markdown that
@@ -10,6 +11,9 @@ import type { WorkspaceProjectInfo } from '../../../shared/ipc';
 interface SpecResponse {
   project: { id: string; name: string };
   language: string;
+  languages: string[];
+  primary: string;
+  untranslated: number;
   labelsLanguage: string;
   labelsFallback: boolean;
   counts: { errors: number; warnings: number };
@@ -31,7 +35,8 @@ function SpecImage({ projectId, src, alt }: { projectId: string; src?: string; a
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!src) return;
-    void fetch(`/api/spec?project=${encodeURIComponent(projectId)}&asset=${encodeURIComponent(src)}`)
+    // spec.md lives in <lang>/: its images are ../screens/…, served relative to the spec folder
+    void fetch(`/api/spec?project=${encodeURIComponent(projectId)}&asset=${encodeURIComponent(src.replace(/^\.\.\//, ''))}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((b: { dataUrl?: string } | null) => setUrl(b?.dataUrl ?? null));
   }, [projectId, src]);
@@ -64,6 +69,7 @@ export default function DocPage() {
   const [spec, setSpec] = useState<SpecResponse | null>(null);
   const [error, setError] = useState('');
   const [written, setWritten] = useState('');
+  const [language, setLanguage] = useState('');
   const [screens, setScreens] = useState<ScreensStatus | null>(null);
 
   useEffect(() => {
@@ -77,11 +83,11 @@ export default function DocPage() {
   const load = useCallback(async () => {
     if (!projectId) return;
     setError('');
-    const res = await fetch(`/api/spec?project=${encodeURIComponent(projectId)}`);
+    const res = await fetch(`/api/spec?project=${encodeURIComponent(projectId)}${language ? `&language=${encodeURIComponent(language)}` : ''}`);
     const body = (await res.json()) as SpecResponse;
-    if (!res.ok) setError(body.error ?? 'Failed to generate the spec');
+    if (!res.ok) setError(body.error ?? t('doc.loadFailed'));
     else setSpec(body);
-  }, [projectId]);
+  }, [projectId, language]);
 
   useEffect(() => {
     void load();
@@ -114,7 +120,7 @@ export default function DocPage() {
   const capture = async () => {
     setError('');
     const res = await fetch('/api/screens', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project: projectId }) });
-    if (!res.ok) setError(((await res.json()) as { error?: string }).error ?? 'Failed to start the capture');
+    if (!res.ok) setError(((await res.json()) as { error?: string }).error ?? t('doc.captureFailed'));
     await loadScreens();
   };
 
@@ -126,8 +132,8 @@ export default function DocPage() {
     setWritten('');
     const res = await fetch('/api/spec', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project: projectId }) });
     const body = (await res.json()) as { dir?: string; files?: string[]; error?: string };
-    if (!res.ok) setError(body.error ?? 'Failed to write the spec');
-    else setWritten(`${body.files?.length ?? 0} file(s) written to ${body.dir}`);
+    if (!res.ok) setError(body.error ?? t('doc.writeFailed'));
+    else setWritten(t('doc.written', { count: body.files?.length ?? 0, dir: body.dir ?? '' }));
   };
 
   return (
@@ -143,31 +149,42 @@ export default function DocPage() {
               ))}
             </select>
           )}
+          {spec && spec.languages.length > 1 && (
+            <select value={spec.language} onChange={(e) => setLanguage(e.target.value)} title={t('doc.language')} className="px-3 py-2 border border-border-strong rounded bg-surface text-fg">
+              {spec.languages.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          )}
           <button type="button" onClick={() => void load()} className="px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm">
-            Regenerate
+            {t('doc.regenerate')}
           </button>
           <button type="button" onClick={() => void write()} disabled={!spec?.output} className="px-3 py-2 bg-accent text-on rounded hover:bg-accent-hover disabled:bg-surface-disabled text-sm">
-            Write files{spec?.output ? '' : ' (output folder not allowed)'}
+            {t('doc.writeFiles')}
+            {spec?.output ? '' : ` ${t('doc.outputNotAllowed')}`}
           </button>
           {screens?.configured && screens.screens > 0 && (
             <button type="button" onClick={() => void (screens.running ? cancelCapture() : capture())} className="px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm">
-              {screens.running ? 'Cancel capture' : `Capture screenshots (${screens.screens})`}
+              {screens.running ? t('doc.cancelCapture') : t('doc.captureScreens', { count: screens.screens })}
             </button>
           )}
           {spec && (
             <span className="text-sm text-meta">
-              {spec.counts.errors} error(s), {spec.counts.warnings} warning(s) · language {spec.language}
-              {spec.labelsFallback ? ` (labels: ${spec.labelsLanguage})` : ''}
+              {t('doc.status', { errors: spec.counts.errors, warnings: spec.counts.warnings })}
+              {spec.untranslated ? ` · ${t('doc.untranslated', { count: spec.untranslated, primary: spec.primary })}` : ''}
+              {spec.labelsFallback ? ` (${t('doc.labelsFallback', { language: spec.labelsLanguage })})` : ''}
             </span>
           )}
         </div>
         {screens?.report && !screens.running && (
           <div className={`mb-4 rounded px-4 py-2 text-sm ${screens.report.state === 'ok' && !screens.report.failed.length ? 'bg-success-muted text-success-fg' : 'bg-warn-soft text-warn-fg'}`}>
-            Screenshots: {screens.report.state}
-            {screens.report.message ? ` — ${screens.report.message}` : ''} · {screens.report.captured}/{screens.report.requested} with an image
+            {t('doc.screenshots', { state: screens.report.state })}
+            {screens.report.message ? ` — ${screens.report.message}` : ''} · {t('doc.withImage', { captured: screens.report.captured, requested: screens.report.requested })}
             {screens.report.failed.map((f) => (
               <div key={`${f.feature}#${f.id}`}>
-                {f.feature} {f.id}: {f.error ?? 'failed'}
+                {f.feature} {f.id}: {f.error ?? t('doc.failed')}
               </div>
             ))}
           </div>
@@ -177,7 +194,7 @@ export default function DocPage() {
         )}
         {written && <div className="mb-4 rounded bg-success-muted px-4 py-2 text-sm text-success-fg">{written}</div>}
         {error && <div className="mb-4 rounded bg-danger-soft px-4 py-2 text-sm text-danger-fg-strong">{error}</div>}
-        {!projects.length && <p className="text-muted">Open a project to generate its spec.</p>}
+        {!projects.length && <p className="text-muted">{t('doc.openProject')}</p>}
         {spec && (
           <article className="rounded-lg bg-surface p-8 shadow">
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ ...md, img: ({ src, alt }) => <SpecImage projectId={projectId} src={typeof src === 'string' ? src : undefined} alt={alt} /> }}>

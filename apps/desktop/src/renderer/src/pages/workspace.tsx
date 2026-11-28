@@ -11,6 +11,9 @@ import type {
   WorkspaceInfo,
   WorkspaceProjectInfo,
 } from '../../../shared/ipc';
+import { t } from '@/i18n';
+import productSchema from '@pc/core/schema/product.schema.json';
+import { LanguageTabs, TranslationEditor } from '@/components/TranslationEditor';
 
 /**
  * Desktop: opened projects and the editor of projects, services and libraries.
@@ -43,7 +46,7 @@ export default function WorkspacePage() {
       if ('ok' in result) {
         setInfo(result.info);
         if (!result.ok) {
-          setError(result.error ?? 'Save failed');
+          setError(result.error ?? t('ws.saveFailed'));
           return;
         }
         setEditing(null);
@@ -59,18 +62,15 @@ export default function WorkspacePage() {
     <div className="max-w-6xl mx-auto px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Workspace</h1>
-          <p className="text-muted text-sm mt-1">
-            Opened projects with their services and libraries. Changes are saved to <code>product-creator.yml</code>{' '}
-            and <code>*.pc.yml</code> files in the project folder.
-          </p>
+          <h1 className="text-3xl font-bold">{t('ws.title')}</h1>
+          <p className="text-muted text-sm mt-1">{t('ws.lead')}</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/projects" className={btn} title="Sync functions from code and business objects from the Prisma schema">
-            Sync code / schema…
+          <Link href="/projects" className={btn} title={t('ws.syncTitle')}>
+            {t('ws.sync')}
           </Link>
           <button className={primary} onClick={() => run(() => window.pc.workspace.openDialog())}>
-            Open project folder…
+            {t('ws.open')}
           </button>
         </div>
       </div>
@@ -79,7 +79,7 @@ export default function WorkspacePage() {
           {error}
         </div>
       )}
-      {info.projects.length === 0 && <p className="text-meta">No projects opened.</p>}
+      {info.projects.length === 0 && <p className="text-meta">{t('ws.none')}</p>}
       <div className="space-y-6">
         {info.projects.map((p) => (
           <ProjectCard key={p.root} info={p} editing={editing} setEditing={setEditing} run={run} />
@@ -200,7 +200,7 @@ function OpenApiCell({ component: c, info, log, onGenerate, onCancel }: OpenApiC
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {running ? (
             <button className="text-xs text-danger hover:underline" onClick={onCancel}>
-              Cancel
+              {t('common.cancel')}
             </button>
           ) : (
             <button
@@ -208,19 +208,19 @@ function OpenApiCell({ component: c, info, log, onGenerate, onCancel }: OpenApiC
               title={c.openapiGenerate.command}
               onClick={onGenerate}
             >
-              Generate OpenAPI
+              {t('ws.generateOpenApi')}
             </button>
           )}
           {status && status.state !== 'idle' && (
             <span className={`text-xs ${STATE_STYLE[status.state]}`} title={status.message}>
-              {status.state}
-              {status.state === 'ok' && status.operations !== undefined ? ` · ${status.operations} ops` : ''}
+              {t(`ws.state.${status.state}`)}
+              {status.state === 'ok' && status.operations !== undefined ? ` · ${t('ws.ops', { count: status.operations })}` : ''}
               {status.finishedAt ? ` · ${formatTime(status.finishedAt)}` : ''}
             </span>
           )}
           {(log || status?.log) && (
             <button className="text-xs text-accent hover:underline" onClick={() => setShowLog(!showLog)}>
-              {showLog ? 'Hide log' : 'Log'}
+              {showLog ? t('ws.hideLog') : t('ws.log')}
             </button>
           )}
         </div>
@@ -259,9 +259,9 @@ function LegacyFeatures({ root, files, run }: { root: string; files: number; run
     <>
       {files > 0 && (
         <div className="text-xs mt-2 text-warn-fg" data-testid="legacy-features">
-          {files} feature card(s) are in the old <span className="font-mono">functions/</span> folder (read as features).
+          {t('ws.legacy', { count: files })}
           <button className={`${btn} ml-2`} onClick={() => void migrate()}>
-            Move to features/
+            {t('ws.moveToFeatures')}
           </button>
         </div>
       )}
@@ -285,13 +285,12 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
           <div className="text-xs text-meta mt-1 font-mono">{root}</div>
           {project && (
             <div className="text-xs text-meta mt-1">
-              id <span className="font-mono">{project.id}</span> · slug <span className="font-mono">{project.slug}</span> ·
-              catalogs in <span className="font-mono">{project.catalogRoot}</span>
+              {t('ws.ids', { id: project.id, slug: project.slug, root: project.catalogRoot })}
             </div>
           )}
           {info.origin && info.origin !== 'read' && (
             <div className="text-xs mt-2 text-warn-fg">
-              {info.origin === 'imported' ? 'Imported from the folder layout on this open' : 'Migrated from product-creator.yml v1'}
+              {info.origin === 'imported' ? t('ws.imported') : t('ws.migrated')}
               {info.notes?.map((n) => (
                 <div key={n}>• {n}</div>
               ))}
@@ -305,30 +304,30 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
           {project && (
             <>
               <button className={btn} onClick={() => setEditing({ root, type: 'project' })}>
-                Edit project
+                {t('ws.editProject')}
               </button>
               <button className={btn} onClick={() => setEditing({ root, type: 'component', component: newComponent('service') })}>
-                Add service
+                {t('ws.addService')}
               </button>
               <button className={btn} onClick={() => setEditing({ root, type: 'component', component: newComponent('library') })}>
-                Add library
+                {t('ws.addLibrary')}
               </button>
               {hasGenerators && (
-                <button className={btn} title="Run the configured OpenAPI generate command of every component" onClick={() => void openapi.generateAll()}>
-                  Generate all OpenAPI
+                <button className={btn} title={t('ws.generateAllTitle')} onClick={() => void openapi.generateAll()}>
+                  {t('ws.generateAll')}
                 </button>
               )}
               <button
                 className={btn}
-                title="Add components found in the folder layout (pnpm workspace) that are not in the project yet"
+                title={t('ws.importNewTitle')}
                 onClick={() => run(() => window.pc.editor.importNew(root))}
               >
-                Import new from folder
+                {t('ws.importNew')}
               </button>
             </>
           )}
           <button className={btn} onClick={() => run(() => window.pc.workspace.close(root))}>
-            Close
+            {t('ws.close')}
           </button>
         </div>
       </div>
@@ -351,19 +350,19 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
           return (
             <div key={kind} className="mt-5">
               <h3 className="font-semibold text-fg-2">
-                {kind === 'service' ? 'Services' : 'Libraries'} <span className="text-meta font-normal">({list.length})</span>
+                {kind === 'service' ? t('ws.services') : t('ws.libraries')} <span className="text-meta font-normal">({list.length})</span>
               </h3>
               {list.length === 0 ? (
-                <p className="text-sm text-meta mt-1">None</p>
+                <p className="text-sm text-meta mt-1">{t('common.none')}</p>
               ) : (
                 <table className="mt-2 w-full text-sm">
                   <thead>
                     <tr className="text-left text-meta border-b">
-                      <th className="py-1 pr-3">Name</th>
-                      <th className="py-1 pr-3">Path</th>
-                      <th className="py-1 pr-3">Catalog</th>
-                      <th className="py-1 pr-3">Prisma / OpenAPI</th>
-                      <th className="py-1 pr-3">Depends on</th>
+                      <th className="py-1 pr-3">{t('common.name')}</th>
+                      <th className="py-1 pr-3">{t('ws.path')}</th>
+                      <th className="py-1 pr-3">{t('ws.catalog')}</th>
+                      <th className="py-1 pr-3">{t('ws.prismaOpenApi')}</th>
+                      <th className="py-1 pr-3">{t('ws.dependsOn')}</th>
                       <th className="py-1" />
                     </tr>
                   </thead>
@@ -403,17 +402,17 @@ function ProjectCard({ info, editing, setEditing, run }: CardProps) {
                           </td>
                           <td className="py-1 whitespace-nowrap text-right">
                             <button className="text-accent hover:underline text-xs mr-3" onClick={() => setEditing({ root, type: 'component', component: c })}>
-                              Edit
+                              {t('common.edit')}
                             </button>
                             <button
                               className="text-danger hover:underline text-xs"
                               onClick={() => {
-                                if (window.confirm(`Remove ${c.name} from the project? Its catalog files are kept.`)) {
+                                if (window.confirm(t('ws.removeConfirm', { name: c.name }))) {
                                   void run(() => window.pc.editor.deleteComponent(root, c.id));
                                 }
                               }}
                             >
-                              Remove
+                              {t('common.remove')}
                             </button>
                           </td>
                         </tr>
@@ -478,7 +477,15 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
   const [actors, setActors] = useState<Row[]>((project.actors ?? []).map((a) => ({ id: a.id, name: a.name, description: a.description ?? '' })));
   const [glossary, setGlossary] = useState<Row[]>((project.glossary ?? []).map((t) => ({ ...t })));
   const [issueUrl, setIssueUrl] = useState(project.tracker?.issueUrl ?? '');
-  const [specSettings, setSpecSettings] = useState({ language: project.spec?.language ?? '', output: project.spec?.output ?? '' });
+  const [specOutput, setSpecOutput] = useState(project.spec?.output ?? '');
+  // content and spec languages (PRODUCTCREATOR-37); the old spec.language becomes the only language
+  const [languages, setLanguages] = useState((project.languages?.length ? project.languages : project.spec?.language ? [project.spec.language] : []).join(', '));
+  const [perLanguage, setPerLanguage] = useState(Boolean(project.screenshots?.perLanguage));
+  const [i18n, setI18n] = useState<Record<string, unknown> | undefined>(project.i18n);
+  const [language, setLanguage] = useState('');
+  const languageList = languages.split(/[\s,]+/).filter(Boolean);
+  const primary = languageList[0] ?? 'en';
+  const translating = Boolean(language && language !== primary && languageList.includes(language));
   const filled = (rows: Row[], keys: string[]) => rows.filter((r) => keys.every((k) => r[k]?.trim()));
   return (
     <form
@@ -492,64 +499,90 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
           actors: filled(actors, ['id', 'name']).map((a) => ({ id: a.id.trim(), name: a.name.trim(), ...(a.description?.trim() ? { description: a.description.trim() } : {}) })),
           glossary: filled(glossary, ['term', 'definition']).map((t) => ({ term: t.term.trim(), definition: t.definition.trim() })),
           tracker: issueUrl.trim() ? { issueUrl: issueUrl.trim() } : null,
-          spec: specSettings.language.trim() || specSettings.output.trim() ? { ...(specSettings.language.trim() ? { language: specSettings.language.trim() } : {}), ...(specSettings.output.trim() ? { output: specSettings.output.trim() } : {}) } : null,
+          spec: specOutput.trim() ? { output: specOutput.trim() } : null,
+          languages: languageList,
+          i18n: i18n ?? null,
+          ...(project.screenshots ? { screenshots: { ...project.screenshots, perLanguage: perLanguage || undefined } } : {}),
         });
       }}
     >
-      <Field label="Name">
+      <div className="col-span-2">
+        <LanguageTabs languages={languageList} value={translating ? language : primary} onChange={setLanguage} />
+      </div>
+      {translating && (
+        <div className="col-span-2">
+          <TranslationEditor
+            schema={productSchema}
+            entry={{ description: v.description, vision, goals, actors, glossary }}
+            i18n={i18n}
+            language={language}
+            primary={primary}
+            onChange={setI18n}
+          />
+        </div>
+      )}
+      <div className={translating ? 'hidden' : 'col-span-2 grid grid-cols-2 gap-3'}>
+      <Field label={t('common.name')}>
         <input className={input} value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} required />
       </Field>
-      <Field label="Slug" hint="a-z, 0-9, -; the id stays the same when renamed">
+      <Field label={t('ws.slug')} hint={t('ws.slugHint')}>
         <input className={input} value={v.slug} onChange={(e) => setV({ ...v, slug: e.target.value })} />
       </Field>
-      <Field label="Description">
+      <Field label={t('common.description')}>
         <input className={input} value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} />
       </Field>
-      <Field label="Sphinx docs folder">
+      <Field label={t('ws.docs')}>
         <input className={input} value={v.docs} onChange={(e) => setV({ ...v, docs: e.target.value })} />
       </Field>
-      <Field label="Catalog root" hint="folder with component catalogs">
+      <Field label={t('ws.catalogRoot')} hint={t('ws.catalogRootHint')}>
         <input className={input} value={v.catalogRoot} onChange={(e) => setV({ ...v, catalogRoot: e.target.value })} />
       </Field>
-      <Field label="Tracker issue URL" hint="{id} is replaced by the ticket key">
+      <Field label={t('ws.issueUrl')} hint={t('ws.issueUrlHint')}>
         <input className={input} value={issueUrl} placeholder="https://example.youtrack.cloud/issue/{id}" onChange={(e) => setIssueUrl(e.target.value)} />
       </Field>
 
-      <Field label="Spec language" hint="language the catalog is written in; default en">
-        <input className={input} value={specSettings.language} placeholder="en" onChange={(e) => setSpecSettings({ ...specSettings, language: e.target.value })} />
+      <Field label={t('ws.languages')} hint={t('ws.languagesHint')}>
+        <input className={input} value={languages} placeholder="en, ru" onChange={(e) => setLanguages(e.target.value)} />
       </Field>
-      <Field label="Spec output folder" hint="product-creator spec writes here; default docs/spec">
-        <input className={input} value={specSettings.output} placeholder="docs/spec" onChange={(e) => setSpecSettings({ ...specSettings, output: e.target.value })} />
+      <Field label={t('ws.specOutput')} hint={t('ws.specOutputHint')}>
+        <input className={input} value={specOutput} placeholder="docs/spec" onChange={(e) => setSpecOutput(e.target.value)} />
       </Field>
+      {project.screenshots && languageList.length > 1 && (
+        <label className="col-span-2 flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={perLanguage} onChange={(e) => setPerLanguage(e.target.checked)} />
+          {t('ws.perLanguageScreens')} <span className="text-[11px] text-meta">{t('ws.perLanguageScreensHint')}</span>
+        </label>
+      )}
 
-      <div className="col-span-2 mt-2 border-t border-border pt-3 text-sm font-semibold">Product</div>
+      <div className="col-span-2 mt-2 border-t border-border pt-3 text-sm font-semibold">{t('ws.product')}</div>
       <div className="col-span-2">
-        <Field label="Vision" hint="why the product exists; the first section of the spec">
+        <Field label={t('ws.vision')} hint={t('ws.visionHint')}>
           <textarea className={input} rows={2} value={vision} onChange={(e) => setVision(e.target.value)} />
         </Field>
       </div>
       <div className="col-span-2">
-        <Field label="Goals" hint="G1, G2, …">
-          <RowsEditor rows={goals} onChange={setGoals} addLabel="+ Add goal" newRow={() => ({ id: nextGoalId(goals), text: '' })} columns={[{ key: 'id', placeholder: 'G1', width: 'w-16' }, { key: 'text', placeholder: 'goal' }]} />
+        <Field label={t('ws.goals')} hint="G1, G2, …">
+          <RowsEditor rows={goals} onChange={setGoals} addLabel={t('ws.addGoal')} newRow={() => ({ id: nextGoalId(goals), text: '' })} columns={[{ key: 'id', placeholder: 'G1', width: 'w-16' }, { key: 'text', placeholder: t('ws.goalPlaceholder') }]} />
         </Field>
       </div>
       <div className="col-span-2">
-        <Field label="Actors" hint="features refer to them by id; a-z, 0-9, _">
-          <RowsEditor rows={actors} onChange={setActors} addLabel="+ Add actor" newRow={() => ({ id: '', name: '', description: '' })} columns={[{ key: 'id', placeholder: 'ai_agent', width: 'w-40' }, { key: 'name', placeholder: 'AI agent', width: 'w-48' }, { key: 'description', placeholder: 'who it is' }]} />
+        <Field label={t('ws.actors')} hint={t('ws.actorsHint')}>
+          <RowsEditor rows={actors} onChange={setActors} addLabel={t('ws.addActor')} newRow={() => ({ id: '', name: '', description: '' })} columns={[{ key: 'id', placeholder: 'ai_agent', width: 'w-40' }, { key: 'name', placeholder: t('ws.actorName'), width: 'w-48' }, { key: 'description', placeholder: t('ws.actorWho') }]} />
         </Field>
       </div>
       <div className="col-span-2">
-        <Field label="Glossary">
-          <RowsEditor rows={glossary} onChange={setGlossary} addLabel="+ Add term" newRow={() => ({ term: '', definition: '' })} columns={[{ key: 'term', placeholder: 'term', width: 'w-48' }, { key: 'definition', placeholder: 'definition' }]} />
+        <Field label={t('ws.glossary')}>
+          <RowsEditor rows={glossary} onChange={setGlossary} addLabel={t('ws.addTerm')} newRow={() => ({ term: '', definition: '' })} columns={[{ key: 'term', placeholder: t('ws.term'), width: 'w-48' }, { key: 'definition', placeholder: t('ws.definition') }]} />
         </Field>
+      </div>
       </div>
 
       <div className="col-span-2 flex items-end justify-end gap-2">
         <button type="button" className={btn} onClick={onCancel}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button type="submit" className={primary}>
-          Save
+          {t('common.save')}
         </button>
       </div>
     </form>
@@ -595,42 +628,42 @@ function ComponentForm({
       }}
     >
       <div className="col-span-3 text-sm font-semibold">
-        {value.id ? `Edit ${value.kind}` : `New ${v.kind}`}
+        {value.id ? t('ws.editComponent', { kind: t(`ws.kind.${value.kind}`) }) : t('ws.newComponent', { kind: t(`ws.kind.${v.kind}`) })}
         {value.id && <span className="ml-2 font-mono text-xs text-meta">{value.id}</span>}
       </div>
-      <Field label="Name">
+      <Field label={t('common.name')}>
         <input className={input} value={v.name} onChange={(e) => set('name', e.target.value)} required />
       </Field>
-      <Field label="Slug" hint="unique in the project; renaming keeps the id">
-        <input className={input} value={v.slug} placeholder="from name" onChange={(e) => set('slug', e.target.value)} />
+      <Field label={t('ws.slug')} hint={t('ws.componentSlugHint')}>
+        <input className={input} value={v.slug} placeholder={t('ws.fromName')} onChange={(e) => set('slug', e.target.value)} />
       </Field>
-      <Field label="Kind">
+      <Field label={t('ws.kind')}>
         <select className={input} value={v.kind} onChange={(e) => set('kind', e.target.value as ComponentInput['kind'])}>
-          <option value="service">service</option>
-          <option value="library">library</option>
+          <option value="service">{t('ws.kind.service')}</option>
+          <option value="library">{t('ws.kind.library')}</option>
         </select>
       </Field>
-      <Field label="Source path" hint="relative to the project root">
+      <Field label={t('ws.sourcePath')} hint={t('ws.sourcePathHint')}>
         <input className={input} value={v.path} placeholder="apps/api" onChange={(e) => set('path', e.target.value)} required />
       </Field>
-      <Field label="Code base for sync" hint="default: source path">
+      <Field label={t('ws.codeBase')} hint={t('ws.codeBaseHint')}>
         <input className={input} value={v.codeBasePath ?? ''} onChange={(e) => set('codeBasePath', e.target.value)} />
       </Field>
-      <Field label="Prisma schema">
+      <Field label={t('ws.prisma')}>
         <input className={input} value={v.dbSchemaPath ?? ''} onChange={(e) => set('dbSchemaPath', e.target.value)} />
       </Field>
-      <Field label="Description">
+      <Field label={t('common.description')}>
         <input className={input} value={v.description ?? ''} onChange={(e) => set('description', e.target.value)} />
       </Field>
-      <Field label="OpenAPI specs" hint="one path per line: committed files or the output of the command">
+      <Field label={t('ws.openapiSpecs')} hint={t('ws.openapiSpecsHint')}>
         <textarea className={input} rows={2} value={specs} onChange={(e) => setSpecs(e.target.value)} />
       </Field>
       <div className="col-span-3 grid grid-cols-3 gap-3 rounded border border-border bg-surface/60 p-3">
         <div className="col-span-3 text-xs font-medium text-muted">
-          OpenAPI generation <span className="font-normal text-meta">— optional; the command runs on your machine when you press “Generate OpenAPI”</span>
+          {t('ws.openapiGeneration')} <span className="font-normal text-meta">{t('ws.openapiGenerationLead')}</span>
         </div>
         <div className="col-span-3">
-          <Field label="Command" hint="e.g. pnpm run generate:openapi — executed as written; list its output file in “OpenAPI specs” above">
+          <Field label={t('ws.command')} hint={t('ws.commandHint')}>
             <input
               className={`${input} font-mono`}
               value={gen.command}
@@ -639,34 +672,34 @@ function ComponentForm({
             />
           </Field>
         </div>
-        <Field label="Working directory" hint={`relative to the project root; default: ${v.path || 'source path'}`}>
+        <Field label={t('ws.cwd')} hint={t('ws.cwdHint', { path: v.path || t('ws.sourcePathShort') })}>
           <input className={input} value={gen.cwd} onChange={(e) => setGen({ ...gen, cwd: e.target.value })} />
         </Field>
-        <Field label="Timeout, seconds" hint="default 120">
+        <Field label={t('ws.timeout')} hint={t('ws.timeoutHint')}>
           <input className={input} type="number" min={1} max={3600} value={gen.timeoutSec} onChange={(e) => setGen({ ...gen, timeoutSec: e.target.value })} />
         </Field>
       </div>
-      <Field label="Catalog folder" hint={value.id ? 'fixed after creation' : `default: ${project.catalogRoot}/<path>`}>
+      <Field label={t('ws.catalogFolder')} hint={value.id ? t('ws.catalogFixed') : t('ws.catalogDefault', { path: `${project.catalogRoot}/<path>` })}>
         <input className={input} value={v.catalog ?? ''} disabled={Boolean(value.id)} onChange={(e) => set('catalog', e.target.value)} />
       </Field>
       <div className="col-span-3">
-        <span className="text-xs font-medium text-muted">Depends on</span>
+        <span className="text-xs font-medium text-muted">{t('ws.dependsOn')}</span>
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-          {others.length === 0 && <span className="text-xs text-meta">no other components</span>}
+          {others.length === 0 && <span className="text-xs text-meta">{t('ws.noOthers')}</span>}
           {others.map((c) => (
             <label key={c.id} className="text-xs flex items-center gap-1">
               <input type="checkbox" checked={Boolean(v.dependsOn?.includes(c.id))} onChange={() => toggleDep(c.id)} />
-              {c.name} <span className="text-meta">({c.kind})</span>
+              {c.name} <span className="text-meta">({t(`ws.kind.${c.kind}`)})</span>
             </label>
           ))}
         </div>
       </div>
       <div className="col-span-3 flex justify-end gap-2">
         <button type="button" className={btn} onClick={onCancel}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button type="submit" className={primary}>
-          Save
+          {t('common.save')}
         </button>
       </div>
     </form>

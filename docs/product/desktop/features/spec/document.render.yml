@@ -23,15 +23,59 @@ requirements:
     text: Problems are shown next to the affected feature
   - id: R3
     text: 'Fields marked x-audience: agent are left out'
-open_questions:
-  - id: Q1
-    question: 'Language of the human spec: one per project, or Russian for people and English for agents?'
-    owner: atai
+  - id: R4
+    text: The spec is shown in every project language; untranslated text is marked with the primary language
 tickets:
   - PRODUCTCREATOR-19
   - PRODUCTCREATOR-35
+  - PRODUCTCREATOR-37
 screens:
   - id: S1
     title: The generated spec on the Doc page
     path: /doc
     wait: article
+decisions:
+  - id: D1
+    decision: One human spec per project language; one agent bundle in the primary language
+    reason: People read their language, agents need one stable source; translations are optional, so missing ones fall back to the primary text (PRODUCTCREATOR-37)
+    date: '2026-11-28'
+    status: accepted
+i18n:
+  ru:
+    name: ТЗ для людей
+    description: Страница Doc показывает ТЗ для людей, построенное по модели, и экспортирует его в Markdown/HTML/PDF.
+    requirements:
+      R1:
+        text: ТЗ с ошибками сообщает об этом в начале
+      R2:
+        text: Проблемы показаны рядом с функцией, к которой относятся
+      R3:
+        text: 'Поля с x-audience: agent не выводятся'
+      R4:
+        text: ТЗ показывается на каждом языке проекта; непереведённый текст помечен основным языком
+    screens:
+      S1:
+        title: Сгенерированное ТЗ на странице Doc
+    decisions:
+      D1:
+        decision: Отдельное ТЗ для людей на каждом языке проекта; один пакет для агентов на основном языке
+        reason: Люди читают на своём языке, агентам нужен один стабильный источник; переводы необязательны, поэтому вместо отсутствующих показывается основной текст (PRODUCTCREATOR-37)
+    _source:
+      name: d50fad81
+      description: 4eaf41e9
+      requirements:
+        R1:
+          text: 71b913b9
+        R2:
+          text: bc5b0433
+        R3:
+          text: bae11980
+        R4:
+          text: bd43d03f
+      decisions:
+        D1:
+          decision: a0a2530b
+          reason: ec23f00d
+      screens:
+        S1:
+          title: d252d5bc

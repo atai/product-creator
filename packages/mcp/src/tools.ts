@@ -313,6 +313,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       const p = resolveProject(host, project);
       return {
         id: p.id, slug: p.slug, name: p.name, description: p.description,
+        languages: p.languages ?? [p.spec?.language ?? 'en'], i18n: p.i18n,
         vision: p.vision, goals: p.goals ?? [], actors: p.actors ?? [], glossary: p.glossary ?? [], tracker: p.tracker,
         components: p.components.map((c) => ({ slug: c.slug, kind: c.kind, name: c.name })),
       };
@@ -325,12 +326,12 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       title: 'Read the generated spec',
       description:
         'The spec (ТЗ) generated from the catalog, for agents. Without `entry`: manifest.json (product context, components, counts, ready=false when the model has errors, the list of entries with their chunk file, and all issues). With `entry` (a `file` from the manifest, e.g. features/catalog.feature.edit.json): that chunk — the feature with requirements, acceptance (verify commands), code places, the business objects it uses with their fields, callers, workflows and its issues. Generated on every call; nothing is written. Use `human: true` for the Markdown people read.',
-      input: { project: projectArg, entry: z.string().optional(), human: z.boolean().optional() },
+      input: { project: projectArg, entry: z.string().optional(), human: z.boolean().optional(), language: z.string().optional().describe('Language of the human view (one of the project languages; default: primary)') },
     },
-    async ({ project, entry, human }) => {
+    async ({ project, entry, human, language }) => {
       const p = resolveProject(host, project);
       const query = `project=${encodeURIComponent(p.id)}`;
-      if (human) return api(host, 'GET', `/api/spec?${query}`);
+      if (human) return api(host, 'GET', `/api/spec?${query}${language ? `&language=${encodeURIComponent(language)}` : ''}`);
       return api(host, 'GET', `/api/spec?${query}&entry=${encodeURIComponent(entry ?? 'manifest.json')}`);
     }
   );
@@ -557,6 +558,8 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
         actors: z.array(z.object({ id: z.string(), name: z.string(), description: z.string().optional() })).optional(),
         glossary: z.array(z.object({ term: z.string(), definition: z.string() })).optional(),
         tracker: z.object({ issueUrl: z.string() }).nullable().optional(),
+        languages: z.array(z.string()).nullable().optional().describe('Languages of the content, first = primary, e.g. ["ru", "en"]'),
+        i18n: z.record(z.string(), z.record(z.string(), z.unknown())).nullable().optional().describe('Translations of the product context: { <lang>: { description, vision, goals: { G1: { text } }, actors: { <id>: { name, description } }, glossary: { <term>: { definition } } } }'),
         screenshots: z
           .object({
             baseUrl: z.string().optional(),
@@ -637,7 +640,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Update a catalog entry',
       write: true,
-      description: 'Change fields of an existing entry. `patch` is merged into the stored card at the top level (a null value removes a field); the id cannot change. The result is validated before writing; a change that adds model errors is rejected with the issues.',
+      description: 'Change fields of an existing entry. `patch` is merged into the stored card at the top level (a null value removes a field); the id cannot change. Translations: patch `i18n` with { <lang>: { name, description, requirements: { R1: { text } }, … } } (the translatable fields of get_schema, items keyed by id); fingerprints are set on save. The result is validated before writing; a change that adds model errors is rejected with the issues.',
       input: { project: projectArg, kind: kindSchema, id: z.string(), patch: z.record(z.string(), z.unknown()), component: componentArg.optional() },
     },
     async ({ project, kind: kindArg, id, patch, component }) => {
