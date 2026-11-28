@@ -1,7 +1,7 @@
 {
   "name": "desktop",
   "productName": "Product Creator",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "private": true,
   "description": "Product Creator desktop app (Electron). Opens a project folder and manages its feature catalog. https://github.com/atai/product-creator · https://ecooz.net",
   "main": "out/main/index.js",

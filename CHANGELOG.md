@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-28
+
+### Added
+- Add product vision, goals, actors, glossary, and tracker to product-creator.yml ([91bf27e](https://github.com/atai/product-creator/commit/91bf27e4a0464e9474ee8f60e7add29687667adc))
+- Add catalog lint command and update CI workflow for product catalog validation ([b35d175](https://github.com/atai/product-creator/commit/b35d1750f26a14d64ea75b362a97c0a35f5a3741))
+
+### Changed
+- Update spec documentation to clarify screenshot capture behavior ([755114f](https://github.com/atai/product-creator/commit/755114f6a3b9c8ca8cb17504aa7899e1c47a268b))
+- Implement screenshot capture functionality and enhance spec generation ([0bb4c50](https://github.com/atai/product-creator/commit/0bb4c5078fa95d01b900cd13991e0803eda7432d))
+- Enhance graph layout and edge label handling ([f0cf523](https://github.com/atai/product-creator/commit/f0cf5239e5511b09b30257d001b747b28d0cd544))
+- Update dependencies and enhance graph visualization features ([774aa56](https://github.com/atai/product-creator/commit/774aa5674d0d9dfdbc0e2dc1e3a8119ff8101417))
+- Implement spec generation and documentation features ([17817f3](https://github.com/atai/product-creator/commit/17817f32d1d52a518dee1c98bf73ddb94369b946))
+- Enhance data model and MCP documentation with product context and API updates ([1250f66](https://github.com/atai/product-creator/commit/1250f66f7ae7b88203d3e9c6c773844d928e5d99))
+- Enhance feature and workflow management with tickets and code references ([7162c0f](https://github.com/atai/product-creator/commit/7162c0fd177bc9baeb72e9057da79beba398b1e0))
+- Enhance FeatureForm and validation with spec fields support ([24337f2](https://github.com/atai/product-creator/commit/24337f26eca246d25d3ce5b3a2540d97ab243cf2))
+
+### Removed
+- PRODUCTCREATOR-32 Feature spec fields, lifecycle draft/approved/implemented/deprecated/removed, keep unknown card fields on read. ([ddfec25](https://github.com/atai/product-creator/commit/ddfec25ea5cc323eabc15df9d9186bdca0fd9b38))
+- Remove deprecated sync mapping and feature YAML files for args, settings, updater, userData, and hooks from the desktop product documentation. ([04671de](https://github.com/atai/product-creator/commit/04671def80aea67c7b097845aafeec44ca23f7fd))
+
 ## [0.1.5] - 2026-11-27
 
 ### Removed
