@@ -1,7 +1,8 @@
 import { getStorage, type FunctionStorage } from '../../../storage';
 import logger from '../../../logger';
 import { DEFAULT_SCREENSHOT_TIMEOUT_SEC, readProject, type ProjectModel } from '../../../project/model';
-import { captureScreens, screensRequest, type CaptureReport } from '../../../screens/index';
+import { captureScreens, screensRequest } from '../../../screens/index';
+import { cancelAllCaptures, captureRuns, captureStopBudgetMs, type CaptureRun } from '../../../screens/runs';
 
 /**
  * Screenshot capture of a project (PRODUCTCREATOR-36). A run takes minutes (services, seeding, a browser), so
@@ -10,17 +11,8 @@ import { captureScreens, screensRequest, type CaptureReport } from '../../../scr
  *   GET    /api/screens?project=<id>        { configured, screens, running, log, report? }
  *   DELETE /api/screens?project=<id>        cancel the running capture
  */
-interface Run {
-  controller: AbortController;
-  running: boolean;
-  /** Resolves when the run has ended, teardown included */
-  done: Promise<void>;
-  /** Longest time stopping the run can take after a cancel: services, then every teardown command */
-  stopBudgetMs: number;
-  log: string;
-  report?: CaptureReport;
-}
-const runs = new Map<string, Run>();
+type Run = CaptureRun;
+const runs = captureRuns;
 const MAX_LOG = 100_000;
 
 function projectOf(storage: FunctionStorage, id: string | null | undefined): ProjectModel | Response {
@@ -93,14 +85,4 @@ export async function DELETE(request: Request) {
 /** Background services are given this long to exit when a run stops (startBackground) */
 const SERVICE_STOP_MS = 5000;
 
-/** Time the running captures may need to stop: 0 when none runs (app quit decides how long to wait) */
-export function captureStopBudgetMs(): number {
-  return Math.max(0, ...[...runs.values()].filter((r) => r.running).map((r) => r.stopBudgetMs));
-}
-
-/** Cancel every running capture and wait until their services are stopped and teardown commands have run (app quit) */
-export async function cancelAllCaptures(): Promise<void> {
-  const running = [...runs.values()].filter((r) => r.running);
-  for (const run of running) run.controller.abort();
-  await Promise.all(running.map((r) => r.done));
-}
+export { cancelAllCaptures, captureStopBudgetMs };

@@ -48,6 +48,7 @@ Headless smoke test of the desktop app (`PC_SMOKE_TEST=1 ...`) is described in `
 
 - The app dogfoods itself. `product-creator.yml` + `docs/product/**/*.pc.yml` are this repo's own catalog. Edit them through the app or keep them schema-valid (`packages/core/schema`).
 - Opening a folder in the app for the first time writes `product-creator.yml` and `*.pc.yml` into it. Experiment on a copy (`git clone --local <repo> /tmp/copy`).
+- `pnpm desktop:build` and `pnpm dev` write the same `apps/desktop/out`. Building while a dev instance runs replaces its chunk files, and the running app later fails with `MODULE_NOT_FOUND` (e.g. on quit). Check `ps` for `electron-vite dev` and do not build while it runs; ask first.
 - Dev runs use a separate userData folder (`Product Creator Dev`). `PC_USER_DATA_DIR=<dir>` overrides it. Build per-app paths from `userData`, never from home/appData directly.
 
 ## Secrets

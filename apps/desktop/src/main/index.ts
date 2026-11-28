@@ -5,6 +5,7 @@ import { deleteComponent, importNewComponents, readProject, saveComponent, updat
 import { loginShellPath, OpenApiGenerationManager } from '@pc/core/interfaces/generator';
 import { setCommandEnv } from '@pc/core/process/command';
 import { captureAppScreens } from './screens';
+import { cancelAllCaptures, captureStopBudgetMs } from '@pc/core/screens/runs';
 import { migrateProject, summarizeMigration } from '@pc/core/catalog/migrate';
 import { IPC, type ApiRequest, type ApiResponse, type ComponentInput, type EditResult, type ProjectPatch } from '../shared/ipc';
 import { parseProjectArgs, defaultProjectFolder } from './args';
@@ -95,7 +96,6 @@ async function shutdown() {
   clearTimeout(workspaceChangedTimer);
   generation.cancelAll();
   // a running screenshot capture is cancelled; shutdown waits for its services and teardown (PRODUCTCREATOR-36)
-  const { cancelAllCaptures } = await import('@pc/core/http/routes/screens/route');
   await cancelAllCaptures();
   relay.stop();
   await mcp.stop();
@@ -466,7 +466,6 @@ if (!app.requestSingleInstanceLock()) {
     shutdownStarted = true;
     void (async () => {
       try {
-        const { captureStopBudgetMs } = await import('@pc/core/http/routes/screens/route');
         const captureMs = captureStopBudgetMs();
         if (captureMs > 0 && Notification.isSupported()) {
           new Notification({ title: 'Product Creator', body: 'Stopping the screenshot run: services and teardown commands are finishing.' }).show();
