@@ -1,0 +1,21 @@
+{
+  "kind": "workflow",
+  "component": "core",
+  "workflow": {
+    "workflow": "spec.release",
+    "name": "Release a spec",
+    "description": "Design checks pass, then the agent bundle and the human spec are generated.",
+    "lifecycle": "draft",
+    "steps": [
+      "validation.design.check",
+      "spec.bundle.generate",
+      "spec.document.render"
+    ],
+    "compensations": {},
+    "tickets": [
+      "PRODUCTCREATOR-34",
+      "PRODUCTCREATOR-35"
+    ]
+  },
+  "issues": []
+}

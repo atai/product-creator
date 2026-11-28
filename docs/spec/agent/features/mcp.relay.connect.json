@@ -1,0 +1,85 @@
+{
+  "kind": "feature",
+  "component": "mcp",
+  "feature": {
+    "id": "mcp.relay.connect",
+    "name": "Reach the app remotely through the relay",
+    "bounded_context": "mcp",
+    "entity": "relay",
+    "action": "connect",
+    "lifecycle": "implemented",
+    "description": "Remote agents reach the local MCP server through the Emperor relay; scope is the stricter of the bot token and the local setting.",
+    "calls": [
+      "mcp.server.serve"
+    ],
+    "source_file": "relay/client.ts",
+    "objects": [
+      {
+        "id": "mcp_settings",
+        "access": "read"
+      }
+    ],
+    "actors": [
+      "ai_agent"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "The effective scope is the stricter of the relay token and the local setting"
+      },
+      {
+        "id": "R2",
+        "text": "Empty or typeless local responses are passed as 204"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2"
+        ],
+        "text": "Handshake, scope and relayed requests behave as specified",
+        "verify": "pnpm --filter @pc/mcp test -- relay"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-20",
+      "PRODUCTCREATOR-25",
+      "PRODUCTCREATOR-27"
+    ]
+  },
+  "objects": [
+    {
+      "id": "mcp_settings",
+      "access": "read",
+      "name": "MCP settings",
+      "fields": [
+        {
+          "name": "enabled",
+          "type": "boolean"
+        },
+        {
+          "name": "scope",
+          "type": "enum<read|write>"
+        },
+        {
+          "name": "port",
+          "type": "int"
+        },
+        {
+          "name": "token",
+          "type": "string",
+          "description": "Bearer token"
+        },
+        {
+          "name": "relayEnabled",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

@@ -1,0 +1,272 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "validation.model.validate",
+    "name": "Validate the catalog",
+    "bounded_context": "validation",
+    "entity": "model",
+    "action": "validate",
+    "lifecycle": "implemented",
+    "description": "Checks the whole model: schemas, ids, references, field types, duplicates, spec items. One implementation for the UI, MCP and CLI.",
+    "source_file": "validation/model.ts",
+    "objects": [
+      {
+        "id": "feature",
+        "access": "read"
+      },
+      {
+        "id": "business_object",
+        "access": "read"
+      },
+      {
+        "id": "workflow",
+        "access": "read"
+      },
+      {
+        "id": "validation_issue",
+        "access": "write"
+      }
+    ],
+    "actors": [
+      "ai_agent",
+      "ci",
+      "product_owner"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "References of calls, objects, steps and compensations resolve across all loaded projects"
+      },
+      {
+        "id": "R2",
+        "text": "Every issue names the entry, the field and a message a person understands"
+      },
+      {
+        "id": "R3",
+        "text": "Streams are validated too",
+        "priority": "should"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2"
+        ],
+        "text": "A catalog with unknown references, types and duplicates reports each with code and field",
+        "verify": "pnpm --filter @pc/core test -- validation"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "C1",
+        "kind": "performance",
+        "text": "Validating a catalog of 1000 entries takes under 1 s"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "core",
+        "file": "http/routes/validation/route.ts",
+        "role": "API"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-29",
+      "PRODUCTCREATOR-32"
+    ]
+  },
+  "objects": [
+    {
+      "id": "feature",
+      "access": "read",
+      "name": "Feature",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "<bounded_context>.<entity>.<action>"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "calls",
+          "type": "feature[]"
+        },
+        {
+          "name": "objects",
+          "type": "business_object[]",
+          "description": "With access read | write"
+        },
+        {
+          "name": "source_file",
+          "type": "string?"
+        },
+        {
+          "name": "actors",
+          "type": "string[]"
+        },
+        {
+          "name": "requirements",
+          "type": "json"
+        },
+        {
+          "name": "acceptance",
+          "type": "json"
+        },
+        {
+          "name": "constraints",
+          "type": "json"
+        },
+        {
+          "name": "decisions",
+          "type": "json"
+        },
+        {
+          "name": "open_questions",
+          "type": "json"
+        },
+        {
+          "name": "code_refs",
+          "type": "json",
+          "description": "component, file, symbol, role"
+        },
+        {
+          "name": "tickets",
+          "type": "string[]"
+        }
+      ]
+    },
+    {
+      "id": "business_object",
+      "access": "read",
+      "name": "Business object",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "fields",
+          "type": "json",
+          "description": "name, type, description"
+        },
+        {
+          "name": "tables",
+          "type": "json?",
+          "description": "Physical tables (from Prisma)"
+        }
+      ]
+    },
+    {
+      "id": "workflow",
+      "access": "read",
+      "name": "Workflow",
+      "fields": [
+        {
+          "name": "workflow",
+          "type": "string",
+          "description": "<context>.<name>"
+        },
+        {
+          "name": "name",
+          "type": "string?"
+        },
+        {
+          "name": "steps",
+          "type": "feature[]"
+        },
+        {
+          "name": "compensations",
+          "type": "json?"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "tickets",
+          "type": "string[]"
+        }
+      ]
+    },
+    {
+      "id": "validation_issue",
+      "access": "write",
+      "name": "Validation issue",
+      "fields": [
+        {
+          "name": "severity",
+          "type": "enum<error|warning>"
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "description": "e.g. unknown_feature, duplicate_item_id"
+        },
+        {
+          "name": "kind",
+          "type": "enum<feature|workflow|business_object>"
+        },
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Id of the entry with the problem"
+        },
+        {
+          "name": "field",
+          "type": "string?"
+        },
+        {
+          "name": "message",
+          "type": "text"
+        },
+        {
+          "name": "file",
+          "type": "string?"
+        },
+        {
+          "name": "component",
+          "type": "component?"
+        }
+      ]
+    }
+  ],
+  "calledBy": [
+    "catalog.problems.show",
+    "mcp.plan.check",
+    "spec.bundle.generate",
+    "spec.document.render",
+    "validation.catalog.lint",
+    "validation.design.check",
+    "validation.plan.check"
+  ],
+  "workflows": [
+    "project.onboard"
+  ],
+  "issues": []
+}

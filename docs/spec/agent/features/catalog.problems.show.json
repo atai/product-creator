@@ -1,0 +1,81 @@
+{
+  "kind": "feature",
+  "component": "desktop",
+  "feature": {
+    "id": "catalog.problems.show",
+    "name": "Show the problems of the catalog",
+    "bounded_context": "catalog",
+    "entity": "problems",
+    "action": "show",
+    "lifecycle": "implemented",
+    "description": "The Problems page lists validation errors and warnings with links to the entries.",
+    "calls": [
+      "validation.model.validate"
+    ],
+    "source_file": "renderer/src/pages/problems.tsx",
+    "objects": [
+      {
+        "id": "validation_issue",
+        "access": "read"
+      }
+    ],
+    "actors": [
+      "product_owner"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Errors and warnings are grouped by entry and link to it"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-29"
+    ]
+  },
+  "objects": [
+    {
+      "id": "validation_issue",
+      "access": "read",
+      "name": "Validation issue",
+      "fields": [
+        {
+          "name": "severity",
+          "type": "enum<error|warning>"
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "description": "e.g. unknown_feature, duplicate_item_id"
+        },
+        {
+          "name": "kind",
+          "type": "enum<feature|workflow|business_object>"
+        },
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Id of the entry with the problem"
+        },
+        {
+          "name": "field",
+          "type": "string?"
+        },
+        {
+          "name": "message",
+          "type": "text"
+        },
+        {
+          "name": "file",
+          "type": "string?"
+        },
+        {
+          "name": "component",
+          "type": "component?"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

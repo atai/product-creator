@@ -1,0 +1,59 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "validation_issue",
+    "name": "Validation issue",
+    "description": "A problem of the model found by validation (not stored; computed)",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "active": true,
+    "fields": [
+      {
+        "name": "severity",
+        "type": "enum<error|warning>"
+      },
+      {
+        "name": "code",
+        "type": "string",
+        "description": "e.g. unknown_feature, duplicate_item_id"
+      },
+      {
+        "name": "kind",
+        "type": "enum<feature|workflow|business_object>"
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "description": "Id of the entry with the problem"
+      },
+      {
+        "name": "field",
+        "type": "string?"
+      },
+      {
+        "name": "message",
+        "type": "text"
+      },
+      {
+        "name": "file",
+        "type": "string?"
+      },
+      {
+        "name": "component",
+        "type": "component?"
+      }
+    ]
+  },
+  "usedBy": [
+    {
+      "id": "catalog.problems.show",
+      "access": "read"
+    },
+    {
+      "id": "validation.model.validate",
+      "access": "write"
+    }
+  ],
+  "issues": []
+}

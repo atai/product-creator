@@ -13,6 +13,7 @@ import * as r_apps__id__sync_schema_start from './routes/apps/[id]/sync-schema/s
 import * as r_apps__id__sync_schema_status__syncId_ from './routes/apps/[id]/sync-schema/status/[syncId]/route';
 import * as r_apps from './routes/apps/route';
 import * as r_apply_plan from './routes/apply-plan/route';
+import * as r_spec from './routes/spec/route';
 import * as r_business_objects from './routes/business-objects/route';
 import * as r_card from './routes/card/route';
 import * as r_card_root from './routes/card-root/route';
@@ -88,6 +89,7 @@ export const routes: RouteEntry[] = [
   // model checks (PRODUCTCREATOR-29)
   compile('validate-plan', r_validate_plan as RouteModule),
   compile('apply-plan', r_apply_plan as RouteModule),
+  compile('spec', r_spec as RouteModule),
   compile('validation', r_validation as RouteModule),
   compile('impact', r_impact as RouteModule),
   compile('duplicates', r_duplicates as RouteModule),

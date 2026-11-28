@@ -1,0 +1,93 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "catalog.workflow.edit",
+    "name": "Create and edit a workflow",
+    "bounded_context": "catalog",
+    "entity": "workflow",
+    "action": "edit",
+    "lifecycle": "implemented",
+    "description": "Creates or changes a workflow: ordered steps (features) with compensations.",
+    "calls": [
+      "validation.save.guard"
+    ],
+    "source_file": "http/routes/save-workflow/route.ts",
+    "objects": [
+      {
+        "id": "workflow",
+        "access": "write"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Every step and compensation is an existing feature"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "A step that is not a feature is rejected with unknown_feature",
+        "verify": "pnpm --filter @pc/mcp test"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "desktop",
+        "file": "renderer/src/pages/workflows-id.tsx",
+        "role": "UI"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-7",
+      "PRODUCTCREATOR-33"
+    ]
+  },
+  "objects": [
+    {
+      "id": "workflow",
+      "access": "write",
+      "name": "Workflow",
+      "fields": [
+        {
+          "name": "workflow",
+          "type": "string",
+          "description": "<context>.<name>"
+        },
+        {
+          "name": "name",
+          "type": "string?"
+        },
+        {
+          "name": "steps",
+          "type": "feature[]"
+        },
+        {
+          "name": "compensations",
+          "type": "json?"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "tickets",
+          "type": "string[]"
+        }
+      ]
+    }
+  ],
+  "calledBy": [
+    "mcp.catalog.write"
+  ],
+  "workflows": [],
+  "issues": []
+}

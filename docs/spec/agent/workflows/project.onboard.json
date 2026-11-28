@@ -1,0 +1,23 @@
+{
+  "kind": "workflow",
+  "component": "core",
+  "workflow": {
+    "workflow": "project.onboard",
+    "name": "Onboard a repository",
+    "description": "A repository is opened, its components imported, code and Prisma linked, and the catalog validated.",
+    "lifecycle": "implemented",
+    "steps": [
+      "project.workspace.open",
+      "project.layout.import",
+      "sync.code.link",
+      "sync.schema.import",
+      "validation.model.validate"
+    ],
+    "compensations": {},
+    "tickets": [
+      "PRODUCTCREATOR-8",
+      "PRODUCTCREATOR-30"
+    ]
+  },
+  "issues": []
+}

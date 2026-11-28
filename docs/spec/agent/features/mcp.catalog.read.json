@@ -1,0 +1,201 @@
+{
+  "kind": "feature",
+  "component": "mcp",
+  "feature": {
+    "id": "mcp.catalog.read",
+    "name": "Read the catalog through MCP",
+    "bounded_context": "mcp",
+    "entity": "catalog",
+    "action": "read",
+    "lifecycle": "implemented",
+    "description": "list_projects, get_project, list_components, list_catalog, get_catalog_entry, get_schema, get_object, list_interfaces.",
+    "calls": [
+      "interfaces.operation.list"
+    ],
+    "source_file": "tools.ts",
+    "objects": [
+      {
+        "id": "feature",
+        "access": "read"
+      },
+      {
+        "id": "business_object",
+        "access": "read"
+      },
+      {
+        "id": "workflow",
+        "access": "read"
+      }
+    ],
+    "actors": [
+      "ai_agent"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "An agent can read the schema of a card before writing it"
+      },
+      {
+        "id": "R2",
+        "text": "Lists are compact and paged"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "get_schema(feature) lists the spec fields",
+        "verify": "pnpm --filter @pc/mcp test -- server"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-18",
+      "PRODUCTCREATOR-32",
+      "PRODUCTCREATOR-33"
+    ]
+  },
+  "objects": [
+    {
+      "id": "feature",
+      "access": "read",
+      "name": "Feature",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "<bounded_context>.<entity>.<action>"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "calls",
+          "type": "feature[]"
+        },
+        {
+          "name": "objects",
+          "type": "business_object[]",
+          "description": "With access read | write"
+        },
+        {
+          "name": "source_file",
+          "type": "string?"
+        },
+        {
+          "name": "actors",
+          "type": "string[]"
+        },
+        {
+          "name": "requirements",
+          "type": "json"
+        },
+        {
+          "name": "acceptance",
+          "type": "json"
+        },
+        {
+          "name": "constraints",
+          "type": "json"
+        },
+        {
+          "name": "decisions",
+          "type": "json"
+        },
+        {
+          "name": "open_questions",
+          "type": "json"
+        },
+        {
+          "name": "code_refs",
+          "type": "json",
+          "description": "component, file, symbol, role"
+        },
+        {
+          "name": "tickets",
+          "type": "string[]"
+        }
+      ]
+    },
+    {
+      "id": "business_object",
+      "access": "read",
+      "name": "Business object",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "fields",
+          "type": "json",
+          "description": "name, type, description"
+        },
+        {
+          "name": "tables",
+          "type": "json?",
+          "description": "Physical tables (from Prisma)"
+        }
+      ]
+    },
+    {
+      "id": "workflow",
+      "access": "read",
+      "name": "Workflow",
+      "fields": [
+        {
+          "name": "workflow",
+          "type": "string",
+          "description": "<context>.<name>"
+        },
+        {
+          "name": "name",
+          "type": "string?"
+        },
+        {
+          "name": "steps",
+          "type": "feature[]"
+        },
+        {
+          "name": "compensations",
+          "type": "json?"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "tickets",
+          "type": "string[]"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [
+    "agent.plan_change"
+  ],
+  "issues": []
+}

@@ -109,7 +109,7 @@ describe('tools (read-write token)', () => {
   it('lists the tools including write tools', async () => {
     const { client } = await connect(bearer());
     const names = (await client.listTools()).tools.map((t) => t.name);
-    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'get_schema', 'get_object', 'find_duplicates', 'impact_of_change', 'validate_plan', 'validate_catalog', 'sync_code_preview', 'get_project', 'update_project', 'apply_plan', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
+    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'get_schema', 'get_object', 'find_duplicates', 'impact_of_change', 'validate_plan', 'validate_catalog', 'sync_code_preview', 'get_project', 'get_spec', 'update_project', 'apply_plan', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
     await client.close();
   });
 
@@ -191,6 +191,24 @@ describe('tools (read-write token)', () => {
 
     const catalog = json(await call('validate_catalog', {}));
     expect(catalog.errors).toBe(0);
+    await client.close();
+  });
+
+  it('serves the generated spec: manifest, chunks, human view (PRODUCTCREATOR-35)', async () => {
+    const { client } = await connect(bearer());
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    const f = { id: 'docs.spec.read', name: 'Read the spec', bounded_context: 'docs', entity: 'spec', action: 'read', owner: 'team-a', lifecycle: 'approved', requirements: [{ id: 'R1', text: 'An agent reads one chunk' }], acceptance: [{ id: 'A1', covers: ['R1'], text: 'get_spec returns the chunk', verify: 'pnpm test' }] };
+    expect((await call('apply_plan', { changes: [{ kind: 'feature', data: f, component: 'svc' }] })).isError).toBeFalsy();
+    const manifest = json(await call('get_spec', {}));
+    expect(manifest.format).toBe('product-creator.spec/1');
+    const entry = manifest.entries.find((e: { id: string }) => e.id === 'docs.spec.read');
+    const chunk = json(await call('get_spec', { entry: entry.file }));
+    expect(chunk.feature.acceptance[0].verify).toBe('pnpm test');
+    expect(chunk.feature.owner).toBeUndefined(); // human-only field
+    const human = json(await call('get_spec', { human: true }));
+    expect(human.markdown).toContain('Read the spec');
+    expect(human.markdown).not.toContain('pnpm test'); // agent-only field
+    expect((await call('get_spec', { entry: 'features/nope.json' })).isError).toBe(true);
     await client.close();
   });
 

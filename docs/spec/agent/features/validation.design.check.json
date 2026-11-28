@@ -1,0 +1,83 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "validation.design.check",
+    "name": "Check the design, strictness by lifecycle",
+    "bounded_context": "validation",
+    "entity": "design",
+    "action": "check",
+    "lifecycle": "approved",
+    "description": "Design-level checks: architecture (calls vs dependsOn, cycles), events, object usage, lifecycle consistency, completeness, code links. Warnings in draft, errors from approved on.",
+    "calls": [
+      "validation.model.validate"
+    ],
+    "actors": [
+      "ai_agent",
+      "ci",
+      "product_owner"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "A feature calling a feature of a component it does not depend on is an error"
+      },
+      {
+        "id": "R2",
+        "text": "An approved feature without requirements, with a requirement not covered by acceptance, or with open questions is an error"
+      },
+      {
+        "id": "R3",
+        "text": "An approved feature calling a draft feature is an error"
+      },
+      {
+        "id": "R4",
+        "text": "An implemented feature without an existing source_file is an error"
+      },
+      {
+        "id": "R5",
+        "text": "References to removed entries are errors; new references to deprecated ones are warnings"
+      },
+      {
+        "id": "R6",
+        "text": "In draft every design problem is a warning"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R2",
+          "R6"
+        ],
+        "given": "the same incomplete feature",
+        "when": "it is draft, then approved",
+        "then": "the problem is a warning, then an error"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R1"
+        ],
+        "text": "A core feature calling a desktop feature is reported (core does not depend on desktop)"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "Strictness depends on lifecycle",
+        "reason": "Drafting is never blocked; agreed work must be complete",
+        "date": "2026-11-28"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-34"
+    ]
+  },
+  "objects": [],
+  "calledBy": [],
+  "workflows": [
+    "spec.release"
+  ],
+  "issues": []
+}

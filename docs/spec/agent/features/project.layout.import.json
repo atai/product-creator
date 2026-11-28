@@ -1,0 +1,179 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "project.layout.import",
+    "name": "Import services and libraries on first open",
+    "bounded_context": "project",
+    "entity": "layout",
+    "action": "import",
+    "lifecycle": "implemented",
+    "description": "When a repository is opened for the first time, services and libraries are found from its layout and written to product-creator.yml and *.pc.yml.",
+    "source_file": "project/model.ts",
+    "objects": [
+      {
+        "id": "project",
+        "access": "write"
+      },
+      {
+        "id": "component",
+        "access": "write"
+      }
+    ],
+    "actors": [
+      "product_owner"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Services and libraries are discovered from the repository layout (apps/, packages/, …)"
+      },
+      {
+        "id": "R2",
+        "text": "Ids are UUIDs that never change after the import"
+      },
+      {
+        "id": "R3",
+        "text": "Later opens read the YAML files and do not import again"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2"
+        ],
+        "given": "a monorepo opened for the first time",
+        "when": "the import runs",
+        "then": "product-creator.yml and one *.pc.yml per component exist with UUIDs",
+        "verify": "pnpm --filter @pc/core test -- model"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R3"
+        ],
+        "text": "Reopening the folder changes no file",
+        "verify": "pnpm --filter @pc/core test -- model"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-8",
+      "PRODUCTCREATOR-12",
+      "PRODUCTCREATOR-13"
+    ]
+  },
+  "objects": [
+    {
+      "id": "project",
+      "access": "write",
+      "name": "Project",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "description": "Stable id, never changes"
+        },
+        {
+          "name": "slug",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "catalogRoot",
+          "type": "string",
+          "description": "Folder of the component catalogs, e.g. docs/product"
+        },
+        {
+          "name": "components",
+          "type": "component[]"
+        },
+        {
+          "name": "vision",
+          "type": "text?"
+        },
+        {
+          "name": "goals",
+          "type": "json",
+          "description": "G1… with text"
+        },
+        {
+          "name": "actors",
+          "type": "json",
+          "description": "id, name, description"
+        },
+        {
+          "name": "glossary",
+          "type": "json"
+        },
+        {
+          "name": "tracker",
+          "type": "json?",
+          "description": "issueUrl with {id}"
+        }
+      ]
+    },
+    {
+      "id": "component",
+      "access": "write",
+      "name": "Component",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "kind",
+          "type": "enum<service|library>"
+        },
+        {
+          "name": "slug",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "description": "Code folder"
+        },
+        {
+          "name": "codeBasePath",
+          "type": "string?",
+          "description": "Base of source_file paths"
+        },
+        {
+          "name": "catalog",
+          "type": "string",
+          "description": "Catalog folder"
+        },
+        {
+          "name": "dependsOn",
+          "type": "component[]"
+        },
+        {
+          "name": "openapiGenerate",
+          "type": "string?",
+          "description": "Command that writes the OpenAPI spec"
+        }
+      ]
+    }
+  ],
+  "calledBy": [
+    "project.workspace.open"
+  ],
+  "workflows": [
+    "project.onboard"
+  ],
+  "issues": []
+}

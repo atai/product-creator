@@ -178,7 +178,7 @@ Views
 * **Problems** — validation errors and warnings of the catalog (see below), with links to the entries.
 * **Presentation → Graph** — features connected by emitted/consumed events.
 * **Presentation → Matrix** — entity × action coverage per bounded context.
-* **Presentation → Doc** — placeholder for the generated specification (ТЗ) bundle.
+* **Presentation → Doc** — the specification (ТЗ) generated from the catalog, see :doc:`spec`.
 
 .. _validation:
 

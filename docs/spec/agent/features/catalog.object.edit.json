@@ -1,0 +1,85 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "catalog.object.edit",
+    "name": "Create and edit a business object",
+    "bounded_context": "catalog",
+    "entity": "object",
+    "action": "edit",
+    "lifecycle": "implemented",
+    "description": "Creates or changes a business object with its fields; field types are scalars or other business objects.",
+    "calls": [
+      "validation.save.guard"
+    ],
+    "source_file": "http/routes/save-business-object/route.ts",
+    "objects": [
+      {
+        "id": "business_object",
+        "access": "write"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "A field type is a scalar (string, int, uuid, enum<a|b>, …) or an existing business object"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "A field of unknown type is rejected with unknown_type",
+        "verify": "pnpm --filter @pc/core test -- validation"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "desktop",
+        "file": "renderer/src/pages/business-objects-new.tsx",
+        "role": "UI"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-7"
+    ]
+  },
+  "objects": [
+    {
+      "id": "business_object",
+      "access": "write",
+      "name": "Business object",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "fields",
+          "type": "json",
+          "description": "name, type, description"
+        },
+        {
+          "name": "tables",
+          "type": "json?",
+          "description": "Physical tables (from Prisma)"
+        }
+      ]
+    }
+  ],
+  "calledBy": [
+    "mcp.catalog.write"
+  ],
+  "workflows": [],
+  "issues": []
+}

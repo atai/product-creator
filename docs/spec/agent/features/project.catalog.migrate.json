@@ -1,0 +1,127 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "project.catalog.migrate",
+    "name": "Move functions/ folders to features/",
+    "bounded_context": "project",
+    "entity": "catalog",
+    "action": "migrate",
+    "lifecycle": "implemented",
+    "description": "Moves the old functions/ catalog folders to features/ without overwriting anything (app banner and `product-creator migrate`).",
+    "source_file": "catalog/migrate.ts",
+    "objects": [
+      {
+        "id": "feature",
+        "access": "write"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Files move from functions/ to features/ of every component"
+      },
+      {
+        "id": "R2",
+        "text": "A file with different content in features/ is a conflict: it stays and is reported"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2"
+        ],
+        "text": "migrate moves files, removes identical copies and reports conflicts",
+        "verify": "pnpm --filter desktop test -- cli"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "desktop",
+        "file": "main/cli.ts",
+        "symbol": "runCli",
+        "role": "CLI"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-28"
+    ]
+  },
+  "objects": [
+    {
+      "id": "feature",
+      "access": "write",
+      "name": "Feature",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "<bounded_context>.<entity>.<action>"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "calls",
+          "type": "feature[]"
+        },
+        {
+          "name": "objects",
+          "type": "business_object[]",
+          "description": "With access read | write"
+        },
+        {
+          "name": "source_file",
+          "type": "string?"
+        },
+        {
+          "name": "actors",
+          "type": "string[]"
+        },
+        {
+          "name": "requirements",
+          "type": "json"
+        },
+        {
+          "name": "acceptance",
+          "type": "json"
+        },
+        {
+          "name": "constraints",
+          "type": "json"
+        },
+        {
+          "name": "decisions",
+          "type": "json"
+        },
+        {
+          "name": "open_questions",
+          "type": "json"
+        },
+        {
+          "name": "code_refs",
+          "type": "json",
+          "description": "component, file, symbol, role"
+        },
+        {
+          "name": "tickets",
+          "type": "string[]"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

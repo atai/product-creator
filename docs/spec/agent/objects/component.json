@@ -1,0 +1,69 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "component",
+    "name": "Component",
+    "description": "A service or library of a project; <catalog>/service.pc.yml or library.pc.yml",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "active": true,
+    "fields": [
+      {
+        "name": "id",
+        "type": "uuid"
+      },
+      {
+        "name": "kind",
+        "type": "enum<service|library>"
+      },
+      {
+        "name": "slug",
+        "type": "string"
+      },
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "path",
+        "type": "string",
+        "description": "Code folder"
+      },
+      {
+        "name": "codeBasePath",
+        "type": "string?",
+        "description": "Base of source_file paths"
+      },
+      {
+        "name": "catalog",
+        "type": "string",
+        "description": "Catalog folder"
+      },
+      {
+        "name": "dependsOn",
+        "type": "component[]"
+      },
+      {
+        "name": "openapiGenerate",
+        "type": "string?",
+        "description": "Command that writes the OpenAPI spec"
+      }
+    ]
+  },
+  "usedBy": [
+    {
+      "id": "interfaces.openapi.generate",
+      "access": "read"
+    },
+    {
+      "id": "project.component.edit",
+      "access": "write"
+    },
+    {
+      "id": "project.layout.import",
+      "access": "write"
+    }
+  ],
+  "issues": []
+}

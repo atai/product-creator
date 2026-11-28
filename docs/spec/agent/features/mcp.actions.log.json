@@ -1,0 +1,62 @@
+{
+  "kind": "feature",
+  "component": "mcp",
+  "feature": {
+    "id": "mcp.actions.log",
+    "name": "Log agent actions",
+    "bounded_context": "mcp",
+    "entity": "actions",
+    "action": "log",
+    "lifecycle": "implemented",
+    "description": "Every tool call is recorded with compacted arguments and shown in the app.",
+    "source_file": "audit.ts",
+    "objects": [
+      {
+        "id": "action_log_entry",
+        "access": "write"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Every tool call, local or relayed, is recorded"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-18"
+    ]
+  },
+  "objects": [
+    {
+      "id": "action_log_entry",
+      "access": "write",
+      "name": "Action log entry",
+      "fields": [
+        {
+          "name": "at",
+          "type": "datetime"
+        },
+        {
+          "name": "tool",
+          "type": "string"
+        },
+        {
+          "name": "args",
+          "type": "json",
+          "description": "Compacted arguments"
+        },
+        {
+          "name": "ok",
+          "type": "boolean"
+        },
+        {
+          "name": "caller",
+          "type": "enum<local|relay>"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

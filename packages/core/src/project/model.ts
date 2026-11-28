@@ -89,6 +89,19 @@ export interface TrackerConfig {
   issueUrl: string;
 }
 
+/**
+ * Spec generation settings (PRODUCTCREATOR-35). `language` is the language the catalog is written in (BCP 47,
+ * default en): headings and labels of the generated spec come from the message catalog of that language.
+ * `output` is the folder the spec is written to, relative to the project root (default docs/spec).
+ */
+export interface SpecSettings {
+  language?: string;
+  output?: string;
+}
+
+export const DEFAULT_SPEC_LANGUAGE = 'en';
+export const DEFAULT_SPEC_OUTPUT = 'docs/spec';
+
 /** Product-level context of a spec (PRODUCTCREATOR-33), stored in product-creator.yml */
 export interface ProductContext {
   vision?: string;
@@ -96,6 +109,7 @@ export interface ProductContext {
   actors?: ProductActor[];
   glossary?: GlossaryTerm[];
   tracker?: TrackerConfig;
+  spec?: SpecSettings;
 }
 
 export const PRODUCT_KEYS = ['vision', 'goals', 'actors', 'glossary', 'tracker'] as const;
@@ -145,6 +159,7 @@ interface RawProjectFile {
   actors?: unknown;
   glossary?: unknown;
   tracker?: unknown;
+  spec?: unknown;
   /** v1 format: inline services */
   services?: Array<Record<string, unknown>>;
 }
@@ -244,9 +259,12 @@ const records = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? v
 const nonEmpty = <T,>(list: T[]): T[] | undefined => (list.length ? list : undefined);
 
 /** Product context from product-creator.yml; malformed items are dropped (the file stays editable by hand) */
-export function readProductContext(raw: { vision?: unknown; goals?: unknown; actors?: unknown; glossary?: unknown; tracker?: unknown }): ProductContext {
+export function readProductContext(raw: { vision?: unknown; goals?: unknown; actors?: unknown; glossary?: unknown; tracker?: unknown; spec?: unknown }): ProductContext {
   const tracker = typeof raw.tracker === 'object' && raw.tracker !== null ? str((raw.tracker as Record<string, unknown>).issueUrl) : undefined;
+  const specRaw = typeof raw.spec === 'object' && raw.spec !== null ? (raw.spec as Record<string, unknown>) : {};
+  const spec: SpecSettings = { ...(str(specRaw.language) ? { language: str(specRaw.language) } : {}), ...(str(specRaw.output) ? { output: str(specRaw.output) } : {}) };
   return {
+    spec: Object.keys(spec).length ? spec : undefined,
     vision: str(raw.vision),
     goals: nonEmpty(records(raw.goals).flatMap((g) => (str(g.id) && str(g.text) ? [{ id: str(g.id) as string, text: str(g.text) as string }] : []))),
     actors: nonEmpty(
@@ -273,6 +291,12 @@ export function assertProductContext(c: ProductContext) {
   unique((c.goals ?? []).map((g) => g.id), 'Goal id');
   unique((c.actors ?? []).map((a) => a.id), 'Actor id');
   unique((c.glossary ?? []).map((t) => t.term), 'Glossary term');
+  if (c.spec?.language && !/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(c.spec.language)) {
+    throw new Error(`spec.language "${c.spec.language}" must be a language tag like en, ru or pt-BR`);
+  }
+  if (c.spec?.output && (path.isAbsolute(c.spec.output) || c.spec.output.split(/[\\/]/).includes('..'))) {
+    throw new Error('spec.output must be a folder inside the project, e.g. docs/spec');
+  }
   if (c.tracker && !(/^https?:\/\//.test(c.tracker.issueUrl) && c.tracker.issueUrl.includes('{id}'))) {
     throw new Error('tracker.issueUrl must be an http(s) URL with {id}, e.g. https://example.youtrack.cloud/issue/{id}');
   }
@@ -342,6 +366,7 @@ export function projectFileContent(project: ProjectModel): string {
       actors: project.actors,
       glossary: project.glossary,
       tracker: project.tracker,
+      spec: project.spec,
     })
   );
 }
@@ -525,6 +550,7 @@ export function openProject(rootDir: string): OpenResult {
 /** Strings: '' clears; product lists: [] clears; tracker: null clears */
 export type ProjectPatch = Partial<Pick<ProjectModel, 'slug' | 'name' | 'description' | 'docs' | 'catalogRoot' | 'vision' | 'goals' | 'actors' | 'glossary'>> & {
   tracker?: TrackerConfig | null;
+  spec?: SpecSettings | null;
 };
 export type ComponentInput = Omit<ComponentModel, 'id' | 'catalog'> & { id?: string; catalog?: string };
 
@@ -545,7 +571,8 @@ export function updateProject(rootDir: string, patch: ProjectPatch): ProjectMode
     if (patch[key] !== undefined) (next as unknown as Record<string, unknown>)[key] = patch[key]?.trim() || undefined;
   }
   // product context (PRODUCTCREATOR-33): normalised like on read, then checked
-  const product = readProductContext({ goals: patch.goals, actors: patch.actors, glossary: patch.glossary, tracker: patch.tracker });
+  const product = readProductContext({ goals: patch.goals, actors: patch.actors, glossary: patch.glossary, tracker: patch.tracker, spec: patch.spec });
+  if (patch.spec !== undefined) next.spec = product.spec;
   if (patch.goals !== undefined) next.goals = product.goals;
   if (patch.actors !== undefined) next.actors = product.actors;
   if (patch.glossary !== undefined) next.glossary = product.glossary;
@@ -629,7 +656,7 @@ export function importNewComponents(rootDir: string): ComponentModel[] {
 /** Map project models to storage entities (projects + apps; app id = component UUID) */
 export function toStorageEntities(projects: ProjectModel[]): { projects: Project[]; apps: AppEntity[] } {
   return {
-    projects: projects.map((p) => ({ id: p.id, name: p.name, description: p.description })),
+    projects: projects.map((p) => ({ id: p.id, name: p.name, description: p.description, root: p.root })),
     apps: projects.flatMap((p) =>
       p.components.map(
         (c): AppEntity => ({

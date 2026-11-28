@@ -1,0 +1,578 @@
+{
+  "format": "product-creator.spec/1",
+  "project": {
+    "id": "18a59566-5bc8-43ac-b24f-8ab132b8f0ec",
+    "slug": "product-creator",
+    "name": "Product Creator",
+    "description": "Feature catalog and traceable product documentation (ТЗ) linked to code",
+    "vision": "Product Creator keeps the logic of a product (features, data, workflows) as YAML next to the code, so people and AI agents plan it together, see planning errors before code is written, and get the spec (ТЗ) generated from the same model.",
+    "goals": [
+      {
+        "id": "G1",
+        "text": "Planning and design errors are visible to people and agents as soon as they are written: in the editor, through MCP and in CI"
+      },
+      {
+        "id": "G2",
+        "text": "Specs for people and for agents are generated from one model and never written twice"
+      },
+      {
+        "id": "G3",
+        "text": "Every feature is traceable to its code, tickets and tests"
+      },
+      {
+        "id": "G4",
+        "text": "Agents plan and change the catalog safely through MCP"
+      }
+    ],
+    "actors": [
+      {
+        "id": "product_owner",
+        "name": "Product owner",
+        "description": "Plans features, approves specs"
+      },
+      {
+        "id": "developer",
+        "name": "Developer",
+        "description": "Builds features, links code, runs sync"
+      },
+      {
+        "id": "ai_agent",
+        "name": "AI agent",
+        "description": "Reads and changes the catalog through MCP, locally or through the relay"
+      },
+      {
+        "id": "ci",
+        "name": "CI",
+        "description": "Checks the catalog on every push"
+      },
+      {
+        "id": "client",
+        "name": "Client",
+        "description": "Reads the human spec"
+      }
+    ],
+    "glossary": [
+      {
+        "term": "Feature",
+        "definition": "A business capability of the product (formerly function); one YAML file with its spec and links to code"
+      },
+      {
+        "term": "Business object",
+        "definition": "A data entity of the product with typed fields"
+      },
+      {
+        "term": "Workflow",
+        "definition": "An ordered sequence of features with compensations"
+      },
+      {
+        "term": "Component",
+        "definition": "A service or library of a project; each has its own catalog folder"
+      },
+      {
+        "term": "Catalog",
+        "definition": "The YAML files of features, business objects and workflows of a component"
+      },
+      {
+        "term": "Lifecycle",
+        "definition": "draft → approved → implemented → deprecated → removed; each status has its own rules"
+      },
+      {
+        "term": "Plan",
+        "definition": "A set of proposed catalog changes, checked as a whole before anything is written"
+      },
+      {
+        "term": "Spec (ТЗ)",
+        "definition": "The document generated from the model: a human view and an agent bundle"
+      }
+    ],
+    "tracker": {
+      "issueUrl": "https://ecooz.youtrack.cloud/issue/{id}"
+    }
+  },
+  "language": "en",
+  "labels": {
+    "language": "en"
+  },
+  "components": [
+    {
+      "id": "65b1a710-428c-4e33-baf7-b6047999dfad",
+      "slug": "core",
+      "name": "Core package",
+      "kind": "library"
+    },
+    {
+      "id": "ec457b8f-8d3a-4187-a38d-0e91adba0168",
+      "slug": "desktop",
+      "name": "Desktop app (Electron)",
+      "kind": "service"
+    },
+    {
+      "id": "5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64",
+      "slug": "mcp",
+      "name": "MCP server package",
+      "kind": "library"
+    }
+  ],
+  "ready": true,
+  "counts": {
+    "errors": 0,
+    "warnings": 0,
+    "features": 32,
+    "objects": 10,
+    "workflows": 3
+  },
+  "chunkBudgetBytes": 16000,
+  "entries": [
+    {
+      "kind": "feature",
+      "id": "app.update.install",
+      "name": "Update the app",
+      "lifecycle": "implemented",
+      "component": "desktop",
+      "file": "features/app.update.install.json",
+      "bytes": 671,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "catalog.feature.edit",
+      "name": "Create and edit a feature",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/catalog.feature.edit.json",
+      "bytes": 3442,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "catalog.graph.show",
+      "name": "Show the event graph",
+      "lifecycle": "implemented",
+      "component": "desktop",
+      "file": "features/catalog.graph.show.json",
+      "bytes": 2119,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "catalog.matrix.show",
+      "name": "Show the entity × action matrix",
+      "lifecycle": "implemented",
+      "component": "desktop",
+      "file": "features/catalog.matrix.show.json",
+      "bytes": 2107,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "catalog.object.edit",
+      "name": "Create and edit a business object",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/catalog.object.edit.json",
+      "bytes": 1983,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "catalog.problems.show",
+      "name": "Show the problems of the catalog",
+      "lifecycle": "implemented",
+      "component": "desktop",
+      "file": "features/catalog.problems.show.json",
+      "bytes": 1794,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "catalog.stream.edit",
+      "name": "Create and edit a stream",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/catalog.stream.edit.json",
+      "bytes": 1038,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "catalog.workflow.edit",
+      "name": "Create and edit a workflow",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/catalog.workflow.edit.json",
+      "bytes": 2006,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "interfaces.openapi.generate",
+      "name": "Generate OpenAPI specs",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/interfaces.openapi.generate.json",
+      "bytes": 2763,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "interfaces.operation.list",
+      "name": "List interface operations",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/interfaces.operation.list.json",
+      "bytes": 1564,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "mcp.actions.log",
+      "name": "Log agent actions",
+      "lifecycle": "implemented",
+      "component": "mcp",
+      "file": "features/mcp.actions.log.json",
+      "bytes": 1272,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "mcp.catalog.read",
+      "name": "Read the catalog through MCP",
+      "lifecycle": "implemented",
+      "component": "mcp",
+      "file": "features/mcp.catalog.read.json",
+      "bytes": 4323,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "mcp.catalog.write",
+      "name": "Write the catalog through MCP",
+      "lifecycle": "implemented",
+      "component": "mcp",
+      "file": "features/mcp.catalog.write.json",
+      "bytes": 2237,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "mcp.plan.check",
+      "name": "Check plans through MCP",
+      "lifecycle": "implemented",
+      "component": "mcp",
+      "file": "features/mcp.plan.check.json",
+      "bytes": 859,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "mcp.relay.connect",
+      "name": "Reach the app remotely through the relay",
+      "lifecycle": "implemented",
+      "component": "mcp",
+      "file": "features/mcp.relay.connect.json",
+      "bytes": 1888,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "mcp.server.serve",
+      "name": "Serve MCP to local agents",
+      "lifecycle": "implemented",
+      "component": "mcp",
+      "file": "features/mcp.server.serve.json",
+      "bytes": 1964,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "project.catalog.migrate",
+      "name": "Move functions/ folders to features/",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/project.catalog.migrate.json",
+      "bytes": 2889,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "project.component.edit",
+      "name": "Edit projects, services and libraries",
+      "lifecycle": "implemented",
+      "component": "desktop",
+      "file": "features/project.component.edit.json",
+      "bytes": 3636,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "project.context.edit",
+      "name": "Edit the product context",
+      "lifecycle": "implemented",
+      "component": "desktop",
+      "file": "features/project.context.edit.json",
+      "bytes": 3022,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "project.layout.import",
+      "name": "Import services and libraries on first open",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/project.layout.import.json",
+      "bytes": 4114,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "project.workspace.open",
+      "name": "Open projects",
+      "lifecycle": "implemented",
+      "component": "desktop",
+      "file": "features/project.workspace.open.json",
+      "bytes": 2677,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "spec.bundle.generate",
+      "name": "Generate the agent spec bundle",
+      "lifecycle": "draft",
+      "component": "core",
+      "file": "features/spec.bundle.generate.json",
+      "bytes": 1215,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "spec.document.render",
+      "name": "Render the spec for people",
+      "lifecycle": "draft",
+      "component": "desktop",
+      "file": "features/spec.document.render.json",
+      "bytes": 1223,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "sync.code.link",
+      "name": "Link code to features",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/sync.code.link.json",
+      "bytes": 3750,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "sync.schema.import",
+      "name": "Import business objects from Prisma",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/sync.schema.import.json",
+      "bytes": 1968,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "validation.catalog.lint",
+      "name": "Lint the catalog from a terminal and CI",
+      "lifecycle": "implemented",
+      "component": "desktop",
+      "file": "features/validation.catalog.lint.json",
+      "bytes": 1204,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "validation.change.impact",
+      "name": "Show what a change affects",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/validation.change.impact.json",
+      "bytes": 4296,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "validation.design.check",
+      "name": "Check the design, strictness by lifecycle",
+      "lifecycle": "approved",
+      "component": "core",
+      "file": "features/validation.design.check.json",
+      "bytes": 2248,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "validation.duplicates.find",
+      "name": "Find duplicates before creating",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/validation.duplicates.find.json",
+      "bytes": 732,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "validation.model.validate",
+      "name": "Validate the catalog",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/validation.model.validate.json",
+      "bytes": 6061,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "validation.plan.check",
+      "name": "Check a plan before writing",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/validation.plan.check.json",
+      "bytes": 1708,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "validation.save.guard",
+      "name": "Reject saves that break the model",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/validation.save.guard.json",
+      "bytes": 1218,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "action_log_entry",
+      "name": "Action log entry",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/action_log_entry.json",
+      "bytes": 785,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "business_object",
+      "name": "Business object",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/business_object.json",
+      "bytes": 1189,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "code_link",
+      "name": "Code link",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/code_link.json",
+      "bytes": 768,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "component",
+      "name": "Component",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/component.json",
+      "bytes": 1411,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "feature",
+      "name": "Feature",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/feature.json",
+      "bytes": 2187,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "interface_operation",
+      "name": "Interface operation",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/interface_operation.json",
+      "bytes": 846,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "mcp_settings",
+      "name": "MCP settings",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/mcp_settings.json",
+      "bytes": 843,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "project",
+      "name": "Project",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/project.json",
+      "bytes": 1650,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "validation_issue",
+      "name": "Validation issue",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/validation_issue.json",
+      "bytes": 1216,
+      "issues": 0
+    },
+    {
+      "kind": "business_object",
+      "id": "workflow",
+      "name": "Workflow",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "objects/workflow.json",
+      "bytes": 1201,
+      "issues": 0
+    },
+    {
+      "kind": "workflow",
+      "id": "agent.plan_change",
+      "name": "Agent plans and writes a catalog change",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "workflows/agent.plan_change.json",
+      "bytes": 561,
+      "issues": 0
+    },
+    {
+      "kind": "workflow",
+      "id": "project.onboard",
+      "name": "Onboard a repository",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "workflows/project.onboard.json",
+      "bytes": 581,
+      "issues": 0
+    },
+    {
+      "kind": "workflow",
+      "id": "spec.release",
+      "name": "Release a spec",
+      "lifecycle": "draft",
+      "component": "core",
+      "file": "workflows/spec.release.json",
+      "bytes": 486,
+      "issues": 0
+    }
+  ],
+  "issues": []
+}

@@ -1,0 +1,166 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "sync.code.link",
+    "name": "Link code to features",
+    "bounded_context": "sync",
+    "entity": "code",
+    "action": "link",
+    "lifecycle": "implemented",
+    "description": "Code sync matches exported code functions to existing features: linked / proposed / candidate / stale. Creates a feature only on request.",
+    "source_file": "sync/codeSyncService.ts",
+    "objects": [
+      {
+        "id": "feature",
+        "access": "write"
+      },
+      {
+        "id": "code_link",
+        "access": "write"
+      }
+    ],
+    "actors": [
+      "ai_agent",
+      "developer"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "A matched code function proposes a link that sets source_file and calls"
+      },
+      {
+        "id": "R2",
+        "text": "An unmatched code function is a candidate; nothing is created by default"
+      },
+      {
+        "id": "R3",
+        "text": "A feature whose code is gone is stale; it is never marked removed automatically"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2",
+          "R3"
+        ],
+        "text": "Matching yields linked, proposed, candidate and stale items",
+        "verify": "pnpm --filter @pc/core test -- codeMatcher"
+      }
+    ],
+    "open_questions": [
+      {
+        "id": "Q1",
+        "question": "Should sync refresh calls of linked features on every run, or only on link?",
+        "owner": "atai"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-4",
+      "PRODUCTCREATOR-30"
+    ]
+  },
+  "objects": [
+    {
+      "id": "feature",
+      "access": "write",
+      "name": "Feature",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "<bounded_context>.<entity>.<action>"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "calls",
+          "type": "feature[]"
+        },
+        {
+          "name": "objects",
+          "type": "business_object[]",
+          "description": "With access read | write"
+        },
+        {
+          "name": "source_file",
+          "type": "string?"
+        },
+        {
+          "name": "actors",
+          "type": "string[]"
+        },
+        {
+          "name": "requirements",
+          "type": "json"
+        },
+        {
+          "name": "acceptance",
+          "type": "json"
+        },
+        {
+          "name": "constraints",
+          "type": "json"
+        },
+        {
+          "name": "decisions",
+          "type": "json"
+        },
+        {
+          "name": "open_questions",
+          "type": "json"
+        },
+        {
+          "name": "code_refs",
+          "type": "json",
+          "description": "component, file, symbol, role"
+        },
+        {
+          "name": "tickets",
+          "type": "string[]"
+        }
+      ]
+    },
+    {
+      "id": "code_link",
+      "access": "write",
+      "name": "Code link",
+      "fields": [
+        {
+          "name": "codeFunction",
+          "type": "string",
+          "description": "<file>:<function>"
+        },
+        {
+          "name": "feature",
+          "type": "feature"
+        },
+        {
+          "name": "status",
+          "type": "enum<linked|proposed|candidate|stale>"
+        },
+        {
+          "name": "lastSync",
+          "type": "datetime"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [
+    "project.onboard"
+  ],
+  "issues": []
+}

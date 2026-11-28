@@ -1,0 +1,85 @@
+{
+  "kind": "feature",
+  "component": "mcp",
+  "feature": {
+    "id": "mcp.catalog.write",
+    "name": "Write the catalog through MCP",
+    "bounded_context": "mcp",
+    "entity": "catalog",
+    "action": "write",
+    "lifecycle": "implemented",
+    "description": "apply_plan, create_catalog_entry, update_catalog_entry, update_project; writes are validated and rejected with issues.",
+    "calls": [
+      "catalog.feature.edit",
+      "catalog.object.edit",
+      "catalog.workflow.edit",
+      "catalog.stream.edit",
+      "project.context.edit"
+    ],
+    "source_file": "tools.ts",
+    "actors": [
+      "ai_agent"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "A write that adds model errors is rejected with the issues"
+      },
+      {
+        "id": "R2",
+        "text": "update merges a patch at the top level; null removes a field"
+      },
+      {
+        "id": "R3",
+        "text": "apply_plan writes a whole plan at once: entries may reference each other, nothing is written if the plan adds errors, a failed write is rolled back"
+      },
+      {
+        "id": "R4",
+        "text": "A read-only session is told which setting enables writing"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "Creating a feature with an unknown object returns unknown_object",
+        "verify": "pnpm --filter @pc/mcp test -- server"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R3"
+        ],
+        "text": "A plan with cross-references is applied in one call; a broken plan writes nothing",
+        "verify": "pnpm --filter @pc/mcp test -- server"
+      },
+      {
+        "id": "A3",
+        "covers": [
+          "R4"
+        ],
+        "text": "Read-only server instructions name Settings → MCP → scope",
+        "verify": "pnpm --filter @pc/mcp test -- server"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "core",
+        "file": "http/routes/apply-plan/route.ts",
+        "role": "API"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-18",
+      "PRODUCTCREATOR-33"
+    ]
+  },
+  "objects": [],
+  "calledBy": [],
+  "workflows": [
+    "agent.plan_change"
+  ],
+  "issues": []
+}

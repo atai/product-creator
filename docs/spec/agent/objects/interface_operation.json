@@ -1,0 +1,42 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "interface_operation",
+    "name": "Interface operation",
+    "description": "An operation of a component's OpenAPI spec",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "active": true,
+    "fields": [
+      {
+        "name": "ref",
+        "type": "string",
+        "description": "<componentId>#<METHOD> <path>"
+      },
+      {
+        "name": "method",
+        "type": "enum<GET|POST|PUT|PATCH|DELETE>"
+      },
+      {
+        "name": "path",
+        "type": "string"
+      },
+      {
+        "name": "component",
+        "type": "component"
+      }
+    ]
+  },
+  "usedBy": [
+    {
+      "id": "interfaces.openapi.generate",
+      "access": "write"
+    },
+    {
+      "id": "interfaces.operation.list",
+      "access": "read"
+    }
+  ],
+  "issues": []
+}

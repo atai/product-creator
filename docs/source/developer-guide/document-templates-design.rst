@@ -87,6 +87,27 @@ Impact of a change
 the plan introduces, so an agent can check a whole plan (rename an object, add a field, add a
 feature and its workflow) in one call before touching code.
 
+Generator (PRODUCTCREATOR-35)
+-----------------------------
+
+``packages/core/src/spec`` (*exists*):
+
+* ``build.ts`` — ``buildSpec(project, model)``: the spec as data (product context, features, objects,
+  workflows of the project; ``removed`` left out; issues per entry; callers, workflows, users).
+* ``human.ts`` — ``renderHuman(spec, messages)``: one Markdown document.
+* ``agent.ts`` — ``renderAgent``: ``manifest.json`` (format ``product-creator.spec/1``) and chunks per
+  entry; chunks over ``CHUNK_BUDGET_BYTES`` are flagged.
+* ``audience.ts`` — ``forAudience(value, schema, 'human' | 'agent')``: fields by ``x-audience``, in
+  schema order, empty values dropped.
+* ``messages.ts`` — label catalogs per language (``Messages``); ``messagesFor(tag)`` with fallback to
+  English. No label is written in the renderers; a new language is a new catalog.
+* ``index.ts`` — ``generateSpec``, ``specOutputDir`` (inside the project, not overlapping the catalog),
+  ``writeSpec`` (replaces ``spec.md`` and ``agent/``).
+
+Entry points: ``/api/spec`` (GET: human view or ``entry`` of the bundle; POST: write), CLI
+``product-creator spec``, MCP ``get_spec``, the Doc page (``react-markdown``, raw HTML not rendered).
+Settings: ``spec.language`` / ``spec.output`` in ``product-creator.yml``.
+
 Later: documents
 ----------------
 
@@ -120,7 +141,8 @@ and agents from a validated model, dogfooded on this repo.
    consistency, completeness, code links, enums, streams; warnings in ``draft``, errors from
    ``approved`` on (`PRODUCTCREATOR-34 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-34>`_).
 #. Generator: agent bundle and human view on the Doc page, unresolved problems rendered next to the
-   affected feature (`PRODUCTCREATOR-35 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35>`_).
+   affected feature (`PRODUCTCREATOR-35 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35>`_,
+   *exists*; label translations other than English, scoped specs and PDF later).
 #. Trace through interfaces: ``interfaces.implements`` / ``interfaces.calls`` on features
    (:doc:`openapi-sync-design`, PRODUCTCREATOR-9); templates and brands (PRODUCTCREATOR-19).
 

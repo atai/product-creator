@@ -1,0 +1,52 @@
+{
+  "kind": "feature",
+  "component": "desktop",
+  "feature": {
+    "id": "spec.document.render",
+    "name": "Render the spec for people",
+    "bounded_context": "spec",
+    "entity": "document",
+    "action": "render",
+    "lifecycle": "draft",
+    "description": "The Doc page renders the human spec (ТЗ) from the model and exports Markdown/HTML/PDF.",
+    "calls": [
+      "validation.model.validate"
+    ],
+    "source_file": "renderer/src/pages/doc.tsx",
+    "actors": [
+      "client",
+      "product_owner"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "A spec with errors says so on top"
+      },
+      {
+        "id": "R2",
+        "text": "Problems are shown next to the affected feature"
+      },
+      {
+        "id": "R3",
+        "text": "Fields marked x-audience: agent are left out"
+      }
+    ],
+    "open_questions": [
+      {
+        "id": "Q1",
+        "question": "Language of the human spec: one per project, or Russian for people and English for agents?",
+        "owner": "atai"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-19",
+      "PRODUCTCREATOR-35"
+    ]
+  },
+  "objects": [],
+  "calledBy": [],
+  "workflows": [
+    "spec.release"
+  ],
+  "issues": []
+}

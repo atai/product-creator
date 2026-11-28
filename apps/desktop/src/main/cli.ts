@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { readProject, toStorageEntities, PROJECT_FILE } from '@pc/core/project/model';
 import { migrateProject, summarizeMigration } from '@pc/core/catalog/migrate';
+import { generateSpec, writeSpec } from '@pc/core/spec/index';
 import { configureStorage, getStorage, resetStorage } from '@pc/core/storage';
 import { countIssues, validateModel, type ValidationIssue } from '@pc/core/validation/model';
 import type { AppEntity } from '@pc/core/types';
@@ -12,9 +13,11 @@ import logger from '@pc/core/logger';
  *   product-creator migrate [folder...] [--dry-run]   move functions/ → features/ in all catalogs (PRODUCTCREATOR-28)
  *   product-creator lint [folder...] [--warnings] [--json]   model validation of the catalogs (PRODUCTCREATOR-29)
  *   product-creator lint --catalog <dir> [...]        validate one catalog folder of a repo without product-creator.yml (read only)
+ *   product-creator spec [folder...] [--strict]        write spec.md + agent/ to spec.output (PRODUCTCREATOR-35);
+ *                                                     --strict: exit 1 when the model has errors (the spec is written anyway)
  * Exit code: 0 ok, 1 problems found (conflicts, model errors), 2 usage error.
  */
-export const CLI_COMMANDS = ['migrate', 'lint'] as const;
+export const CLI_COMMANDS = ['migrate', 'lint', 'spec'] as const;
 export type CliCommand = (typeof CLI_COMMANDS)[number];
 
 export interface CliIo {
@@ -49,6 +52,7 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
     return exit;
   }
   if (command === 'lint') return lint(rest, io);
+  if (command === 'spec') return spec(folders, flags, io);
   io.error(`Usage: product-creator [folder...] | ${CLI_COMMANDS.map((c) => `product-creator ${c} [folder...]`).join(' | ')}`);
   return 2;
 }
@@ -103,6 +107,39 @@ async function lint(args: string[], io: CliIo): Promise<number> {
     io.log(`${counts.errors} error(s), ${counts.warnings} warning(s) in ${scope || 'no catalogs'}${flags.has('--warnings') ? '' : ' (warnings hidden; --warnings shows them)'}`);
   }
   return counts.errors > 0 ? 1 : 0;
+}
+
+async function spec(folders: string[], flags: Set<string>, io: CliIo): Promise<number> {
+  const projects = [];
+  for (const { root, project } of projectsOf(folders, io)) {
+    if (!project) {
+      io.error(`${root}: no product-creator.yml (open the folder in the app once to create it)`);
+      return 2;
+    }
+    projects.push(project);
+  }
+  for (const t of logger.transports) t.silent = true;
+  await resetStorage();
+  configureStorage({ manifest: { ...toStorageEntities(projects), source: PROJECT_FILE }, watch: false });
+  const model = (await getStorage()).modelSnapshot();
+  await resetStorage();
+  let exit = 0;
+  for (const project of projects) {
+    try {
+      const generated = generateSpec(project, model);
+      const { dir, files } = writeSpec(project, generated);
+      const { errors, warnings } = generated.spec.counts;
+      io.log(`${project.name}: ${files.length} file(s) in ${path.relative(io.cwd, dir) || dir}`);
+      io.log(`  ${generated.spec.features.length} feature(s), ${generated.spec.objects.length} object(s), ${generated.spec.workflows.length} workflow(s); language ${generated.spec.language}`);
+      if (generated.labelsFallback) io.log(`  no labels for "${generated.spec.language}": headings are in ${generated.labelsLanguage}`);
+      io.log(`  ${errors} error(s), ${warnings} warning(s)${errors ? ': the spec says it is not ready' : ''}`);
+      if (errors && flags.has('--strict')) exit = 1;
+    } catch (error) {
+      io.error(`${project.name}: ${error instanceof Error ? error.message : String(error)}`);
+      exit = 2;
+    }
+  }
+  return exit;
 }
 
 // Entry point when run as out/main/cli.js

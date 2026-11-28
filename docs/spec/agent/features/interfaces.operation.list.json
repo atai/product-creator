@@ -1,0 +1,70 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "interfaces.operation.list",
+    "name": "List interface operations",
+    "bounded_context": "interfaces",
+    "entity": "operation",
+    "action": "list",
+    "lifecycle": "implemented",
+    "description": "Loads committed or generated OpenAPI specs and lists their operations (Interfaces page, MCP).",
+    "source_file": "interfaces/openapi.ts",
+    "objects": [
+      {
+        "id": "interface_operation",
+        "access": "read"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Operations are addressed as <componentId>#<METHOD> <path>"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "YAML and JSON specs load into operations",
+        "verify": "pnpm --filter @pc/core test -- openapi"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-9"
+    ]
+  },
+  "objects": [
+    {
+      "id": "interface_operation",
+      "access": "read",
+      "name": "Interface operation",
+      "fields": [
+        {
+          "name": "ref",
+          "type": "string",
+          "description": "<componentId>#<METHOD> <path>"
+        },
+        {
+          "name": "method",
+          "type": "enum<GET|POST|PUT|PATCH|DELETE>"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "component",
+          "type": "component"
+        }
+      ]
+    }
+  ],
+  "calledBy": [
+    "mcp.catalog.read"
+  ],
+  "workflows": [],
+  "issues": []
+}

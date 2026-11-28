@@ -122,6 +122,10 @@ name from ``list_projects``) as an argument.
    * - ``get_project``
      - read
      - Product context of a project: vision, goals, actors, glossary, tracker, components
+   * - ``get_spec``
+     - read
+     - The generated spec: the agent manifest, one entry (``entry``: a file from the manifest), or the
+       human Markdown (``human: true``); see :doc:`spec`
    * - ``apply_plan``
      - read-write
      - Write several changes at once (same input as ``validate_plan``). The plan is checked as a whole,

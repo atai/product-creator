@@ -12,6 +12,7 @@ Agents that cannot reach this computer use :ref:`remote access <mcp-remote-acces
    launching
    projects-and-services
    catalog
+   spec
    sync
    interfaces
    mcp

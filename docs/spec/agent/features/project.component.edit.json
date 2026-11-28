@@ -1,0 +1,164 @@
+{
+  "kind": "feature",
+  "component": "desktop",
+  "feature": {
+    "id": "project.component.edit",
+    "name": "Edit projects, services and libraries",
+    "bounded_context": "project",
+    "entity": "component",
+    "action": "edit",
+    "lifecycle": "implemented",
+    "description": "Edits the project and its components in the app; the YAML files are the database.",
+    "source_file": "renderer/src/pages/workspace.tsx",
+    "objects": [
+      {
+        "id": "project",
+        "access": "write"
+      },
+      {
+        "id": "component",
+        "access": "write"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Name, paths, dependencies and the OpenAPI command of a component can be edited"
+      },
+      {
+        "id": "R2",
+        "text": "Saving keeps the UUID of the component"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R2"
+        ],
+        "text": "Renaming a component keeps its id",
+        "verify": "pnpm --filter @pc/core test -- model"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "core",
+        "file": "project/model.ts",
+        "symbol": "saveComponent",
+        "role": "storage"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-12",
+      "PRODUCTCREATOR-14"
+    ]
+  },
+  "objects": [
+    {
+      "id": "project",
+      "access": "write",
+      "name": "Project",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "description": "Stable id, never changes"
+        },
+        {
+          "name": "slug",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "catalogRoot",
+          "type": "string",
+          "description": "Folder of the component catalogs, e.g. docs/product"
+        },
+        {
+          "name": "components",
+          "type": "component[]"
+        },
+        {
+          "name": "vision",
+          "type": "text?"
+        },
+        {
+          "name": "goals",
+          "type": "json",
+          "description": "G1… with text"
+        },
+        {
+          "name": "actors",
+          "type": "json",
+          "description": "id, name, description"
+        },
+        {
+          "name": "glossary",
+          "type": "json"
+        },
+        {
+          "name": "tracker",
+          "type": "json?",
+          "description": "issueUrl with {id}"
+        }
+      ]
+    },
+    {
+      "id": "component",
+      "access": "write",
+      "name": "Component",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "kind",
+          "type": "enum<service|library>"
+        },
+        {
+          "name": "slug",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "description": "Code folder"
+        },
+        {
+          "name": "codeBasePath",
+          "type": "string?",
+          "description": "Base of source_file paths"
+        },
+        {
+          "name": "catalog",
+          "type": "string",
+          "description": "Catalog folder"
+        },
+        {
+          "name": "dependsOn",
+          "type": "component[]"
+        },
+        {
+          "name": "openapiGenerate",
+          "type": "string?",
+          "description": "Command that writes the OpenAPI spec"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

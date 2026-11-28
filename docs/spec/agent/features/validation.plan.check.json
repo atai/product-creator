@@ -1,0 +1,68 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "validation.plan.check",
+    "name": "Check a plan before writing",
+    "bounded_context": "validation",
+    "entity": "plan",
+    "action": "check",
+    "lifecycle": "implemented",
+    "description": "Applies proposed upserts and deletes to a copy of the model and reports only the errors the plan introduces.",
+    "calls": [
+      "validation.model.validate"
+    ],
+    "source_file": "validation/plan.ts",
+    "actors": [
+      "ai_agent"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Nothing is written"
+      },
+      {
+        "id": "R2",
+        "text": "Only errors introduced by the plan make ok false; existing problems are reported separately"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2"
+        ],
+        "given": "a plan with a workflow step that does not exist",
+        "when": "validate_plan runs",
+        "then": "ok is false, introduced has unknown_feature, no file changed",
+        "verify": "pnpm --filter @pc/mcp test"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "Plan checks apply changes to a copy of the snapshot",
+        "reason": "One validation for real and planned state; no second implementation",
+        "date": "2026-11-20"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "core",
+        "file": "http/routes/validate-plan/route.ts",
+        "role": "API"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-29"
+    ]
+  },
+  "objects": [],
+  "calledBy": [
+    "mcp.plan.check",
+    "validation.save.guard"
+  ],
+  "workflows": [],
+  "issues": []
+}

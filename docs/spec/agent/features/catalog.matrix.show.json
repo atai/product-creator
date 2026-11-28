@@ -1,0 +1,98 @@
+{
+  "kind": "feature",
+  "component": "desktop",
+  "feature": {
+    "id": "catalog.matrix.show",
+    "name": "Show the entity × action matrix",
+    "bounded_context": "catalog",
+    "entity": "matrix",
+    "action": "show",
+    "lifecycle": "implemented",
+    "description": "Entity × action coverage per bounded context.",
+    "source_file": "renderer/src/pages/matrix.tsx",
+    "objects": [
+      {
+        "id": "feature",
+        "access": "read"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-7"
+    ]
+  },
+  "objects": [
+    {
+      "id": "feature",
+      "access": "read",
+      "name": "Feature",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "<bounded_context>.<entity>.<action>"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "calls",
+          "type": "feature[]"
+        },
+        {
+          "name": "objects",
+          "type": "business_object[]",
+          "description": "With access read | write"
+        },
+        {
+          "name": "source_file",
+          "type": "string?"
+        },
+        {
+          "name": "actors",
+          "type": "string[]"
+        },
+        {
+          "name": "requirements",
+          "type": "json"
+        },
+        {
+          "name": "acceptance",
+          "type": "json"
+        },
+        {
+          "name": "constraints",
+          "type": "json"
+        },
+        {
+          "name": "decisions",
+          "type": "json"
+        },
+        {
+          "name": "open_questions",
+          "type": "json"
+        },
+        {
+          "name": "code_refs",
+          "type": "json",
+          "description": "component, file, symbol, role"
+        },
+        {
+          "name": "tickets",
+          "type": "string[]"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

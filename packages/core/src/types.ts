@@ -195,6 +195,8 @@ export interface Project {
   name: string;
   description?: string;
   locked?: boolean;
+  /** Absolute project root (desktop mode) */
+  root?: string;
 }
 
 export interface AppEntity {

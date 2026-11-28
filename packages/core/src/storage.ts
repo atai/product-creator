@@ -606,6 +606,11 @@ class FunctionStorage {
     return this.projectRepo.getById(id);
   }
 
+  /** Root folder of a project in manifest (desktop) mode; null otherwise (PRODUCTCREATOR-35) */
+  getProjectRoot(id: string): string | null {
+    return this.manifest?.projects.find((p) => p.id === id)?.root ?? null;
+  }
+
   /** True when projects/apps come from project manifests (desktop mode) */
   isManifestMode(): boolean {
     return Boolean(this.manifest);

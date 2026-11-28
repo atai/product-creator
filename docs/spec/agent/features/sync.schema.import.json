@@ -1,0 +1,86 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "sync.schema.import",
+    "name": "Import business objects from Prisma",
+    "bounded_context": "sync",
+    "entity": "schema",
+    "action": "import",
+    "lifecycle": "implemented",
+    "description": "Schema sync creates and updates business objects from a Prisma schema.",
+    "source_file": "sync/syncService.ts",
+    "objects": [
+      {
+        "id": "business_object",
+        "access": "write"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Models become business objects with fields and tables"
+      },
+      {
+        "id": "R2",
+        "text": "Prisma enums become field types that validation accepts"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "A Prisma schema is parsed into models and fields",
+        "verify": "pnpm --filter @pc/core test -- prisma"
+      }
+    ],
+    "open_questions": [
+      {
+        "id": "Q1",
+        "question": "Model a Prisma enum as a business object kind or as enum<…> field types?",
+        "owner": "atai"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-3"
+    ]
+  },
+  "objects": [
+    {
+      "id": "business_object",
+      "access": "write",
+      "name": "Business object",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum<draft|approved|implemented|deprecated|removed>"
+        },
+        {
+          "name": "fields",
+          "type": "json",
+          "description": "name, type, description"
+        },
+        {
+          "name": "tables",
+          "type": "json?",
+          "description": "Physical tables (from Prisma)"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [
+    "project.onboard"
+  ],
+  "issues": []
+}

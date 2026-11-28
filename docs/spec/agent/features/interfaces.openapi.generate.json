@@ -1,0 +1,123 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "interfaces.openapi.generate",
+    "name": "Generate OpenAPI specs",
+    "bounded_context": "interfaces",
+    "entity": "openapi",
+    "action": "generate",
+    "lifecycle": "implemented",
+    "description": "Runs the OpenAPI generate command of a component and reloads its operations.",
+    "source_file": "interfaces/generator.ts",
+    "objects": [
+      {
+        "id": "component",
+        "access": "read"
+      },
+      {
+        "id": "interface_operation",
+        "access": "write"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "The command runs in the component folder with the login shell PATH"
+      },
+      {
+        "id": "R2",
+        "text": "One generation per component at a time; it can be cancelled"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R2"
+        ],
+        "text": "The manager runs, deduplicates and cancels generations",
+        "verify": "pnpm --filter @pc/core test -- generator"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-23"
+    ]
+  },
+  "objects": [
+    {
+      "id": "component",
+      "access": "read",
+      "name": "Component",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "kind",
+          "type": "enum<service|library>"
+        },
+        {
+          "name": "slug",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "description": "Code folder"
+        },
+        {
+          "name": "codeBasePath",
+          "type": "string?",
+          "description": "Base of source_file paths"
+        },
+        {
+          "name": "catalog",
+          "type": "string",
+          "description": "Catalog folder"
+        },
+        {
+          "name": "dependsOn",
+          "type": "component[]"
+        },
+        {
+          "name": "openapiGenerate",
+          "type": "string?",
+          "description": "Command that writes the OpenAPI spec"
+        }
+      ]
+    },
+    {
+      "id": "interface_operation",
+      "access": "write",
+      "name": "Interface operation",
+      "fields": [
+        {
+          "name": "ref",
+          "type": "string",
+          "description": "<componentId>#<METHOD> <path>"
+        },
+        {
+          "name": "method",
+          "type": "enum<GET|POST|PUT|PATCH|DELETE>"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "component",
+          "type": "component"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

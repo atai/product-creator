@@ -1,0 +1,42 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "action_log_entry",
+    "name": "Action log entry",
+    "description": "One MCP tool call recorded in the action log",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "active": true,
+    "fields": [
+      {
+        "name": "at",
+        "type": "datetime"
+      },
+      {
+        "name": "tool",
+        "type": "string"
+      },
+      {
+        "name": "args",
+        "type": "json",
+        "description": "Compacted arguments"
+      },
+      {
+        "name": "ok",
+        "type": "boolean"
+      },
+      {
+        "name": "caller",
+        "type": "enum<local|relay>"
+      }
+    ]
+  },
+  "usedBy": [
+    {
+      "id": "mcp.actions.log",
+      "access": "write"
+    }
+  ],
+  "issues": []
+}

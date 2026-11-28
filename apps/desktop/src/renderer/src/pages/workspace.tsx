@@ -478,6 +478,7 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
   const [actors, setActors] = useState<Row[]>((project.actors ?? []).map((a) => ({ id: a.id, name: a.name, description: a.description ?? '' })));
   const [glossary, setGlossary] = useState<Row[]>((project.glossary ?? []).map((t) => ({ ...t })));
   const [issueUrl, setIssueUrl] = useState(project.tracker?.issueUrl ?? '');
+  const [specSettings, setSpecSettings] = useState({ language: project.spec?.language ?? '', output: project.spec?.output ?? '' });
   const filled = (rows: Row[], keys: string[]) => rows.filter((r) => keys.every((k) => r[k]?.trim()));
   return (
     <form
@@ -491,6 +492,7 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
           actors: filled(actors, ['id', 'name']).map((a) => ({ id: a.id.trim(), name: a.name.trim(), ...(a.description?.trim() ? { description: a.description.trim() } : {}) })),
           glossary: filled(glossary, ['term', 'definition']).map((t) => ({ term: t.term.trim(), definition: t.definition.trim() })),
           tracker: issueUrl.trim() ? { issueUrl: issueUrl.trim() } : null,
+          spec: specSettings.language.trim() || specSettings.output.trim() ? { ...(specSettings.language.trim() ? { language: specSettings.language.trim() } : {}), ...(specSettings.output.trim() ? { output: specSettings.output.trim() } : {}) } : null,
         });
       }}
     >
@@ -511,6 +513,13 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
       </Field>
       <Field label="Tracker issue URL" hint="{id} is replaced by the ticket key">
         <input className={input} value={issueUrl} placeholder="https://example.youtrack.cloud/issue/{id}" onChange={(e) => setIssueUrl(e.target.value)} />
+      </Field>
+
+      <Field label="Spec language" hint="language the catalog is written in; default en">
+        <input className={input} value={specSettings.language} placeholder="en" onChange={(e) => setSpecSettings({ ...specSettings, language: e.target.value })} />
+      </Field>
+      <Field label="Spec output folder" hint="product-creator spec writes here; default docs/spec">
+        <input className={input} value={specSettings.output} placeholder="docs/spec" onChange={(e) => setSpecSettings({ ...specSettings, output: e.target.value })} />
       </Field>
 
       <div className="col-span-2 mt-2 border-t border-border pt-3 text-sm font-semibold">Product</div>

@@ -320,6 +320,22 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
   );
 
   define(
+    'get_spec',
+    {
+      title: 'Read the generated spec',
+      description:
+        'The spec (ТЗ) generated from the catalog, for agents. Without `entry`: manifest.json (product context, components, counts, ready=false when the model has errors, the list of entries with their chunk file, and all issues). With `entry` (a `file` from the manifest, e.g. features/catalog.feature.edit.json): that chunk — the feature with requirements, acceptance (verify commands), code places, the business objects it uses with their fields, callers, workflows and its issues. Generated on every call; nothing is written. Use `human: true` for the Markdown people read.',
+      input: { project: projectArg, entry: z.string().optional(), human: z.boolean().optional() },
+    },
+    async ({ project, entry, human }) => {
+      const p = resolveProject(host, project);
+      const query = `project=${encodeURIComponent(p.id)}`;
+      if (human) return api(host, 'GET', `/api/spec?${query}`);
+      return api(host, 'GET', `/api/spec?${query}&entry=${encodeURIComponent(entry ?? 'manifest.json')}`);
+    }
+  );
+
+  define(
     'get_catalog_entry',
     {
       title: 'Get a catalog entry',
@@ -528,7 +544,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       title: 'Update the product context',
       write: true,
       description:
-        'Change name, description, vision, goals, actors, glossary or tracker of a project (product-creator.yml). A list replaces the whole list ([] clears it); tracker: null removes it. Goal ids are G1, G2, …; actor ids use a-z, 0-9 and _.',
+        'Change name, description, vision, goals, actors, glossary, tracker or spec settings (language, output) of a project (product-creator.yml). A list replaces the whole list ([] clears it); tracker: null removes it. Goal ids are G1, G2, …; actor ids use a-z, 0-9 and _.',
       input: {
         project: projectArg,
         name: z.string().optional(),
@@ -538,6 +554,10 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
         actors: z.array(z.object({ id: z.string(), name: z.string(), description: z.string().optional() })).optional(),
         glossary: z.array(z.object({ term: z.string(), definition: z.string() })).optional(),
         tracker: z.object({ issueUrl: z.string() }).nullable().optional(),
+        spec: z
+          .object({ language: z.string().optional().describe('Language the catalog is written in (en, ru, pt-BR); spec labels follow it'), output: z.string().optional().describe('Output folder of product-creator spec, default docs/spec') })
+          .nullable()
+          .optional(),
       },
     },
     async ({ project, ...patch }) => {

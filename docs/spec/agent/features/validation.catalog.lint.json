@@ -1,0 +1,53 @@
+{
+  "kind": "feature",
+  "component": "desktop",
+  "feature": {
+    "id": "validation.catalog.lint",
+    "name": "Lint the catalog from a terminal and CI",
+    "bounded_context": "validation",
+    "entity": "catalog",
+    "action": "lint",
+    "lifecycle": "implemented",
+    "description": "`product-creator lint` validates the catalogs of a project; exit code 1 on errors. CI runs it on this repo.",
+    "calls": [
+      "validation.model.validate"
+    ],
+    "source_file": "main/cli.ts",
+    "actors": [
+      "ci",
+      "developer"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Exit code is 1 when there are errors"
+      },
+      {
+        "id": "R2",
+        "text": "--json prints the issues for tools"
+      },
+      {
+        "id": "R3",
+        "text": "CI fails when this repo's catalog has errors"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R3"
+        ],
+        "text": "pnpm catalog:lint is a CI step",
+        "verify": "pnpm catalog:lint"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-29",
+      "PRODUCTCREATOR-33"
+    ]
+  },
+  "objects": [],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

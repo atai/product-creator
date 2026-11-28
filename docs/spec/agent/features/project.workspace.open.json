@@ -1,0 +1,120 @@
+{
+  "kind": "feature",
+  "component": "desktop",
+  "feature": {
+    "id": "project.workspace.open",
+    "name": "Open projects",
+    "bounded_context": "project",
+    "entity": "workspace",
+    "action": "open",
+    "lifecycle": "implemented",
+    "description": "Opens one or several project folders: from the command line, from the current folder or from the Workspace page.",
+    "calls": [
+      "project.layout.import"
+    ],
+    "source_file": "main/workspace.ts",
+    "objects": [
+      {
+        "id": "project",
+        "access": "read"
+      }
+    ],
+    "actors": [
+      "developer",
+      "product_owner"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "`product-creator` opens the current folder; folders given as arguments open together"
+      },
+      {
+        "id": "R2",
+        "text": "The Workspace page adds and removes projects"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "`product-creator ~/a ~/b` shows both projects in the workspace"
+      }
+    ],
+    "open_questions": [
+      {
+        "id": "Q1",
+        "question": "Should the workspace remember projects between launches per machine or per user?",
+        "owner": "atai"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-6",
+      "PRODUCTCREATOR-9"
+    ]
+  },
+  "objects": [
+    {
+      "id": "project",
+      "access": "read",
+      "name": "Project",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "description": "Stable id, never changes"
+        },
+        {
+          "name": "slug",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "text?"
+        },
+        {
+          "name": "catalogRoot",
+          "type": "string",
+          "description": "Folder of the component catalogs, e.g. docs/product"
+        },
+        {
+          "name": "components",
+          "type": "component[]"
+        },
+        {
+          "name": "vision",
+          "type": "text?"
+        },
+        {
+          "name": "goals",
+          "type": "json",
+          "description": "G1… with text"
+        },
+        {
+          "name": "actors",
+          "type": "json",
+          "description": "id, name, description"
+        },
+        {
+          "name": "glossary",
+          "type": "json"
+        },
+        {
+          "name": "tracker",
+          "type": "json?",
+          "description": "issueUrl with {id}"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [
+    "project.onboard"
+  ],
+  "issues": []
+}

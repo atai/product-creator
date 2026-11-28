@@ -1,0 +1,82 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "project",
+    "name": "Project",
+    "description": "A repository opened in Product Creator; product-creator.yml at its root",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "active": true,
+    "fields": [
+      {
+        "name": "id",
+        "type": "uuid",
+        "description": "Stable id, never changes"
+      },
+      {
+        "name": "slug",
+        "type": "string"
+      },
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "description",
+        "type": "text?"
+      },
+      {
+        "name": "catalogRoot",
+        "type": "string",
+        "description": "Folder of the component catalogs, e.g. docs/product"
+      },
+      {
+        "name": "components",
+        "type": "component[]"
+      },
+      {
+        "name": "vision",
+        "type": "text?"
+      },
+      {
+        "name": "goals",
+        "type": "json",
+        "description": "G1… with text"
+      },
+      {
+        "name": "actors",
+        "type": "json",
+        "description": "id, name, description"
+      },
+      {
+        "name": "glossary",
+        "type": "json"
+      },
+      {
+        "name": "tracker",
+        "type": "json?",
+        "description": "issueUrl with {id}"
+      }
+    ]
+  },
+  "usedBy": [
+    {
+      "id": "project.component.edit",
+      "access": "write"
+    },
+    {
+      "id": "project.context.edit",
+      "access": "write"
+    },
+    {
+      "id": "project.layout.import",
+      "access": "write"
+    },
+    {
+      "id": "project.workspace.open",
+      "access": "read"
+    }
+  ],
+  "issues": []
+}
