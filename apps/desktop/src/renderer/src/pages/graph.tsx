@@ -28,10 +28,22 @@ const NODE_PAD_X = 12;
 const NODE_PAD_Y = 8;
 const LINE_HEIGHT = NODE_FONT_PX * 1.25;
 const GAP = 24;
+const RANK_SEP = GAP * 2.5;
+const EDGE_FONT_PX = 10;
+/** Free line before and after an edge label: the start of the edge and the whole arrow head stay visible */
+const EDGE_LABEL_MARGIN = 20;
 
 let measureCanvas: HTMLCanvasElement | null = null;
 
 /** Size of a node from its label: words wrapped at NODE_TEXT_MAX, the way cytoscape wraps them, plus padding */
+function textWidth(text: string, font: string): number {
+  measureCanvas = measureCanvas ?? document.createElement('canvas');
+  const ctx = measureCanvas.getContext('2d');
+  if (!ctx) return text.length * EDGE_FONT_PX * 0.6;
+  ctx.font = font;
+  return ctx.measureText(text).width;
+}
+
 function nodeSize(label: string, font: string): { width: number; height: number } {
   measureCanvas = measureCanvas ?? document.createElement('canvas');
   const ctx = measureCanvas.getContext('2d');
@@ -52,12 +64,21 @@ function nodeSize(label: string, font: string): { width: number; height: number 
  * Linked features: layered layout (dagre) along the arrows, with the real node sizes so labels never overlap.
  * Features without links: a grid below, cells as large as the largest node.
  */
-function layoutGraph(cy: cytoscape.Core) {
+function layoutGraph(cy: cytoscape.Core, edgeFont: string) {
   const linked = cy.nodes().filter((n) => n.degree(false) > 0);
+  // Gap between two nodes k ranks apart is at least k·RANK_SEP + (k−1)·(lowest node): enough ranks for the label
+  // plus a margin on both sides. Edges without a label keep one rank.
+  const lowest = linked.nonempty() ? Math.min(...linked.map((n) => n.height())) : 0;
+  const minLen = (edge: cytoscape.EdgeSingular) => {
+    const label = String(edge.data('label') ?? '');
+    if (!label) return 1;
+    const need = textWidth(label, edgeFont) + 2 * EDGE_LABEL_MARGIN;
+    return Math.max(1, Math.ceil((need + lowest) / (RANK_SEP + lowest)));
+  };
   const single = cy.nodes().difference(linked);
   linked
     .union(linked.connectedEdges())
-    .layout({ name: 'dagre', rankDir: 'TB', nodeSep: GAP, rankSep: GAP * 2.5, edgeSep: GAP / 2, fit: false } as cytoscape.LayoutOptions)
+    .layout({ name: 'dagre', rankDir: 'TB', nodeSep: GAP, rankSep: RANK_SEP, edgeSep: GAP / 2, minLen, fit: false } as cytoscape.LayoutOptions)
     .run();
   if (single.nonempty()) {
     const box = linked.nonempty() ? linked.boundingBox() : { x1: 0, y2: -GAP * 2, w: 0 };
@@ -159,7 +180,8 @@ export default function GraphPage() {
                 'target-arrow-shape': 'triangle',
                 'arrow-scale': 1.2,
                 label: 'data(label)',
-                'font-size': 10,
+                'font-size': EDGE_FONT_PX,
+                'font-family': fontFamily,
                 color: '#4a5568',
                 'text-rotation': 'autorotate',
                 'text-background-color': '#ffffff',
@@ -174,7 +196,7 @@ export default function GraphPage() {
           ],
           layout: { name: 'preset' },
         });
-        layoutGraph(cyInstance.current);
+        layoutGraph(cyInstance.current, `${EDGE_FONT_PX}px ${fontFamily}`);
 
         cyInstance.current.on('tap', 'node', (evt) => {
           const node = evt.target;
