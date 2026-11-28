@@ -1,0 +1,39 @@
+id: sync.code.link
+name: Link code to features
+bounded_context: sync
+entity: code
+action: link
+owner: atai
+lifecycle: implemented
+description: 'Code sync matches exported code functions to existing features: linked / proposed / candidate / stale. Creates a feature only on request.'
+source_file: sync/codeSyncService.ts
+objects:
+  - id: feature
+    access: write
+  - id: code_link
+    access: write
+actors:
+  - ai_agent
+  - developer
+requirements:
+  - id: R1
+    text: A matched code function proposes a link that sets source_file and calls
+  - id: R2
+    text: An unmatched code function is a candidate; nothing is created by default
+  - id: R3
+    text: A feature whose code is gone is stale; it is never marked removed automatically
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+      - R3
+    text: Matching yields linked, proposed, candidate and stale items
+    verify: pnpm --filter @pc/core test -- codeMatcher
+open_questions:
+  - id: Q1
+    question: Should sync refresh calls of linked features on every run, or only on link?
+    owner: atai
+tickets:
+  - PRODUCTCREATOR-4
+  - PRODUCTCREATOR-30

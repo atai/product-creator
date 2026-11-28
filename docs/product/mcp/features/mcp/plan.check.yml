@@ -1,0 +1,21 @@
+id: mcp.plan.check
+name: Check plans through MCP
+bounded_context: mcp
+entity: plan
+action: check
+owner: atai
+lifecycle: implemented
+description: validate_catalog, validate_plan, impact_of_change, find_duplicates for agents.
+source_file: tools.ts
+calls:
+  - validation.model.validate
+  - validation.plan.check
+  - validation.change.impact
+  - validation.duplicates.find
+actors:
+  - ai_agent
+requirements:
+  - id: R1
+    text: An agent checks a whole plan in one call before writing code
+tickets:
+  - PRODUCTCREATOR-29

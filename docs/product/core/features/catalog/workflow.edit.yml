@@ -1,0 +1,30 @@
+id: catalog.workflow.edit
+name: Create and edit a workflow
+bounded_context: catalog
+entity: workflow
+action: edit
+owner: atai
+lifecycle: implemented
+description: 'Creates or changes a workflow: ordered steps (features) with compensations.'
+source_file: http/routes/save-workflow/route.ts
+calls:
+  - validation.save.guard
+objects:
+  - id: workflow
+    access: write
+requirements:
+  - id: R1
+    text: Every step and compensation is an existing feature
+acceptance:
+  - id: A1
+    covers:
+      - R1
+    text: A step that is not a feature is rejected with unknown_feature
+    verify: pnpm --filter @pc/mcp test
+tickets:
+  - PRODUCTCREATOR-7
+  - PRODUCTCREATOR-33
+code_refs:
+  - component: desktop
+    file: renderer/src/pages/workflows-id.tsx
+    role: UI

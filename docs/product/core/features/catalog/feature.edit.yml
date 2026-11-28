@@ -1,0 +1,44 @@
+id: catalog.feature.edit
+name: Create and edit a feature
+bounded_context: catalog
+entity: feature
+action: edit
+owner: atai
+lifecycle: implemented
+description: Creates or changes a feature card with its spec; the save is validated before writing.
+source_file: http/routes/save/route.ts
+calls:
+  - validation.save.guard
+objects:
+  - id: feature
+    access: write
+actors:
+  - ai_agent
+  - product_owner
+requirements:
+  - id: R1
+    text: A feature is saved to features/<context>/<entity>.<action>.yml of its component
+  - id: R2
+    text: Spec fields (actors, requirements, acceptance, constraints, decisions, open questions) are saved with the card
+  - id: R3
+    text: A save that adds a model error is rejected with the issues
+acceptance:
+  - id: A1
+    covers:
+      - R2
+    text: Reading a card and saving it back keeps every field
+    verify: pnpm --filter @pc/core test -- features
+  - id: A2
+    covers:
+      - R3
+    given: a feature whose calls name a missing feature
+    when: it is saved
+    then: the response is 400 with unknown_feature
+    verify: pnpm --filter @pc/core test -- features
+tickets:
+  - PRODUCTCREATOR-7
+  - PRODUCTCREATOR-32
+code_refs:
+  - component: desktop
+    file: renderer/src/components/FeatureForm.tsx
+    role: UI

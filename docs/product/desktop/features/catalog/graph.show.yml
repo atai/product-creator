@@ -1,0 +1,14 @@
+id: catalog.graph.show
+name: Show the event graph
+bounded_context: catalog
+entity: graph
+action: show
+owner: atai
+lifecycle: implemented
+description: Features connected by emitted and consumed events, coloured by lifecycle.
+source_file: renderer/src/pages/graph.tsx
+objects:
+  - id: feature
+    access: read
+tickets:
+  - PRODUCTCREATOR-7

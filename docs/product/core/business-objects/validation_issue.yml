@@ -1,0 +1,24 @@
+id: validation_issue
+name: Validation issue
+description: A problem of the model found by validation (not stored; computed)
+owner: atai
+lifecycle: implemented
+fields:
+  - name: severity
+    type: enum<error|warning>
+  - name: code
+    type: string
+    description: e.g. unknown_feature, duplicate_item_id
+  - name: kind
+    type: enum<feature|workflow|business_object>
+  - name: id
+    type: string
+    description: Id of the entry with the problem
+  - name: field
+    type: string?
+  - name: message
+    type: text
+  - name: file
+    type: string?
+  - name: component
+    type: component?

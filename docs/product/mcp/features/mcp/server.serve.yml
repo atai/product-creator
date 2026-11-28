@@ -1,0 +1,34 @@
+id: mcp.server.serve
+name: Serve MCP to local agents
+bounded_context: mcp
+entity: server
+action: serve
+owner: atai
+lifecycle: implemented
+description: Streamable HTTP MCP server on 127.0.0.1 with a bearer token and read or write scope; off by default.
+source_file: server.ts
+objects:
+  - id: mcp_settings
+    access: read
+actors:
+  - ai_agent
+requirements:
+  - id: R1
+    text: Only 127.0.0.1 is listened on
+  - id: R2
+    text: Requests without the token are rejected
+  - id: R3
+    text: Read scope cannot call write tools
+acceptance:
+  - id: A1
+    covers:
+      - R2
+      - R3
+    text: Wrong token → 401; write tool with read token → error
+    verify: pnpm --filter @pc/mcp test -- server
+constraints:
+  - id: C1
+    kind: security
+    text: The token is stored only in the app data folder (mode 0600)
+tickets:
+  - PRODUCTCREATOR-18

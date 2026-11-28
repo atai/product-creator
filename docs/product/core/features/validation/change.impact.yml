@@ -1,0 +1,30 @@
+id: validation.change.impact
+name: Show what a change affects
+bounded_context: validation
+entity: change
+action: impact
+owner: atai
+lifecycle: implemented
+description: 'For a business object or feature: the features that use or call it, their callers, workflows and objects with fields of its type.'
+source_file: validation/plan.ts
+objects:
+  - id: feature
+    access: read
+  - id: business_object
+    access: read
+  - id: workflow
+    access: read
+requirements:
+  - id: R1
+    text: Impact of an object lists features by access and the workflows that use them
+  - id: R2
+    text: Impact of a feature lists callers two levels up
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+    text: impactOf returns features, workflows and objects with the reason (via)
+    verify: pnpm --filter @pc/core test -- validation
+tickets:
+  - PRODUCTCREATOR-29

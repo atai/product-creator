@@ -1,0 +1,33 @@
+id: project.component.edit
+name: Edit projects, services and libraries
+bounded_context: project
+entity: component
+action: edit
+owner: atai
+lifecycle: implemented
+description: Edits the project and its components in the app; the YAML files are the database.
+source_file: renderer/src/pages/workspace.tsx
+objects:
+  - id: project
+    access: write
+  - id: component
+    access: write
+requirements:
+  - id: R1
+    text: Name, paths, dependencies and the OpenAPI command of a component can be edited
+  - id: R2
+    text: Saving keeps the UUID of the component
+acceptance:
+  - id: A1
+    covers:
+      - R2
+    text: Renaming a component keeps its id
+    verify: pnpm --filter @pc/core test -- model
+tickets:
+  - PRODUCTCREATOR-12
+  - PRODUCTCREATOR-14
+code_refs:
+  - component: core
+    file: project/model.ts
+    symbol: saveComponent
+    role: storage

@@ -1,0 +1,13 @@
+workflow: project.onboard
+name: Onboard a repository
+steps:
+  - project.workspace.open
+  - project.layout.import
+  - sync.code.link
+  - sync.schema.import
+  - validation.model.validate
+lifecycle: implemented
+description: A repository is opened, its components imported, code and Prisma linked, and the catalog validated.
+tickets:
+  - PRODUCTCREATOR-8
+  - PRODUCTCREATOR-30

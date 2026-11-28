@@ -1,0 +1,36 @@
+id: project.context.edit
+name: Edit the product context
+bounded_context: project
+entity: context
+action: edit
+owner: atai
+lifecycle: implemented
+description: 'Vision, goals, actors, glossary and tracker of a project, stored in product-creator.yml: the first part of a spec.'
+source_file: renderer/src/pages/workspace.tsx
+objects:
+  - id: project
+    access: write
+actors:
+  - ai_agent
+  - product_owner
+requirements:
+  - id: R1
+    text: Vision, goals (G1…), actors, glossary and tracker are saved in product-creator.yml and survive other project edits
+  - id: R2
+    text: Goal ids, actor ids and glossary terms are unique; actor ids use a-z, 0-9, _; the tracker URL contains {id}
+  - id: R3
+    text: An agent reads the context with get_project and changes it with update_project
+  - id: R4
+    text: Ticket keys of entries link to the tracker
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+    text: updateProject saves, keeps and clears the context and rejects bad ids
+    verify: pnpm --filter @pc/core test -- model
+  - id: A2
+    covers:
+      - R3
+    text: get_project returns what update_project wrote; a bad goal id is rejected
+    verify: pnpm --filter @pc/mcp test -- server

@@ -1,0 +1,16 @@
+id: validation.duplicates.find
+name: Find duplicates before creating
+bounded_context: validation
+entity: duplicates
+action: find
+owner: atai
+lifecycle: implemented
+description: Finds entries with the same or a similar name or id.
+source_file: validation/plan.ts
+actors:
+  - ai_agent
+requirements:
+  - id: R1
+    text: Similar names and ids are found across components
+tickets:
+  - PRODUCTCREATOR-29

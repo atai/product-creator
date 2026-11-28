@@ -1,0 +1,25 @@
+id: validation.save.guard
+name: Reject saves that break the model
+bounded_context: validation
+entity: save
+action: guard
+owner: atai
+lifecycle: implemented
+description: Every save (UI, MCP) is checked before and after the change; it is rejected only if it adds an error.
+source_file: validation/guard.ts
+calls:
+  - validation.plan.check
+requirements:
+  - id: R1
+    text: A catalog that already has problems stays editable
+  - id: R2
+    text: The rejection lists the introduced issues
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+    text: Writes that add errors are rejected, consistent ones accepted, existing problems stay editable
+    verify: pnpm --filter @pc/core test -- features
+tickets:
+  - PRODUCTCREATOR-29

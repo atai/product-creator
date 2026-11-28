@@ -1,0 +1,16 @@
+id: app.update.install
+name: Update the app
+bounded_context: app
+entity: update
+action: install
+owner: atai
+lifecycle: implemented
+description: Signed releases update automatically; a check can be started from the menu.
+source_file: main/updater.ts
+actors:
+  - product_owner
+requirements:
+  - id: R1
+    text: Updates are installed only for signed builds
+tickets:
+  - PRODUCTCREATOR-21

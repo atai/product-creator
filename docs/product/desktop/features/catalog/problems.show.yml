@@ -1,0 +1,21 @@
+id: catalog.problems.show
+name: Show the problems of the catalog
+bounded_context: catalog
+entity: problems
+action: show
+owner: atai
+lifecycle: implemented
+description: The Problems page lists validation errors and warnings with links to the entries.
+source_file: renderer/src/pages/problems.tsx
+calls:
+  - validation.model.validate
+objects:
+  - id: validation_issue
+    access: read
+actors:
+  - product_owner
+requirements:
+  - id: R1
+    text: Errors and warnings are grouped by entry and link to it
+tickets:
+  - PRODUCTCREATOR-29

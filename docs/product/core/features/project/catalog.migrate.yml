@@ -1,0 +1,31 @@
+id: project.catalog.migrate
+name: Move functions/ folders to features/
+bounded_context: project
+entity: catalog
+action: migrate
+owner: atai
+lifecycle: implemented
+description: Moves the old functions/ catalog folders to features/ without overwriting anything (app banner and `product-creator migrate`).
+source_file: catalog/migrate.ts
+objects:
+  - id: feature
+    access: write
+requirements:
+  - id: R1
+    text: Files move from functions/ to features/ of every component
+  - id: R2
+    text: 'A file with different content in features/ is a conflict: it stays and is reported'
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+    text: migrate moves files, removes identical copies and reports conflicts
+    verify: pnpm --filter desktop test -- cli
+tickets:
+  - PRODUCTCREATOR-28
+code_refs:
+  - component: desktop
+    file: main/cli.ts
+    symbol: runCli
+    role: CLI

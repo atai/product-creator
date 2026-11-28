@@ -1,0 +1,21 @@
+id: workflow
+name: Workflow
+description: 'An ordered sequence of features: workflows/<key>.yml'
+owner: atai
+lifecycle: implemented
+fields:
+  - name: workflow
+    type: string
+    description: <context>.<name>
+  - name: name
+    type: string?
+  - name: steps
+    type: feature[]
+  - name: compensations
+    type: json?
+  - name: lifecycle
+    type: enum<draft|approved|implemented|deprecated|removed>
+  - name: description
+    type: text?
+  - name: tickets
+    type: string[]

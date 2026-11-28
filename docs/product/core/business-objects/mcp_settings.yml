@@ -1,0 +1,17 @@
+id: mcp_settings
+name: MCP settings
+description: settings.json in the app data folder
+owner: atai
+lifecycle: implemented
+fields:
+  - name: enabled
+    type: boolean
+  - name: scope
+    type: enum<read|write>
+  - name: port
+    type: int
+  - name: token
+    type: string
+    description: Bearer token
+  - name: relayEnabled
+    type: boolean

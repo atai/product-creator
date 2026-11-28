@@ -1,0 +1,26 @@
+id: spec.bundle.generate
+name: Generate the agent spec bundle
+bounded_context: spec
+entity: bundle
+action: generate
+owner: atai
+lifecycle: draft
+description: Manifest and small chunks per feature, component and interface group, with ids, contracts, objects, acceptance with verify and code anchors.
+calls:
+  - validation.model.validate
+actors:
+  - ai_agent
+requirements:
+  - id: R1
+    text: Unresolved validation issues are part of the bundle next to the affected feature
+  - id: R2
+    text: 'Fields marked x-audience: human are left out'
+open_questions:
+  - id: Q1
+    question: 'Scope of a bundle: whole product, component, or a selected set of features?'
+    owner: atai
+  - id: Q2
+    question: Size budget per chunk?
+    owner: atai
+tickets:
+  - PRODUCTCREATOR-35

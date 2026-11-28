@@ -1,0 +1,11 @@
+workflow: spec.release
+name: Release a spec
+steps:
+  - validation.design.check
+  - spec.bundle.generate
+  - spec.document.render
+lifecycle: draft
+description: Design checks pass, then the agent bundle and the human spec are generated.
+tickets:
+  - PRODUCTCREATOR-34
+  - PRODUCTCREATOR-35

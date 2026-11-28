@@ -1,0 +1,12 @@
+workflow: agent.plan_change
+name: Agent plans and writes a catalog change
+steps:
+  - validation.duplicates.find
+  - mcp.catalog.read
+  - mcp.plan.check
+  - mcp.catalog.write
+lifecycle: implemented
+description: An agent finds duplicates, reads the schema, checks the whole plan and applies it in one call.
+tickets:
+  - PRODUCTCREATOR-29
+  - PRODUCTCREATOR-33

@@ -1,0 +1,33 @@
+id: project
+name: Project
+description: A repository opened in Product Creator; product-creator.yml at its root
+owner: atai
+lifecycle: implemented
+fields:
+  - name: id
+    type: uuid
+    description: Stable id, never changes
+  - name: slug
+    type: string
+  - name: name
+    type: string
+  - name: description
+    type: text?
+  - name: catalogRoot
+    type: string
+    description: Folder of the component catalogs, e.g. docs/product
+  - name: components
+    type: component[]
+  - name: vision
+    type: text?
+  - name: goals
+    type: json
+    description: G1… with text
+  - name: actors
+    type: json
+    description: id, name, description
+  - name: glossary
+    type: json
+  - name: tracker
+    type: json?
+    description: issueUrl with {id}

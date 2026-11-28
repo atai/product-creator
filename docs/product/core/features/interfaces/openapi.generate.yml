@@ -1,0 +1,27 @@
+id: interfaces.openapi.generate
+name: Generate OpenAPI specs
+bounded_context: interfaces
+entity: openapi
+action: generate
+owner: atai
+lifecycle: implemented
+description: Runs the OpenAPI generate command of a component and reloads its operations.
+source_file: interfaces/generator.ts
+objects:
+  - id: component
+    access: read
+  - id: interface_operation
+    access: write
+requirements:
+  - id: R1
+    text: The command runs in the component folder with the login shell PATH
+  - id: R2
+    text: One generation per component at a time; it can be cancelled
+acceptance:
+  - id: A1
+    covers:
+      - R2
+    text: The manager runs, deduplicates and cancels generations
+    verify: pnpm --filter @pc/core test -- generator
+tickets:
+  - PRODUCTCREATOR-23

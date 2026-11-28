@@ -1,0 +1,34 @@
+id: project.workspace.open
+name: Open projects
+bounded_context: project
+entity: workspace
+action: open
+owner: atai
+lifecycle: implemented
+description: 'Opens one or several project folders: from the command line, from the current folder or from the Workspace page.'
+source_file: main/workspace.ts
+calls:
+  - project.layout.import
+objects:
+  - id: project
+    access: read
+actors:
+  - developer
+  - product_owner
+requirements:
+  - id: R1
+    text: '`product-creator` opens the current folder; folders given as arguments open together'
+  - id: R2
+    text: The Workspace page adds and removes projects
+acceptance:
+  - id: A1
+    covers:
+      - R1
+    text: '`product-creator ~/a ~/b` shows both projects in the workspace'
+open_questions:
+  - id: Q1
+    question: Should the workspace remember projects between launches per machine or per user?
+    owner: atai
+tickets:
+  - PRODUCTCREATOR-6
+  - PRODUCTCREATOR-9

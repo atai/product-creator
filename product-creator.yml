@@ -7,3 +7,53 @@ name: Product Creator
 description: Feature catalog and traceable product documentation (ТЗ) linked to code
 docs: docs
 catalogRoot: docs/product
+vision: >-
+  Product Creator keeps the logic of a product (features, data, workflows) as YAML next to the code, so people and AI
+  agents plan it together, see planning errors before code is written, and get the spec (ТЗ) generated from the same
+  model.
+goals:
+  - id: G1
+    text: >-
+      Planning and design errors are visible to people and agents as soon as they are written: in the editor, through
+      MCP and in CI
+  - id: G2
+    text: Specs for people and for agents are generated from one model and never written twice
+  - id: G3
+    text: Every feature is traceable to its code, tickets and tests
+  - id: G4
+    text: Agents plan and change the catalog safely through MCP
+actors:
+  - id: product_owner
+    name: Product owner
+    description: Plans features, approves specs
+  - id: developer
+    name: Developer
+    description: Builds features, links code, runs sync
+  - id: ai_agent
+    name: AI agent
+    description: Reads and changes the catalog through MCP, locally or through the relay
+  - id: ci
+    name: CI
+    description: Checks the catalog on every push
+  - id: client
+    name: Client
+    description: Reads the human spec
+glossary:
+  - term: Feature
+    definition: A business capability of the product (formerly function); one YAML file with its spec and links to code
+  - term: Business object
+    definition: A data entity of the product with typed fields
+  - term: Workflow
+    definition: An ordered sequence of features with compensations
+  - term: Component
+    definition: A service or library of a project; each has its own catalog folder
+  - term: Catalog
+    definition: The YAML files of features, business objects and workflows of a component
+  - term: Lifecycle
+    definition: draft → approved → implemented → deprecated → removed; each status has its own rules
+  - term: Plan
+    definition: A set of proposed catalog changes, checked as a whole before anything is written
+  - term: Spec (ТЗ)
+    definition: 'The document generated from the model: a human view and an agent bundle'
+tracker:
+  issueUrl: https://ecooz.youtrack.cloud/issue/{id}

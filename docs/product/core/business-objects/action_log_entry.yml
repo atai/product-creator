@@ -1,0 +1,17 @@
+id: action_log_entry
+name: Action log entry
+description: One MCP tool call recorded in the action log
+owner: atai
+lifecycle: implemented
+fields:
+  - name: at
+    type: datetime
+  - name: tool
+    type: string
+  - name: args
+    type: json
+    description: Compacted arguments
+  - name: ok
+    type: boolean
+  - name: caller
+    type: enum<local|relay>

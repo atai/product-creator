@@ -1,0 +1,32 @@
+id: mcp.relay.connect
+name: Reach the app remotely through the relay
+bounded_context: mcp
+entity: relay
+action: connect
+owner: atai
+lifecycle: implemented
+description: Remote agents reach the local MCP server through the Emperor relay; scope is the stricter of the bot token and the local setting.
+source_file: relay/client.ts
+calls:
+  - mcp.server.serve
+objects:
+  - id: mcp_settings
+    access: read
+actors:
+  - ai_agent
+requirements:
+  - id: R1
+    text: The effective scope is the stricter of the relay token and the local setting
+  - id: R2
+    text: Empty or typeless local responses are passed as 204
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+    text: Handshake, scope and relayed requests behave as specified
+    verify: pnpm --filter @pc/mcp test -- relay
+tickets:
+  - PRODUCTCREATOR-20
+  - PRODUCTCREATOR-25
+  - PRODUCTCREATOR-27

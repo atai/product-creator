@@ -1,0 +1,18 @@
+id: business_object
+name: Business object
+description: 'A data entity of the product: business-objects/<id>.yml'
+owner: atai
+lifecycle: implemented
+fields:
+  - name: id
+    type: string
+  - name: name
+    type: string
+  - name: lifecycle
+    type: enum<draft|approved|implemented|deprecated|removed>
+  - name: fields
+    type: json
+    description: name, type, description
+  - name: tables
+    type: json?
+    description: Physical tables (from Prisma)

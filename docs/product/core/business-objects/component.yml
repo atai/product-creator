@@ -1,0 +1,28 @@
+id: component
+name: Component
+description: A service or library of a project; <catalog>/service.pc.yml or library.pc.yml
+owner: atai
+lifecycle: implemented
+fields:
+  - name: id
+    type: uuid
+  - name: kind
+    type: enum<service|library>
+  - name: slug
+    type: string
+  - name: name
+    type: string
+  - name: path
+    type: string
+    description: Code folder
+  - name: codeBasePath
+    type: string?
+    description: Base of source_file paths
+  - name: catalog
+    type: string
+    description: Catalog folder
+  - name: dependsOn
+    type: component[]
+  - name: openapiGenerate
+    type: string?
+    description: Command that writes the OpenAPI spec

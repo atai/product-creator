@@ -1,0 +1,14 @@
+id: catalog.matrix.show
+name: Show the entity × action matrix
+bounded_context: catalog
+entity: matrix
+action: show
+owner: atai
+lifecycle: implemented
+description: Entity × action coverage per bounded context.
+source_file: renderer/src/pages/matrix.tsx
+objects:
+  - id: feature
+    access: read
+tickets:
+  - PRODUCTCREATOR-7

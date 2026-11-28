@@ -1,0 +1,35 @@
+id: mcp.catalog.read
+name: Read the catalog through MCP
+bounded_context: mcp
+entity: catalog
+action: read
+owner: atai
+lifecycle: implemented
+description: list_projects, get_project, list_components, list_catalog, get_catalog_entry, get_schema, get_object, list_interfaces.
+source_file: tools.ts
+calls:
+  - interfaces.operation.list
+objects:
+  - id: feature
+    access: read
+  - id: business_object
+    access: read
+  - id: workflow
+    access: read
+actors:
+  - ai_agent
+requirements:
+  - id: R1
+    text: An agent can read the schema of a card before writing it
+  - id: R2
+    text: Lists are compact and paged
+acceptance:
+  - id: A1
+    covers:
+      - R1
+    text: get_schema(feature) lists the spec fields
+    verify: pnpm --filter @pc/mcp test -- server
+tickets:
+  - PRODUCTCREATOR-18
+  - PRODUCTCREATOR-32
+  - PRODUCTCREATOR-33

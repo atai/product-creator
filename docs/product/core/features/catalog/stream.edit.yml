@@ -1,0 +1,22 @@
+id: catalog.stream.edit
+name: Create and edit a stream
+bounded_context: catalog
+entity: stream
+action: edit
+owner: atai
+lifecycle: implemented
+description: 'Creates or changes a stream: a business process with stages, KPIs and workflows per stage.'
+source_file: http/routes/save-stream/route.ts
+requirements:
+  - id: R1
+    text: Streams are saved as YAML in streams/
+open_questions:
+  - id: Q1
+    question: 'Streams are not validated and not used by any other entity: keep, validate, or drop them?'
+    owner: atai
+tickets:
+  - PRODUCTCREATOR-7
+code_refs:
+  - component: desktop
+    file: renderer/src/pages/streams-id.tsx
+    role: UI

@@ -1,0 +1,48 @@
+id: validation.model.validate
+name: Validate the catalog
+bounded_context: validation
+entity: model
+action: validate
+owner: atai
+lifecycle: implemented
+description: 'Checks the whole model: schemas, ids, references, field types, duplicates, spec items. One implementation for the UI, MCP and CLI.'
+source_file: validation/model.ts
+objects:
+  - id: feature
+    access: read
+  - id: business_object
+    access: read
+  - id: workflow
+    access: read
+  - id: validation_issue
+    access: write
+actors:
+  - ai_agent
+  - ci
+  - product_owner
+requirements:
+  - id: R1
+    text: References of calls, objects, steps and compensations resolve across all loaded projects
+  - id: R2
+    text: Every issue names the entry, the field and a message a person understands
+  - id: R3
+    text: Streams are validated too
+    priority: should
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+    text: A catalog with unknown references, types and duplicates reports each with code and field
+    verify: pnpm --filter @pc/core test -- validation
+constraints:
+  - id: C1
+    kind: performance
+    text: Validating a catalog of 1000 entries takes under 1 s
+tickets:
+  - PRODUCTCREATOR-29
+  - PRODUCTCREATOR-32
+code_refs:
+  - component: core
+    file: http/routes/validation/route.ts
+    role: API

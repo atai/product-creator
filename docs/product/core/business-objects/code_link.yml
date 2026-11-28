@@ -1,0 +1,15 @@
+id: code_link
+name: Code link
+description: 'Link of a code function to a feature: .sync-mapping.json of a catalog'
+owner: atai
+lifecycle: implemented
+fields:
+  - name: codeFunction
+    type: string
+    description: <file>:<function>
+  - name: feature
+    type: feature
+  - name: status
+    type: enum<linked|proposed|candidate|stale>
+  - name: lastSync
+    type: datetime
