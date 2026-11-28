@@ -28,6 +28,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm desktop:build
+      - name: Catalog lint (this repo's own product catalog, PRODUCTCREATOR-33)
+        run: pnpm catalog:lint
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'

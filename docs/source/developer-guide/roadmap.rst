@@ -50,6 +50,23 @@ version of Product Creator.
    * - `PRODUCTCREATOR-30 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-30>`_
      - Code sync links code functions to existing features (linked / proposed / candidate / stale)
 
+Epic `PRODUCTCREATOR-31 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-31>`_ — specs (ТЗ) for
+people and agents from a validated model, dogfooded on this repo.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Ticket
+     - Scope
+   * - `PRODUCTCREATOR-32 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-32>`_
+     - Feature spec fields: requirements, acceptance, actors, constraints, decisions, open questions
+   * - `PRODUCTCREATOR-33 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-33>`_
+     - Dogfooding: Product Creator modelled in its own catalog; catalog lint in CI
+   * - `PRODUCTCREATOR-34 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-34>`_
+     - Design checks; strictness by lifecycle
+   * - `PRODUCTCREATOR-35 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35>`_
+     - Spec generator: agent bundle + human view, planning problems embedded
+
 Known gaps
 ----------
 

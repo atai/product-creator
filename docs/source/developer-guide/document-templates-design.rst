@@ -47,8 +47,7 @@ Decisions
 #. **Features declare the objects they use**: ``objects: [{id, access: read|write}]``, validated
    against the business objects. This is what impact analysis is built on. (*exists*)
 #. **The document generator is a later step.** Rendering YAML into human pages and an agent bundle
-   (manifest + chunks) comes after the model is reliable. Product Creator itself is not modelled in
-   its own catalog yet.
+   (manifest + chunks) comes after the model is reliable.
 
 What exists
 -----------
@@ -109,13 +108,21 @@ Kept from the first proposal, now on top of the YAML model:
 Planned order
 -------------
 
-#. Enums and other missing type kinds for business object fields; stream validation.
+Epic `PRODUCTCREATOR-31 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-31>`_: specs for people
+and agents from a validated model, dogfooded on this repo.
+
+#. Spec fields on Feature: actors, requirements, acceptance with ``verify``, constraints, decisions,
+   open questions, ``x-audience`` (`PRODUCTCREATOR-32 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-32>`_).
+   Comes first, so the project is modelled in the right schema.
+#. Modelling Product Creator itself in its catalog; catalog lint in CI
+   (`PRODUCTCREATOR-33 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-33>`_).
+#. Design checks: architecture (``calls`` vs ``dependsOn``, cycles), events, object usage, lifecycle
+   consistency, completeness, code links, enums, streams; warnings in ``draft``, errors from
+   ``approved`` on (`PRODUCTCREATOR-34 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-34>`_).
+#. Generator: agent bundle and human view on the Doc page, unresolved problems rendered next to the
+   affected feature (`PRODUCTCREATOR-35 <https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35>`_).
 #. Trace through interfaces: ``interfaces.implements`` / ``interfaces.calls`` on features
-   (:doc:`openapi-sync-design`) and their validation.
-#. Requirement fields on Feature (requirements, acceptance with ``verify``), decision records.
-#. Generator: agent bundle (manifest, chunks, size budget, MCP ``get_doc_manifest``), then the human
-   renderer on the Doc page.
-#. Modelling Product Creator itself in its catalog (dogfooding).
+   (:doc:`openapi-sync-design`, PRODUCTCREATOR-9); templates and brands (PRODUCTCREATOR-19).
 
 Open questions
 --------------

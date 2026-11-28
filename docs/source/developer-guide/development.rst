@@ -28,6 +28,9 @@ Commands (from the repository root)
      - TypeScript checks of all packages (core, desktop, mcp)
    * - ``pnpm lint``
      - ESLint (``eslint.config.mjs``) for ``apps/desktop``, ``packages/core`` and ``packages/mcp``
+   * - ``pnpm catalog:lint``
+     - ``product-creator lint`` on this repo's own catalog (``docs/product``), warnings shown; needs
+       ``pnpm desktop:build`` first. CI fails on catalog errors.
    * - ``pnpm test``
      - Unit tests (vitest, ``packages/core/test``)
    * - ``pnpm docs``
