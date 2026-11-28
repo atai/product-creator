@@ -118,6 +118,17 @@
         "additionalProperties": false
       },
       "description": "Physical representations supporting this object"
+    },
+    "tickets": {
+      "type": "array",
+      "x-audience": "both",
+      "default": [],
+      "description": "Tracker issues this entry is planned or built in, e.g. PRODUCTCREATOR-34 (YouTrack/Jira key) or #12 (GitHub). Linked with tracker.issueUrl of product-creator.yml.",
+      "items": {
+        "type": "string",
+        "pattern": "^([A-Z][A-Z0-9_]*-|#)[1-9][0-9]*$",
+        "description": "Issue key: PROJECT-123 or #123"
+      }
     }
   },
   "additionalProperties": false

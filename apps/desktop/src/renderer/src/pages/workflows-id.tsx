@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { Workflow } from '@pc/core/types';
+import { LIFECYCLES, type Lifecycle, type Workflow } from '@pc/core/types';
 import FormHelpHint from '@/components/FormHelpHint';
 
 type WorkflowFormData = {
   workflow: string;
   name: string;
+  description: string;
+  lifecycle: Lifecycle;
+  /** comma-separated issue keys */
+  tickets: string;
   steps: { value: string }[];
   emits: { value: string }[];
   compensations: { stepId: string; compensationId: string }[];
@@ -25,6 +29,8 @@ export default function WorkflowEditPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<string>('');
+  /** The card as loaded: fields the form does not edit are saved back unchanged */
+  const [loaded, setLoaded] = useState<Workflow | null>(null);
 
   const {
     register,
@@ -36,6 +42,9 @@ export default function WorkflowEditPage() {
     defaultValues: {
       workflow: '',
       name: '',
+      description: '',
+      lifecycle: 'draft',
+      tickets: '',
       steps: [],
       emits: [],
       compensations: [],
@@ -90,9 +99,13 @@ export default function WorkflowEditPage() {
 
       const workflow: Workflow = await response.json();
 
+      setLoaded(workflow);
       reset({
         workflow: workflow.workflow,
         name: workflow.name || '',
+        description: workflow.description || '',
+        lifecycle: workflow.lifecycle || 'draft',
+        tickets: (workflow.tickets || []).join(', '),
         steps: workflow.steps.map(step => ({ value: step })),
         emits: (workflow.emits || []).map(emit => ({ value: emit })),
         compensations: Object.entries(workflow.compensations || {}).map(([stepId, compensationId]) => ({
@@ -113,9 +126,14 @@ export default function WorkflowEditPage() {
       setSaving(true);
       setError(null);
 
+      const tickets = data.tickets.split(/[\s,]+/).filter(Boolean);
       const workflow: Workflow = {
+        ...loaded,
         workflow: data.workflow,
         name: data.name || undefined,
+        description: data.description.trim() || undefined,
+        lifecycle: data.lifecycle,
+        tickets: tickets.length ? tickets : undefined,
         steps: data.steps.map(s => s.value).filter(v => v.trim()),
         emits: data.emits.map(e => e.value).filter(v => v.trim()),
         compensations: data.compensations.reduce((acc, { stepId, compensationId }) => {
@@ -203,6 +221,27 @@ export default function WorkflowEditPage() {
                   placeholder="Human-readable name"
                   className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-fg-2 mb-1">Lifecycle *</label>
+                <select {...register('lifecycle', { required: true })} className="w-full px-3 py-2 border border-border-strong rounded bg-surface text-fg">
+                  {LIFECYCLES.map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-fg-2 mb-1">Description</label>
+                <textarea {...register('description')} rows={2} placeholder="What the workflow achieves and when it runs" className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-fg-2 mb-1">Tickets</label>
+                <input {...register('tickets')} placeholder="PRODUCTCREATOR-34, #12" className="w-full px-3 py-2 border border-border-strong rounded focus:ring-2 focus:ring-accent" />
               </div>
             </div>
           </div>

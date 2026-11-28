@@ -1,4 +1,63 @@
+import { useEffect, useState } from 'react';
 import type { Feature } from '@pc/core/types';
+
+/**
+ * Issue link template of the open projects (PRODUCTCREATOR-33). Used only when exactly one tracker is configured:
+ * with several, a key cannot be attributed to a project here and is shown without a link.
+ */
+function useIssueUrl(): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    void window.pc.workspace.get().then((info) => {
+      const urls = [...new Set(info.projects.flatMap((p) => (p.project?.tracker ? [p.project.tracker.issueUrl] : [])))];
+      setUrl(urls.length === 1 ? urls[0] : null);
+    });
+  }, []);
+  return url;
+}
+
+/** Tickets and other places of the implementation (PRODUCTCREATOR-33) */
+export function FeatureLinksView({ feature }: { feature: Feature }) {
+  const issueUrl = useIssueUrl();
+  const { tickets = [], code_refs = [] } = feature;
+  return (
+    <>
+      {tickets.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-medium text-meta mb-2">Tickets</h3>
+          <div className="flex flex-wrap gap-2">
+            {tickets.map((t) =>
+              issueUrl ? (
+                <a key={t} href={issueUrl.replace('{id}', encodeURIComponent(t.replace(/^#/, '')))} target="_blank" rel="noreferrer" className="font-mono text-sm text-accent-fg underline">
+                  {t}
+                </a>
+              ) : (
+                <span key={t} className="font-mono text-sm">
+                  {t}
+                </span>
+              )
+            )}
+          </div>
+        </div>
+      )}
+      {code_refs.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-medium text-meta mb-2">Also implemented in</h3>
+          <ul className="space-y-1 text-sm">
+            {code_refs.map((c) => (
+              <li key={`${c.component}:${c.file}:${c.symbol ?? ''}`}>
+                <span className="text-xs text-meta mr-2">{c.component}</span>
+                <span className="font-mono">{c.file}</span>
+                {c.symbol && <span className="font-mono text-meta"> #{c.symbol}</span>}
+                {c.role && <span className="ml-2 text-xs text-meta">({c.role})</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+}
 
 /** Read-only spec of a feature (PRODUCTCREATOR-32): actors, requirements, acceptance, constraints, decisions, open questions */
 export default function FeatureSpecView({ feature }: { feature: Feature }) {

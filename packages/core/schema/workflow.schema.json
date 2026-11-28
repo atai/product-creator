@@ -3,39 +3,76 @@
   "title": "Workflow",
   "description": "A workflow is a sequence of functions that work together",
   "type": "object",
-  "required": ["workflow", "steps"],
+  "required": [
+    "workflow",
+    "lifecycle",
+    "steps"
+  ],
   "properties": {
     "workflow": {
       "type": "string",
       "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
-      "description": "Workflow identifier in format: context.name"
+      "description": "Workflow identifier in format: context.name",
+      "x-audience": "both"
     },
     "name": {
       "type": "string",
-      "description": "Human-readable name"
+      "description": "Human-readable name",
+      "x-audience": "both"
+    },
+    "description": {
+      "type": "string",
+      "x-audience": "both",
+      "description": "What the workflow achieves and when it runs"
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "implemented",
+        "deprecated",
+        "removed"
+      ],
+      "x-audience": "both",
+      "description": "draft: being worked out; approved: spec agreed, ready to build; implemented: in the code; deprecated: still in the code, do not use in new work; removed: gone from the code, kept for history"
     },
     "steps": {
       "type": "array",
       "items": {
         "type": "string",
-        "description": "Function ID"
+        "description": "Feature id"
       },
       "minItems": 1,
-      "description": "Ordered list of function IDs"
+      "description": "Ordered list of feature ids",
+      "x-audience": "both"
     },
     "emits": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Events emitted by this workflow"
+      "description": "Events emitted by this workflow",
+      "x-audience": "both"
     },
     "compensations": {
       "type": "object",
       "additionalProperties": {
         "type": "string"
       },
-      "description": "Map of function ID to compensation function ID"
+      "description": "Map of feature id (step) to the feature id that undoes it",
+      "x-audience": "both"
+    },
+    "tickets": {
+      "type": "array",
+      "x-audience": "both",
+      "default": [],
+      "description": "Tracker issues this entry is planned or built in, e.g. PRODUCTCREATOR-34 (YouTrack/Jira key) or #12 (GitHub). Linked with tracker.issueUrl of product-creator.yml.",
+      "items": {
+        "type": "string",
+        "pattern": "^([A-Z][A-Z0-9_]*-|#)[1-9][0-9]*$",
+        "description": "Issue key: PROJECT-123 or #123"
+      }
     }
   }
 }

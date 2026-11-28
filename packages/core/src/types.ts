@@ -39,6 +39,20 @@ export interface Feature {
   constraints?: FeatureConstraint[];
   decisions?: FeatureDecision[];
   open_questions?: FeatureQuestion[];
+  /** Other places of the implementation, in this or another component (PRODUCTCREATOR-33) */
+  code_refs?: FeatureCodeRef[];
+  /** Tracker issues, e.g. PRODUCTCREATOR-34 */
+  tickets?: string[];
+}
+
+export interface FeatureCodeRef {
+  /** Component slug or id */
+  component: string;
+  /** Relative to the codeBasePath of that component */
+  file: string;
+  symbol?: string;
+  /** e.g. UI, API, CLI */
+  role?: string;
 }
 
 export interface FeatureRequirement {
@@ -118,9 +132,13 @@ export interface GraphEdge {
 export interface Workflow {
   workflow: string;
   name?: string;
+  description?: string;
+  /** PRODUCTCREATOR-33: a planned workflow is draft like a feature */
+  lifecycle: Lifecycle;
   steps: string[];
   emits?: string[];
   compensations?: Record<string, string>;
+  tickets?: string[];
 }
 
 export interface StreamStage {
@@ -169,6 +187,7 @@ export interface BusinessObject {
   fields: BusinessObjectField[];
   tables?: BusinessObjectTable[];
   childObjects?: BusinessObject[];
+  tickets?: string[];
 }
 
 export interface Project {

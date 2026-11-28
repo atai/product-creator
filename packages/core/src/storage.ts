@@ -5,7 +5,10 @@ import type { FSWatcher } from 'chokidar';
 import chokidar from 'chokidar';
 import logger from './logger';
 import { Feature, Workflow, Stream, BusinessObject, Project, AppEntity } from './types';
-import type { CatalogModel, ModelEntry } from './validation/model';
+import type { CatalogModel, EntityKind, ModelEntry } from './validation/model';
+
+/** Store table of each validated catalog kind */
+const CATALOG_TABLES: Record<EntityKind, string> = { feature: 'features', workflow: 'workflows', business_object: 'business_objects' };
 import { BaseRepository } from './repository/BaseRepository';
 import { FileSystemAdapter } from './repository/FileSystemAdapter';
 import {
@@ -547,6 +550,33 @@ class FunctionStorage {
       return null;
     }
     return row.filePath as string;
+  }
+
+  /** Catalog entry by kind (PRODUCTCREATOR-33: apply-plan) */
+  getEntry(kind: EntityKind, id: string): Feature | Workflow | BusinessObject | null {
+    return kind === 'feature' ? this.getFeatureById(id) : kind === 'workflow' ? this.getWorkflowById(id) : this.getBusinessObjectById(id);
+  }
+
+  /** Catalog folder (component directory) an entry is stored in */
+  getEntryRoot(kind: EntityKind, id: string): string | null {
+    const file = this.getFilePath(CATALOG_TABLES[kind], id);
+    return file ? this.getRootForFilePath(file) : null;
+  }
+
+  async saveEntry(kind: EntityKind, data: unknown, targetRoot: string): Promise<{ success: boolean; error?: string }> {
+    if (kind === 'feature') return this.saveFeature(data as Feature, targetRoot);
+    if (kind === 'workflow') return this.saveWorkflow(data as Workflow, targetRoot);
+    return this.saveBusinessObject(data as BusinessObject, targetRoot);
+  }
+
+  /** Removes the file of a catalog entry; false if it does not exist */
+  deleteEntry(kind: EntityKind, id: string): boolean {
+    const deleted = this.deleteRowFile(CATALOG_TABLES[kind], id);
+    if (deleted && kind === 'feature') {
+      this.buildEdges();
+      this.indexEvents();
+    }
+    return deleted;
   }
 
   private deleteRowFile(tableName: string, id: string): boolean {

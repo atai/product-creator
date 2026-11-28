@@ -42,7 +42,7 @@ describe('product-creator migrate', () => {
     const project = openProject(root).project;
     const wf = path.join(root, project.components[0].catalog, 'workflows', 'orders.checkout.yml');
     fs.mkdirSync(path.dirname(wf), { recursive: true });
-    fs.writeFileSync(wf, 'workflow: orders.checkout\nsteps:\n  - orders.order.create\n');
+    fs.writeFileSync(wf, 'workflow: orders.checkout\nlifecycle: draft\nsteps:\n  - orders.order.create\n');
 
     const run = io();
     expect(await runCli(['lint'], run.io)).toBe(1);

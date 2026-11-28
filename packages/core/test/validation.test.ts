@@ -8,7 +8,7 @@ const feature = (id: string, extra: Partial<Feature> = {}): Feature => {
   return { id, name: `${entity} ${action}`, bounded_context, entity, action, owner: 'team', lifecycle: 'implemented', ...extra };
 };
 const object = (id: string, fields: BusinessObject['fields'] = [{ name: 'id', type: 'string' }], name = id): BusinessObject => ({ id, name, owner: 'team', lifecycle: 'implemented', fields });
-const workflow = (key: string, steps: string[], compensations?: Record<string, string>): Workflow => ({ workflow: key, name: key, steps, ...(compensations ? { compensations } : {}) });
+const workflow = (key: string, steps: string[], compensations?: Record<string, string>): Workflow => ({ workflow: key, name: key, lifecycle: 'implemented', steps, ...(compensations ? { compensations } : {}) });
 
 function model(): CatalogModel {
   return {

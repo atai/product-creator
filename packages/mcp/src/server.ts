@@ -6,7 +6,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { ActionLog } from './audit.js';
 import type { McpHost, McpScope, Principal } from './host.js';
-import { registerTools } from './tools.js';
+import { registerTools, WRITE_TOOLS } from './tools.js';
 
 export const MCP_PATH = '/mcp';
 /** Headers the relay client sets when it forwards a bot request (honoured only with the in-process relay key) */
@@ -251,7 +251,12 @@ export class McpHttpServer {
       {
         instructions:
           'Product Creator: feature catalog, services/libraries, code and schema sync, OpenAPI. Start with list_projects. Tools work only on projects open in the desktop app.' +
-          (principal.cappedByLocal ? ' This app is set to read-only mode: write tools are disabled although your token allows writes.' : '')
+          ' To change the catalog: get_schema, find_duplicates, validate_plan, then apply_plan with the same changes.' +
+          (principal.cappedByLocal
+            ? ' This app is set to read-only mode: write tools are disabled although your token allows writes.'
+            : principal.scope !== 'write'
+              ? ` This session is read-only: the write tools (${WRITE_TOOLS.join(', ')}) are not available. Ask the user to set Settings → MCP → scope to read-write in Product Creator.`
+              : '')
       }
     );
     registerTools(server, { host: this.options.host, principal, audit: this.audit });

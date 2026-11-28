@@ -9,6 +9,7 @@ import {
   deleteComponent,
   importNewComponents,
   isUuid,
+  issueLink,
   openProject,
   PROJECT_FILE,
   readProject,
@@ -177,5 +178,39 @@ describe('safety', () => {
   it('refuses to import the home directory or filesystem root', () => {
     expect(() => openProject(os.homedir())).toThrow(/not a project folder/);
     expect(() => openProject(path.parse(process.cwd()).root)).toThrow(/not a project folder/);
+  });
+});
+
+describe('product context (PRODUCTCREATOR-33)', () => {
+  it('saves vision, goals, actors, glossary and tracker in product-creator.yml and reads them back', () => {
+    monorepo();
+    openProject(root);
+    updateProject(root, {
+      vision: 'Specs people and agents can check',
+      goals: [{ id: 'G1', text: 'Planning errors are visible' }],
+      actors: [{ id: 'ai_agent', name: 'AI agent', description: 'Plans and writes through MCP' }],
+      glossary: [{ term: 'Feature', definition: 'A business capability' }],
+      tracker: { issueUrl: 'https://example.youtrack.cloud/issue/{id}' },
+    });
+    const file = yaml.load(fs.readFileSync(path.join(root, PROJECT_FILE), 'utf8')) as Record<string, unknown>;
+    expect(file.goals).toEqual([{ id: 'G1', text: 'Planning errors are visible' }]);
+    const project = readProject(root)!;
+    expect(project.actors?.[0]).toEqual({ id: 'ai_agent', name: 'AI agent', description: 'Plans and writes through MCP' });
+    expect(issueLink(project.tracker, 'PC-12')).toBe('https://example.youtrack.cloud/issue/PC-12');
+
+    // other edits keep the context; empty lists and null clear it
+    updateProject(root, { name: 'Renamed' });
+    expect(readProject(root)!.glossary).toHaveLength(1);
+    updateProject(root, { glossary: [], tracker: null });
+    expect(readProject(root)!).toMatchObject({ glossary: undefined, tracker: undefined, vision: 'Specs people and agents can check' });
+  });
+
+  it('rejects bad ids, duplicates and a tracker URL without {id}', () => {
+    monorepo();
+    openProject(root);
+    expect(() => updateProject(root, { goals: [{ id: 'goal-1', text: 'x' }] })).toThrow(/G1, G2/);
+    expect(() => updateProject(root, { actors: [{ id: 'AI Agent', name: 'x' }] })).toThrow(/a-z, 0-9 and _/);
+    expect(() => updateProject(root, { glossary: [{ term: 'Feature', definition: 'a' }, { term: 'feature', definition: 'b' }] })).toThrow(/used twice/);
+    expect(() => updateProject(root, { tracker: { issueUrl: 'https://example.com/issue' } })).toThrow(/\{id\}/);
   });
 });

@@ -1,25 +1,33 @@
 import * as path from 'path';
 import { EntityConfig } from './types';
-import { Feature, Workflow, Stream, BusinessObject, Project, AppEntity } from '../types';
+import { Feature, Workflow, Stream, BusinessObject, Project, AppEntity, type Lifecycle } from '../types';
 
 /** Catalog folder of features (PRODUCTCREATOR-28) */
 export const FEATURES_DIR = 'features';
 /** Old folder name, still read so that existing catalogs keep working; `migrateFeatureFolders` moves it */
 export const LEGACY_FEATURES_DIR = 'functions';
 
-/** Feature fields with their own row column; every other field of the card goes to the `extra` column */
-const FEATURE_COLUMNS = new Set(['id', 'name', 'bounded_context', 'entity', 'action', 'owner', 'lifecycle', 'tags', 'emits', 'consumes', 'apis', 'description', 'source_file', 'calls', 'objects', 'filePath']);
-
-/** Fields without a column (spec fields of PRODUCTCREATOR-32 and any field added later), so that reading a card never drops them */
-function extraFields(entity: Feature): string | undefined {
-  const extra = Object.fromEntries(Object.entries(entity).filter(([k, v]) => !FEATURE_COLUMNS.has(k) && v !== undefined));
-  return Object.keys(extra).length ? JSON.stringify(extra) : undefined;
+/**
+ * Catalog cards keep every field: fields without their own row column (spec fields of PRODUCTCREATOR-32, workflow
+ * lifecycle, tickets, … and any field added later) go to the `extra` JSON column, so reading a card and saving it
+ * back never drops a field (PRODUCTCREATOR-33).
+ */
+function keepAllFields<T extends object>(config: EntityConfig<T>): EntityConfig<T> {
+  return {
+    ...config,
+    toRow: (entity, filePath) => {
+      const row = config.toRow(entity, filePath);
+      const extra = Object.fromEntries(Object.entries(entity).filter(([k, v]) => !(k in row) && v !== undefined));
+      return Object.keys(extra).length ? { ...row, extra: JSON.stringify(extra) } : row;
+    },
+    fromRow: (row) => ({ ...(row.extra ? (JSON.parse(row.extra as string) as Partial<T>) : {}), ...config.fromRow(row) }),
+  };
 }
 
 /**
  * Configuration for the Feature repository
  */
-export const featureConfig: EntityConfig<Feature> = {
+export const featureConfig: EntityConfig<Feature> = keepAllFields({
   tableName: 'features',
   subdirectory: FEATURES_DIR,
 
@@ -64,12 +72,10 @@ export const featureConfig: EntityConfig<Feature> = {
     ...(entity.source_file ? { source_file: entity.source_file } : {}),
     ...(entity.calls?.length ? { calls: JSON.stringify(entity.calls) } : {}),
     ...(entity.objects?.length ? { objects: JSON.stringify(entity.objects) } : {}),
-    ...(extraFields(entity) ? { extra: extraFields(entity) } : {}),
     filePath,
   }),
 
   fromRow: (row) => ({
-    ...(row.extra ? (JSON.parse(row.extra as string) as Partial<Feature>) : {}),
     id: row.id as string,
     name: row.name as string,
     bounded_context: row.bounded_context as string,
@@ -86,12 +92,12 @@ export const featureConfig: EntityConfig<Feature> = {
     ...(row.calls ? { calls: JSON.parse(row.calls as string) as string[] } : {}),
     ...(row.objects ? { objects: JSON.parse(row.objects as string) as Feature['objects'] } : {}),
   }),
-};
+});
 
 /**
  * Configuration for Workflow repository
  */
-export const workflowConfig: EntityConfig<Workflow> = {
+export const workflowConfig: EntityConfig<Workflow> = keepAllFields({
   tableName: 'workflows',
   subdirectory: 'workflows',
 
@@ -109,6 +115,8 @@ export const workflowConfig: EntityConfig<Workflow> = {
   toRow: (entity, filePath) => ({
     workflow: entity.workflow,
     name: entity.name || '',
+    // a card without lifecycle stays without it (validation reports it), nothing is invented on read
+    ...(entity.lifecycle ? { lifecycle: entity.lifecycle } : {}),
     steps: JSON.stringify(entity.steps || []),
     emits: JSON.stringify(entity.emits || []),
     compensations: JSON.stringify(entity.compensations || {}),
@@ -118,16 +126,17 @@ export const workflowConfig: EntityConfig<Workflow> = {
   fromRow: (row) => ({
     workflow: row.workflow as string,
     name: row.name as string,
+    lifecycle: row.lifecycle as Lifecycle,
     steps: JSON.parse((row.steps as string) || '[]'),
     emits: JSON.parse((row.emits as string) || '[]'),
     compensations: JSON.parse((row.compensations as string) || '{}'),
   }),
-};
+});
 
 /**
  * Configuration for Stream repository
  */
-export const streamConfig: EntityConfig<Stream> = {
+export const streamConfig: EntityConfig<Stream> = keepAllFields({
   tableName: 'streams',
   subdirectory: 'streams',
 
@@ -163,12 +172,12 @@ export const streamConfig: EntityConfig<Stream> = {
     stages: JSON.parse((row.stages as string) || '[]'),
     rules: JSON.parse((row.rules as string) || '{}'),
   }),
-};
+});
 
 /**
  * Configuration for Business Object repository
  */
-export const businessObjectConfig: EntityConfig<BusinessObject> = {
+export const businessObjectConfig: EntityConfig<BusinessObject> = keepAllFields({
   tableName: 'business_objects',
   subdirectory: 'business-objects',
 
@@ -217,7 +226,7 @@ export const businessObjectConfig: EntityConfig<BusinessObject> = {
     fields: JSON.parse((row.fields as string) || '[]'),
     tables: JSON.parse((row.tables as string) || '[]'),
   }),
-};
+});
 
 /**
  * Configuration for Project repository

@@ -27,7 +27,7 @@ const toForm = (card: Feature | null | undefined): FeatureFormData =>
 
 /** Form values → the card as it is checked, previewed and saved */
 function toPayload(data: FeatureFormData, id: string): Feature {
-  const { tags, emits, consumes, actors: _actors, requirements: _r, acceptance: _a, constraints: _c, decisions: _d, open_questions: _q, ...rest } = data;
+  const { tags, emits, consumes, actors: _actors, requirements: _r, acceptance: _a, constraints: _c, decisions: _d, open_questions: _q, tickets: _t, code_refs: _cr, ...rest } = data;
   const payload: Feature = {
     ...rest,
     id,

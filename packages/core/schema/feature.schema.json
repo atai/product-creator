@@ -133,7 +133,7 @@
     },
     "source_file": {
       "type": "string",
-      "description": "Relative path of the source file that implements this feature",
+      "description": "Main implementation file, relative to the codeBasePath of the feature's component. Set by code sync; other places go to code_refs.",
       "x-audience": "agent"
     },
     "objects": {
@@ -381,6 +381,53 @@
             "description": "Who answers it"
           }
         }
+      }
+    },
+    "code_refs": {
+      "type": "array",
+      "x-audience": "agent",
+      "default": [],
+      "description": "Other places that implement the feature (UI page, API route, CLI command), in this or another component of the project",
+      "items": {
+        "type": "object",
+        "required": [
+          "component",
+          "file"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "component": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Component slug (or id) the file belongs to"
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path relative to the codeBasePath of that component"
+          },
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Function, class or route in the file, if one"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What this place does for the feature, e.g. UI, API, CLI, storage"
+          }
+        }
+      }
+    },
+    "tickets": {
+      "type": "array",
+      "x-audience": "both",
+      "default": [],
+      "description": "Tracker issues this entry is planned or built in, e.g. PRODUCTCREATOR-34 (YouTrack/Jira key) or #12 (GitHub). Linked with tracker.issueUrl of product-creator.yml.",
+      "items": {
+        "type": "string",
+        "pattern": "^([A-Z][A-Z0-9_]*-|#)[1-9][0-9]*$",
+        "description": "Issue key: PROJECT-123 or #123"
       }
     }
   }

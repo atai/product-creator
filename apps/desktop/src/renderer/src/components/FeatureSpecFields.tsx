@@ -1,5 +1,5 @@
 import { useFieldArray, type Control, type UseFormRegister } from 'react-hook-form';
-import type { Feature, FeatureAcceptance, FeatureConstraint, FeatureDecision, FeatureQuestion, FeatureRequirement } from '@pc/core/types';
+import type { Feature, FeatureAcceptance, FeatureCodeRef, FeatureConstraint, FeatureDecision, FeatureQuestion, FeatureRequirement } from '@pc/core/types';
 
 /**
  * Spec fields of a feature (PRODUCTCREATOR-32): actors, requirements, acceptance, constraints, decisions, open questions.
@@ -12,6 +12,9 @@ export interface SpecFormData {
   constraints: FeatureConstraint[];
   decisions: FeatureDecision[];
   open_questions: FeatureQuestion[];
+  /** comma-separated issue keys (PRODUCTCREATOR-33) */
+  tickets: string;
+  code_refs: FeatureCodeRef[];
 }
 
 /** Values of the feature form (FeatureForm): string lists are `{ value }` rows for useFieldArray */
@@ -22,7 +25,7 @@ export type FeatureFormData = Omit<Feature, 'tags' | 'emits' | 'consumes' | keyo
     consumes: { value: string }[];
   };
 
-type SpecFields = Pick<Feature, 'actors' | 'requirements' | 'acceptance' | 'constraints' | 'decisions' | 'open_questions'>;
+type SpecFields = Pick<Feature, 'actors' | 'requirements' | 'acceptance' | 'constraints' | 'decisions' | 'open_questions' | 'tickets' | 'code_refs'>;
 
 export function specToForm(f: Partial<Feature> | null | undefined): SpecFormData {
   return {
@@ -32,6 +35,8 @@ export function specToForm(f: Partial<Feature> | null | undefined): SpecFormData
     constraints: f?.constraints ?? [],
     decisions: f?.decisions ?? [],
     open_questions: f?.open_questions ?? [],
+    tickets: (f?.tickets ?? []).join(', '),
+    code_refs: f?.code_refs ?? [],
   };
 }
 
@@ -58,6 +63,8 @@ export function specFromForm(d: Partial<SpecFormData>): SpecFields {
     constraints: (d.constraints ?? []).map(compact).filter((c) => c.text),
     decisions: (d.decisions ?? []).map(compact).filter((x) => x.decision),
     open_questions: (d.open_questions ?? []).map(compact).filter((q) => q.question),
+    tickets: (d.tickets ?? '').split(/[\s,]+/).filter(Boolean),
+    code_refs: (d.code_refs ?? []).map(compact).filter((c) => c.component && c.file),
   };
   for (const key of Object.keys(spec) as (keyof SpecFields)[]) if (!spec[key]?.length) delete spec[key];
   return spec;
@@ -116,11 +123,40 @@ function SpecList({ control, register, name, label, hint, addLabel, children }: 
 
 export default function FeatureSpecFields({ control, register }: Form) {
   const actors = useFieldArray({ control, name: 'actors' });
+  const codeRefs = useFieldArray({ control, name: 'code_refs' });
   const form = { control, register };
 
   return (
     <div className="space-y-4 border-t border-border pt-4">
-      <h2 className="text-lg font-semibold">Spec</h2>
+      <h2 className="text-lg font-semibold">Links</h2>
+
+      <div>
+        <label className="block text-sm font-medium mb-1 text-fg-2">Tickets</label>
+        <p className="text-xs text-meta mb-2">Tracker issues the feature is planned or built in.</p>
+        <input {...register('tickets')} className={input} placeholder="PRODUCTCREATOR-34, #12" />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1 text-fg-2">Also implemented in</label>
+        <p className="text-xs text-meta mb-2">Other places of the implementation (UI page, API route, CLI), in this or another component. The main file is Source file, set by code sync.</p>
+        <div className="space-y-2">
+          {codeRefs.fields.map((field, index) => (
+            <div key={field.id} className="flex gap-2">
+              <input {...register(`code_refs.${index}.component`)} className="w-32 px-3 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta" placeholder="component" />
+              <input {...register(`code_refs.${index}.file`)} className={`${input} font-mono text-sm`} placeholder="renderer/src/pages/doc.tsx" />
+              <input {...register(`code_refs.${index}.role`)} className="w-28 px-3 py-2 border border-border-strong rounded bg-surface text-fg placeholder-meta" placeholder="UI" />
+              <button type="button" onClick={() => codeRefs.remove(index)} className={removeBtn}>
+                ✕
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => codeRefs.append({ component: '', file: '', role: '' })} className={addBtn}>
+            + Add place
+          </button>
+        </div>
+      </div>
+
+      <h2 className="text-lg font-semibold pt-2">Spec</h2>
 
       <div>
         <label className="block text-sm font-medium mb-1 text-fg-2">Actors</label>

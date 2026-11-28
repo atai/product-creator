@@ -1,5 +1,5 @@
 import type { BusinessObject, Feature, Workflow } from '../types';
-import { idOf, referencedType, typeKey, validateModel, type CatalogModel, type EntityKind, type ModelEntry, type ValidationIssue } from './model';
+import { idOf, normalizeKind, referencedType, typeKey, validateModel, type CatalogModel, type EntityKind, type ModelEntry, type ValidationIssue } from './model';
 
 /**
  * Plan checks (PRODUCTCREATOR-29): what a proposed change would break, without writing anything.
@@ -23,6 +23,24 @@ export interface PlanResult {
   introduced: ValidationIssue[];
   /** Issues the changed entries already had before (informational, do not block) */
   existing: ValidationIssue[];
+}
+
+/** Request body `{ changes: [...] }` of /api/validate-plan and /api/apply-plan → changes, or the error to return (400) */
+export function parsePlanChanges(body: unknown): { changes: PlanChange[] } | { error: string } {
+  const raw = (body ?? {}) as { changes?: unknown };
+  if (!Array.isArray(raw.changes) || raw.changes.length === 0) return { error: 'changes must be a non-empty array' };
+  const changes: PlanChange[] = [];
+  for (const [i, item] of raw.changes.entries()) {
+    const c = (item ?? {}) as Record<string, unknown>;
+    const kind = normalizeKind(c.kind);
+    if (!kind) return { error: `changes[${i}].kind must be feature, workflow or business_object` };
+    const op = c.op === 'delete' ? 'delete' : 'upsert';
+    if (op === 'delete' ? typeof c.id !== 'string' : typeof c.data !== 'object' || c.data === null) {
+      return { error: `changes[${i}]: ${op === 'delete' ? 'id' : 'data'} is required` };
+    }
+    changes.push({ kind, op, data: c.data, id: c.id as string | undefined, component: typeof c.component === 'string' ? c.component : undefined });
+  }
+  return { changes };
 }
 
 const lists = (model: CatalogModel, kind: EntityKind): ModelEntry<unknown>[] =>

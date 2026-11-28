@@ -63,7 +63,16 @@ let workspaceChangedTimer: NodeJS.Timeout | undefined;
 const mcp = new McpController(
   settings,
   {
-    projects: () => workspace.info().projects.flatMap((p) => (p.project ? [p.project] : [])),
+    // a fresh read of the YAML model (McpHost contract): an agent sees its own writes at once, not after the UI reload
+    projects: () =>
+      workspace.info().projects.flatMap((p) => {
+        if (!p.project) return [];
+        try {
+          return [readProject(p.root) ?? p.project];
+        } catch {
+          return [p.project];
+        }
+      }),
     api: (request) => handleApi({ method: request.method, url: request.url, body: request.body, headers: { 'content-type': 'application/json' } }),
     generation,
     // data was written by an agent: let the UI re-read (debounced, a sync may report several writes)

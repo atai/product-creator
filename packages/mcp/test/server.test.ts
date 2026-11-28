@@ -5,7 +5,7 @@ import * as path from 'path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { openProject, toStorageEntities, PROJECT_FILE, type ProjectModel } from '@pc/core/project/model';
+import { openProject, readProject, toStorageEntities, PROJECT_FILE, type ProjectModel } from '@pc/core/project/model';
 import { configureStorage, resetStorage } from '@pc/core/storage';
 import { OpenApiGenerationManager } from '@pc/core/interfaces/generator';
 import { ActionLog } from '../src/audit';
@@ -39,7 +39,8 @@ beforeAll(async () => {
   configureStorage({ manifest: { ...toStorageEntities([project]), source: PROJECT_FILE } });
   const generation = new OpenApiGenerationManager();
   const host: McpHost = {
-    projects: () => [project],
+    // like the desktop host: a fresh read of the YAML model
+    projects: () => [readProject(root) ?? project],
     api: async (req) => {
       const { dispatch } = await import('@pc/core/http/router');
       const res = await dispatch(new Request(new URL(req.url, 'http://pc.local'), { method: req.method, body: req.body, headers: { 'content-type': 'application/json' } }));
@@ -108,7 +109,7 @@ describe('tools (read-write token)', () => {
   it('lists the tools including write tools', async () => {
     const { client } = await connect(bearer());
     const names = (await client.listTools()).tools.map((t) => t.name);
-    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'get_schema', 'get_object', 'find_duplicates', 'impact_of_change', 'validate_plan', 'validate_catalog', 'sync_code_preview', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
+    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'get_schema', 'get_object', 'find_duplicates', 'impact_of_change', 'validate_plan', 'validate_catalog', 'sync_code_preview', 'get_project', 'update_project', 'apply_plan', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
     await client.close();
   });
 
@@ -155,11 +156,11 @@ describe('tools (read-write token)', () => {
     const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
     const invoice = { id: 'invoice', name: 'Invoice', owner: 'team-a', lifecycle: 'draft', fields: [{ name: 'id', type: 'string' }, { name: 'total', type: 'decimal' }] };
 
-    const plan = json(await call('validate_plan', { changes: [{ kind: 'workflow', data: { workflow: 'billing.close', steps: ['billing.invoice.create', 'billing.invoice.send'] }, component: 'svc' }] }));
+    const plan = json(await call('validate_plan', { changes: [{ kind: 'workflow', data: { lifecycle: 'draft', workflow: 'billing.close', steps: ['billing.invoice.create', 'billing.invoice.send'] }, component: 'svc' }] }));
     expect(plan.ok).toBe(false);
     expect(plan.introduced).toEqual([expect.objectContaining({ code: 'unknown_feature', field: 'steps[1]', component: 'svc' })]);
 
-    const rejected = await call('create_catalog_entry', { component: 'svc', kind: 'workflow', data: { workflow: 'billing.close', steps: ['billing.invoice.send'] } });
+    const rejected = await call('create_catalog_entry', { component: 'svc', kind: 'workflow', data: { lifecycle: 'draft', workflow: 'billing.close', steps: ['billing.invoice.send'] } });
     expect(rejected.isError).toBe(true);
     expect(text(rejected)).toContain('unknown_feature');
 
@@ -169,7 +170,7 @@ describe('tools (read-write token)', () => {
 
     expect((await call('create_catalog_entry', { component: 'svc', kind: 'business_object', data: invoice })).isError).toBeFalsy();
     expect((await call('update_catalog_entry', { kind: 'feature', id: FN.id, patch: { objects: [{ id: 'invoice', access: 'write' }] } })).isError).toBeFalsy();
-    expect((await call('create_catalog_entry', { component: 'svc', kind: 'workflow', data: { workflow: 'billing.close', steps: [FN.id] } })).isError).toBeFalsy();
+    expect((await call('create_catalog_entry', { component: 'svc', kind: 'workflow', data: { lifecycle: 'draft', workflow: 'billing.close', steps: [FN.id] } })).isError).toBeFalsy();
 
     const schema = json(await call('get_schema', { kind: 'feature' }));
     expect(Object.keys(schema.schema.properties)).toEqual(expect.arrayContaining(['requirements', 'acceptance', 'decisions', 'open_questions']));
@@ -190,6 +191,42 @@ describe('tools (read-write token)', () => {
 
     const catalog = json(await call('validate_catalog', {}));
     expect(catalog.errors).toBe(0);
+    await client.close();
+  });
+
+  it('reads and updates the product context (PRODUCTCREATOR-33)', async () => {
+    const { client } = await connect(bearer());
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    const updated = await call('update_project', { vision: 'Plans that can be checked', actors: [{ id: 'ai_agent', name: 'AI agent' }], tracker: { issueUrl: 'https://example.youtrack.cloud/issue/{id}' } });
+    expect(updated.isError).toBeFalsy();
+    const ctx = json(await call('get_project', {}));
+    expect(ctx).toMatchObject({ vision: 'Plans that can be checked', actors: [{ id: 'ai_agent', name: 'AI agent' }], tracker: { issueUrl: 'https://example.youtrack.cloud/issue/{id}' } });
+    const bad = await call('update_project', { goals: [{ id: 'first', text: 'x' }] });
+    expect(bad.isError).toBe(true);
+    expect(text(bad)).toContain('G1, G2');
+    await client.close();
+  });
+
+  it('applies a plan of entries that reference each other in one call (PRODUCTCREATOR-33)', async () => {
+    const { client } = await connect(bearer());
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    const f = (id: string, extra: object = {}) => {
+      const [bounded_context, entity, action] = id.split('.');
+      return { id, name: id, bounded_context, entity, action, owner: 'team-a', lifecycle: 'draft', ...extra };
+    };
+    const changes = [
+      { kind: 'workflow', data: { lifecycle: 'draft', workflow: 'shop.checkout', steps: ['shop.cart.pay'] }, component: 'svc' },
+      { kind: 'feature', data: f('shop.cart.pay', { calls: ['shop.cart.fill'], objects: [{ id: 'cart', access: 'write' }] }), component: 'svc' },
+      { kind: 'feature', data: f('shop.cart.fill'), component: 'svc' },
+      { kind: 'business_object', data: { id: 'cart', name: 'Cart', owner: 'team-a', lifecycle: 'draft', fields: [{ name: 'id', type: 'string' }] }, component: 'svc' },
+    ];
+    const broken = await call('apply_plan', { changes: [...changes.slice(0, 2)] });
+    expect(broken.isError).toBe(true);
+    expect(text(broken)).toContain('nothing was written');
+    expect(json(await call('validate_plan', { changes })).ok).toBe(true);
+    const applied = json(await call('apply_plan', { changes }));
+    expect(applied.applied.map((a: { id: string }) => a.id)).toEqual(['shop.checkout', 'shop.cart.pay', 'shop.cart.fill', 'cart']);
+    expect(json(await call('get_catalog_entry', { kind: 'workflow', id: 'shop.checkout' })).component).toBe('svc');
     await client.close();
   });
 
@@ -266,6 +303,8 @@ describe('scope and callers', () => {
     const { client } = await connect({ ...bearer(), [RELAY_HEADERS.scope]: 'READ_WRITE' });
     const names = (await client.listTools()).tools.map((t) => t.name);
     expect(names).not.toContain('create_catalog_entry');
+    // the agent is told why writing is not possible and what to do (PRODUCTCREATOR-33)
+    expect(client.getInstructions()).toContain('Settings → MCP → scope');
     await client.close();
   });
 

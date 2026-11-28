@@ -2,7 +2,7 @@ import * as path from 'path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { ComponentModel, ProjectModel } from '@pc/core/project/model';
+import { updateProject, type ComponentModel, type ProjectModel } from '@pc/core/project/model';
 import { catalogSchemas } from '@pc/core/validation/schemas';
 import type { ActionLog } from './audit.js';
 import { compactArgs } from './audit.js';
@@ -218,6 +218,9 @@ const planChangeSchema = z.object({
   component: componentArg.optional().describe('Component the entry goes to (default: where it is now)'),
 });
 
+/** Tools that change files; offered only to read-write principals (named in the server instructions for read-only ones) */
+export const WRITE_TOOLS = ['apply_plan', 'update_project', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'sync_schema_apply', 'generate_openapi'] as const;
+
 /** All tools. `write: true` tools exist only for read-write principals. */
 export function registerTools(server: McpServer, ctx: ToolContext): void {
   const { host, principal, audit } = ctx;
@@ -295,6 +298,24 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       const start = offset ?? 0;
       const size = limit ?? DEFAULT_LIST;
       return { total: rows.length, offset: start, items: rows.slice(start, start + size) };
+    }
+  );
+
+  define(
+    'get_project',
+    {
+      title: 'Get the product context of a project',
+      description:
+        'Product-level context for specs: vision, goals (G1…), actors (ids that features use in `actors`), glossary, tracker (issueUrl with {id}, for ticket links), plus name, description and components.',
+      input: { project: projectArg },
+    },
+    async ({ project }) => {
+      const p = resolveProject(host, project);
+      return {
+        id: p.id, slug: p.slug, name: p.name, description: p.description,
+        vision: p.vision, goals: p.goals ?? [], actors: p.actors ?? [], glossary: p.glossary ?? [], tracker: p.tracker,
+        components: p.components.map((c) => ({ slug: c.slug, kind: c.kind, name: c.name })),
+      };
     }
   );
 
@@ -480,6 +501,50 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     async ({ project, component, limit }) => {
       const c = resolveComponent(resolveProject(host, project), component);
       return syncPreview(host, c, 'sync-schema', limit ?? DEFAULT_LIST);
+    }
+  );
+
+  define(
+    'apply_plan',
+    {
+      title: 'Apply a plan',
+      write: true,
+      description:
+        'Write several catalog changes at once (same `changes` as validate_plan: upserts and deletes of features, business objects, workflows). The plan is checked as a whole, so entries that reference each other can be written together in any order. Nothing is written if the plan adds errors (the issues are returned); a failed write rolls back the changes already made. `component` is required for new entries.',
+      input: { project: projectArg, changes: z.array(planChangeSchema).min(1).max(200) },
+    },
+    async ({ project, changes }) => {
+      const p = resolveProject(host, project);
+      const body = changes.map((ch) => ({ ...ch, component: ch.component ? resolveComponent(p, ch.component).id : undefined }));
+      const res = (await api(host, 'POST', '/api/apply-plan', { changes: body })) as { applied: { kind: string; op: string; id: string; created: boolean }[]; warnings: Issue[] };
+      await host.changed?.();
+      return { applied: res.applied, warnings: projectView(p, res.warnings, true) };
+    }
+  );
+
+  define(
+    'update_project',
+    {
+      title: 'Update the product context',
+      write: true,
+      description:
+        'Change name, description, vision, goals, actors, glossary or tracker of a project (product-creator.yml). A list replaces the whole list ([] clears it); tracker: null removes it. Goal ids are G1, G2, …; actor ids use a-z, 0-9 and _.',
+      input: {
+        project: projectArg,
+        name: z.string().optional(),
+        description: z.string().optional(),
+        vision: z.string().optional(),
+        goals: z.array(z.object({ id: z.string(), text: z.string() })).optional(),
+        actors: z.array(z.object({ id: z.string(), name: z.string(), description: z.string().optional() })).optional(),
+        glossary: z.array(z.object({ term: z.string(), definition: z.string() })).optional(),
+        tracker: z.object({ issueUrl: z.string() }).nullable().optional(),
+      },
+    },
+    async ({ project, ...patch }) => {
+      const p = resolveProject(host, project);
+      const next = updateProject(p.root, patch);
+      await host.changed?.();
+      return { updated: next.slug, changed: Object.keys(patch) };
     }
   );
 

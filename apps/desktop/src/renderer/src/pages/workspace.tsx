@@ -7,6 +7,7 @@ import type {
   EditResult,
   GenerateStatus,
   ProjectModel,
+  ProjectPatch,
   WorkspaceInfo,
   WorkspaceProjectInfo,
 } from '../../../shared/ipc';
@@ -438,14 +439,59 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onSave: (p: Partial<ProjectModel>) => void; onCancel: () => void }) {
+type Row = Record<string, string>;
+
+/** Editable list of small records (goals, actors, glossary terms) */
+function RowsEditor({ rows, columns, onChange, addLabel, newRow }: { rows: Row[]; columns: { key: string; placeholder: string; width?: string }[]; onChange: (rows: Row[]) => void; addLabel: string; newRow: () => Row }) {
+  return (
+    <div className="space-y-1">
+      {rows.map((row, i) => (
+        <div key={i} className="flex gap-2">
+          {columns.map((c) => (
+            <input
+              key={c.key}
+              className={`${input} ${c.width ?? ''}`}
+              placeholder={c.placeholder}
+              value={row[c.key] ?? ''}
+              onChange={(e) => onChange(rows.map((r, j) => (j === i ? { ...r, [c.key]: e.target.value } : r)))}
+            />
+          ))}
+          <button type="button" className={btn} onClick={() => onChange(rows.filter((_, j) => j !== i))}>
+            ✕
+          </button>
+        </div>
+      ))}
+      <button type="button" className={btn} onClick={() => onChange([...rows, newRow()])}>
+        {addLabel}
+      </button>
+    </div>
+  );
+}
+
+const nextGoalId = (rows: Row[]) => `G${Math.max(0, ...rows.map((r) => Number(r.id?.slice(1)) || 0)) + 1}`;
+
+function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onSave: (p: ProjectPatch) => void; onCancel: () => void }) {
   const [v, setV] = useState({ name: project.name, slug: project.slug, description: project.description ?? '', docs: project.docs ?? '', catalogRoot: project.catalogRoot });
+  // product context (PRODUCTCREATOR-33)
+  const [vision, setVision] = useState(project.vision ?? '');
+  const [goals, setGoals] = useState<Row[]>((project.goals ?? []).map((g) => ({ ...g })));
+  const [actors, setActors] = useState<Row[]>((project.actors ?? []).map((a) => ({ id: a.id, name: a.name, description: a.description ?? '' })));
+  const [glossary, setGlossary] = useState<Row[]>((project.glossary ?? []).map((t) => ({ ...t })));
+  const [issueUrl, setIssueUrl] = useState(project.tracker?.issueUrl ?? '');
+  const filled = (rows: Row[], keys: string[]) => rows.filter((r) => keys.every((k) => r[k]?.trim()));
   return (
     <form
       className="mt-4 grid grid-cols-2 gap-3 rounded border border-accent-border bg-accent-soft/40 p-4"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave(v);
+        onSave({
+          ...v,
+          vision,
+          goals: filled(goals, ['id', 'text']).map((g) => ({ id: g.id.trim(), text: g.text.trim() })),
+          actors: filled(actors, ['id', 'name']).map((a) => ({ id: a.id.trim(), name: a.name.trim(), ...(a.description?.trim() ? { description: a.description.trim() } : {}) })),
+          glossary: filled(glossary, ['term', 'definition']).map((t) => ({ term: t.term.trim(), definition: t.definition.trim() })),
+          tracker: issueUrl.trim() ? { issueUrl: issueUrl.trim() } : null,
+        });
       }}
     >
       <Field label="Name">
@@ -463,7 +509,33 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
       <Field label="Catalog root" hint="folder with component catalogs">
         <input className={input} value={v.catalogRoot} onChange={(e) => setV({ ...v, catalogRoot: e.target.value })} />
       </Field>
-      <div className="flex items-end justify-end gap-2">
+      <Field label="Tracker issue URL" hint="{id} is replaced by the ticket key">
+        <input className={input} value={issueUrl} placeholder="https://example.youtrack.cloud/issue/{id}" onChange={(e) => setIssueUrl(e.target.value)} />
+      </Field>
+
+      <div className="col-span-2 mt-2 border-t border-border pt-3 text-sm font-semibold">Product</div>
+      <div className="col-span-2">
+        <Field label="Vision" hint="why the product exists; the first section of the spec">
+          <textarea className={input} rows={2} value={vision} onChange={(e) => setVision(e.target.value)} />
+        </Field>
+      </div>
+      <div className="col-span-2">
+        <Field label="Goals" hint="G1, G2, …">
+          <RowsEditor rows={goals} onChange={setGoals} addLabel="+ Add goal" newRow={() => ({ id: nextGoalId(goals), text: '' })} columns={[{ key: 'id', placeholder: 'G1', width: 'w-16' }, { key: 'text', placeholder: 'goal' }]} />
+        </Field>
+      </div>
+      <div className="col-span-2">
+        <Field label="Actors" hint="features refer to them by id; a-z, 0-9, _">
+          <RowsEditor rows={actors} onChange={setActors} addLabel="+ Add actor" newRow={() => ({ id: '', name: '', description: '' })} columns={[{ key: 'id', placeholder: 'ai_agent', width: 'w-40' }, { key: 'name', placeholder: 'AI agent', width: 'w-48' }, { key: 'description', placeholder: 'who it is' }]} />
+        </Field>
+      </div>
+      <div className="col-span-2">
+        <Field label="Glossary">
+          <RowsEditor rows={glossary} onChange={setGlossary} addLabel="+ Add term" newRow={() => ({ term: '', definition: '' })} columns={[{ key: 'term', placeholder: 'term', width: 'w-48' }, { key: 'definition', placeholder: 'definition' }]} />
+        </Field>
+      </div>
+
+      <div className="col-span-2 flex items-end justify-end gap-2">
         <button type="button" className={btn} onClick={onCancel}>
           Cancel
         </button>

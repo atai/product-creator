@@ -7,7 +7,7 @@ import FeatureForm from '@/components/FeatureForm';
 import Link from 'next/link';
 import FormHelpHint from '@/components/FormHelpHint';
 import ImpactPanel from '@/components/ImpactPanel';
-import FeatureSpecView from '../components/FeatureSpecView';
+import FeatureSpecView, { FeatureLinksView } from '../components/FeatureSpecView';
 import LifecycleBadge from '../components/LifecycleBadge';
 
 export default function FeatureDetail() {
@@ -155,6 +155,8 @@ export default function FeatureDetail() {
                   <p className="font-mono text-sm">{feature.source_file}</p>
                 </div>
               )}
+
+              <FeatureLinksView feature={feature} />
 
               {feature.objects && feature.objects.length > 0 && (
                 <div className="mt-6">

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Workflow } from '@pc/core/types';
 import { useEntityList } from '@/hooks/useEntityList';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
+import LifecycleBadge from '../components/LifecycleBadge';
 
 export default function WorkflowsPage() {
   const searchParams = useSearchParams();
@@ -72,6 +73,9 @@ export default function WorkflowsPage() {
                   Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
+                  Lifecycle
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
                   Steps
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
@@ -95,6 +99,9 @@ export default function WorkflowsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-fg">
                     {workflow.name || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {workflow.lifecycle ? <LifecycleBadge lifecycle={workflow.lifecycle} /> : <span className="text-xs text-danger">missing</span>}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-muted">

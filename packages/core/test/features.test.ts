@@ -125,6 +125,59 @@ describe('feature spec fields in storage (PRODUCTCREATOR-32)', () => {
   });
 });
 
+describe('apply plan (PRODUCTCREATOR-33)', () => {
+  const post = (url: string, body: unknown) =>
+    dispatch(new Request(`http://pc.local${url}`, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }));
+  const feature = (id: string, extra: object = {}) => {
+    const [bounded_context, entity, action] = id.split('.');
+    return { id, name: id, bounded_context, entity, action, owner: 'team', lifecycle: 'draft', ...extra };
+  };
+
+  it('writes entries that reference each other in one call, in any order', async () => {
+    await load();
+    const appId = project.components[0].id;
+    const res = await post('/api/apply-plan', {
+      changes: [
+        { kind: 'workflow', data: { lifecycle: 'draft', workflow: 'orders.checkout', steps: ['orders.order.create', 'orders.order.pay'] }, component: appId },
+        { kind: 'feature', data: feature('orders.order.pay', { calls: ['orders.order.create'], objects: [{ id: 'order', access: 'write' }] }), component: appId },
+        { kind: 'feature', data: feature('orders.order.create'), component: appId },
+        { kind: 'business_object', data: { id: 'order', name: 'Order', owner: 'team', lifecycle: 'draft', fields: [{ name: 'lines', type: 'order_line[]' }] }, component: appId },
+        { kind: 'business_object', data: { id: 'order_line', name: 'Order line', owner: 'team', lifecycle: 'draft', fields: [{ name: 'order', type: 'order' }] }, component: appId },
+      ],
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { ok: boolean; applied: { id: string; created: boolean }[] };
+    expect(body.applied.every((a) => a.created)).toBe(true);
+    expect(fs.existsSync(path.join(catalog, 'features/orders/order.pay.yml'))).toBe(true);
+    expect(fs.existsSync(path.join(catalog, 'workflows/orders.checkout.yml'))).toBe(true);
+
+    // existing entries keep their component; delete removes the file
+    const update = await post('/api/apply-plan', { changes: [{ kind: 'feature', data: feature('orders.order.create', { name: 'Create order' }) }] });
+    expect(update.status).toBe(200);
+    const del = await post('/api/apply-plan', { changes: [{ kind: 'workflow', op: 'delete', id: 'orders.checkout' }] });
+    expect(del.status).toBe(200);
+    expect(fs.existsSync(path.join(catalog, 'workflows/orders.checkout.yml'))).toBe(false);
+  });
+
+  it('writes nothing when the plan adds an error, and needs a component for new entries', async () => {
+    await load();
+    const appId = project.components[0].id;
+    const bad = await post('/api/apply-plan', {
+      changes: [
+        { kind: 'feature', data: feature('orders.order.create'), component: appId },
+        { kind: 'feature', data: feature('orders.order.pay', { calls: ['orders.order.refund'] }), component: appId },
+      ],
+    });
+    expect(bad.status).toBe(400);
+    expect(((await bad.json()) as { issues: { code: string }[] }).issues.map((i) => i.code)).toEqual(['unknown_feature']);
+    expect(fs.existsSync(path.join(catalog, 'features'))).toBe(false);
+
+    const noComponent = await post('/api/apply-plan', { changes: [{ kind: 'feature', data: feature('orders.order.create') }] });
+    expect(noComponent.status).toBe(400);
+    expect(await noComponent.text()).toContain('component is required');
+  });
+});
+
 describe('file watcher', () => {
   it('picks up files written outside the app, also in a features/ folder created later', async () => {
     write(path.join(project.components[0].catalog, 'functions/orders/order.create.yml'), card('orders.order.create'));
@@ -147,7 +200,7 @@ describe('save guard (PRODUCTCREATOR-29)', () => {
     await load();
     const appId = project.components[0].id;
 
-    const wf = await post('/api/save-workflow', { workflow: { workflow: 'orders.checkout', steps: ['orders.order.create'] }, appId });
+    const wf = await post('/api/save-workflow', { workflow: { lifecycle: 'draft', workflow: 'orders.checkout', steps: ['orders.order.create'] }, appId });
     expect(wf.status).toBe(400);
     const body = (await wf.json()) as { issues: { code: string }[] };
     expect(body.issues[0].code).toBe('unknown_feature');
@@ -160,7 +213,7 @@ describe('save guard (PRODUCTCREATOR-29)', () => {
     const bo = await post('/api/save-business-object', { businessObject: { id: 'order', name: 'Order', owner: 'team', lifecycle: 'implemented', fields: [{ name: 'id', type: 'string' }] }, appId });
     expect(bo.status).toBe(200);
     expect((await post('/api/save-feature', { data: feature, appId })).status).toBe(201);
-    expect((await post('/api/save-workflow', { workflow: { workflow: 'orders.checkout', steps: ['orders.order.create'] }, appId })).status).toBe(200);
+    expect((await post('/api/save-workflow', { workflow: { lifecycle: 'draft', workflow: 'orders.checkout', steps: ['orders.order.create'] }, appId })).status).toBe(200);
 
     const plan = await post('/api/validate-plan', { changes: [{ kind: 'function', op: 'delete', id: 'orders.order.create' }] });
     const planBody = (await plan.json()) as { ok: boolean; introduced: { id: string }[] };

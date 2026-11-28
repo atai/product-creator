@@ -65,7 +65,42 @@ export interface ComponentModel {
   catalog: string;
 }
 
-export interface ProjectModel {
+/** Product goal (PRODUCTCREATOR-33): G1, G2, … */
+export interface ProductGoal {
+  id: string;
+  text: string;
+}
+
+/** Who uses the product; features refer to actors by id in `actors` */
+export interface ProductActor {
+  /** a-z, 0-9, _ (e.g. product_owner, ai_agent) */
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface GlossaryTerm {
+  term: string;
+  definition: string;
+}
+
+export interface TrackerConfig {
+  /** Link of an issue, `{id}` is replaced by the key: https://example.youtrack.cloud/issue/{id} */
+  issueUrl: string;
+}
+
+/** Product-level context of a spec (PRODUCTCREATOR-33), stored in product-creator.yml */
+export interface ProductContext {
+  vision?: string;
+  goals?: ProductGoal[];
+  actors?: ProductActor[];
+  glossary?: GlossaryTerm[];
+  tracker?: TrackerConfig;
+}
+
+export const PRODUCT_KEYS = ['vision', 'goals', 'actors', 'glossary', 'tracker'] as const;
+
+export interface ProjectModel extends ProductContext {
   id: string;
   slug: string;
   name: string;
@@ -105,6 +140,11 @@ interface RawProjectFile {
   description?: string;
   docs?: string;
   catalogRoot?: string;
+  vision?: unknown;
+  goals?: unknown;
+  actors?: unknown;
+  glossary?: unknown;
+  tracker?: unknown;
   /** v1 format: inline services */
   services?: Array<Record<string, unknown>>;
 }
@@ -199,6 +239,49 @@ export function readComponentFile(root: string, file: string, kind: ComponentKin
 }
 
 /** Read a v2 project. Returns null when product-creator.yml is missing or in v1 format. */
+const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+const records = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? v.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null) : []);
+const nonEmpty = <T,>(list: T[]): T[] | undefined => (list.length ? list : undefined);
+
+/** Product context from product-creator.yml; malformed items are dropped (the file stays editable by hand) */
+export function readProductContext(raw: { vision?: unknown; goals?: unknown; actors?: unknown; glossary?: unknown; tracker?: unknown }): ProductContext {
+  const tracker = typeof raw.tracker === 'object' && raw.tracker !== null ? str((raw.tracker as Record<string, unknown>).issueUrl) : undefined;
+  return {
+    vision: str(raw.vision),
+    goals: nonEmpty(records(raw.goals).flatMap((g) => (str(g.id) && str(g.text) ? [{ id: str(g.id) as string, text: str(g.text) as string }] : []))),
+    actors: nonEmpty(
+      records(raw.actors).flatMap((a) =>
+        str(a.id) && str(a.name) ? [{ id: str(a.id) as string, name: str(a.name) as string, ...(str(a.description) ? { description: str(a.description) } : {}) }] : []
+      )
+    ),
+    glossary: nonEmpty(records(raw.glossary).flatMap((t) => (str(t.term) && str(t.definition) ? [{ term: str(t.term) as string, definition: str(t.definition) as string }] : []))),
+    tracker: tracker ? { issueUrl: tracker } : undefined,
+  };
+}
+
+/** Rejects a product context that cannot be saved: ids, duplicates, tracker URL */
+export function assertProductContext(c: ProductContext) {
+  const unique = (values: string[], what: string) => {
+    const seen = new Set<string>();
+    for (const v of values) {
+      if (seen.has(v.toLowerCase())) throw new Error(`${what} "${v}" is used twice`);
+      seen.add(v.toLowerCase());
+    }
+  };
+  for (const g of c.goals ?? []) if (!/^G[1-9][0-9]*$/.test(g.id)) throw new Error(`Goal id "${g.id}" must be G1, G2, …`);
+  for (const a of c.actors ?? []) if (!/^[a-z0-9_]+$/.test(a.id)) throw new Error(`Actor id "${a.id}" must use a-z, 0-9 and _ (e.g. product_owner)`);
+  unique((c.goals ?? []).map((g) => g.id), 'Goal id');
+  unique((c.actors ?? []).map((a) => a.id), 'Actor id');
+  unique((c.glossary ?? []).map((t) => t.term), 'Glossary term');
+  if (c.tracker && !(/^https?:\/\//.test(c.tracker.issueUrl) && c.tracker.issueUrl.includes('{id}'))) {
+    throw new Error('tracker.issueUrl must be an http(s) URL with {id}, e.g. https://example.youtrack.cloud/issue/{id}');
+  }
+}
+
+/** Link of a tracker issue, or null when the project has no tracker */
+export const issueLink = (tracker: TrackerConfig | undefined, key: string): string | null =>
+  tracker ? tracker.issueUrl.replace('{id}', encodeURIComponent(key.replace(/^#/, ''))) : null;
+
 export function readProject(rootDir: string): ProjectModel | null {
   const root = path.resolve(rootDir);
   const raw = readYaml<RawProjectFile>(path.join(root, PROJECT_FILE));
@@ -221,6 +304,7 @@ export function readProject(rootDir: string): ProjectModel | null {
     description: raw.description || undefined,
     docs: raw.docs || undefined,
     catalogRoot,
+    ...readProductContext(raw),
     root,
     components,
   };
@@ -253,6 +337,11 @@ export function projectFileContent(project: ProjectModel): string {
       description: project.description,
       docs: project.docs,
       catalogRoot: project.catalogRoot,
+      vision: project.vision,
+      goals: project.goals,
+      actors: project.actors,
+      glossary: project.glossary,
+      tracker: project.tracker,
     })
   );
 }
@@ -433,7 +522,10 @@ export function openProject(rootDir: string): OpenResult {
 // Editing (used by the UI editor)
 // ---------------------------------------------------------------------------------------------
 
-export type ProjectPatch = Partial<Pick<ProjectModel, 'slug' | 'name' | 'description' | 'docs' | 'catalogRoot'>>;
+/** Strings: '' clears; product lists: [] clears; tracker: null clears */
+export type ProjectPatch = Partial<Pick<ProjectModel, 'slug' | 'name' | 'description' | 'docs' | 'catalogRoot' | 'vision' | 'goals' | 'actors' | 'glossary'>> & {
+  tracker?: TrackerConfig | null;
+};
 export type ComponentInput = Omit<ComponentModel, 'id' | 'catalog'> & { id?: string; catalog?: string };
 
 function load(rootDir: string): ProjectModel {
@@ -449,9 +541,16 @@ function assertSlug(slug: string) {
 export function updateProject(rootDir: string, patch: ProjectPatch): ProjectModel {
   const project = load(rootDir);
   const next: ProjectModel = { ...project };
-  for (const key of ['slug', 'name', 'description', 'docs', 'catalogRoot'] as const) {
+  for (const key of ['slug', 'name', 'description', 'docs', 'catalogRoot', 'vision'] as const) {
     if (patch[key] !== undefined) (next as unknown as Record<string, unknown>)[key] = patch[key]?.trim() || undefined;
   }
+  // product context (PRODUCTCREATOR-33): normalised like on read, then checked
+  const product = readProductContext({ goals: patch.goals, actors: patch.actors, glossary: patch.glossary, tracker: patch.tracker });
+  if (patch.goals !== undefined) next.goals = product.goals;
+  if (patch.actors !== undefined) next.actors = product.actors;
+  if (patch.glossary !== undefined) next.glossary = product.glossary;
+  if (patch.tracker !== undefined) next.tracker = product.tracker;
+  assertProductContext(next);
   next.slug = next.slug || slugify(next.name || path.basename(project.root));
   next.name = next.name || next.slug;
   next.catalogRoot = next.catalogRoot || DEFAULT_CATALOG_ROOT;
