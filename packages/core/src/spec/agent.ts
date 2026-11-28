@@ -47,7 +47,7 @@ export function renderAgent(spec: SpecModel, meta: { labelsLanguage: string; lab
       const o = objects.get(ref.id);
       return { id: ref.id, access: ref.access, ...(o ? { name: o.name, fields: o.fields } : { missing: true }) };
     });
-    add('feature', f.data.id, f.data.name, f.data.lifecycle, f.component.slug, 'features', { kind: 'feature', component: f.component.slug, feature, objects: used, calledBy: f.calledBy, workflows: f.workflows, issues: f.issues }, f.issues.length);
+    add('feature', f.data.id, f.data.name, f.data.lifecycle, f.component.slug, 'features', { kind: 'feature', component: f.component.slug, feature, objects: used, calledBy: f.calledBy, workflows: f.workflows, ...(f.screens.length ? { screenshots: f.screens.map((s) => ({ id: s.screen.id, title: s.screen.title, path: s.screen.path, file: s.file, exists: s.exists, ...(s.error ? { error: s.error } : {}) })) } : {}), issues: f.issues }, f.issues.length);
   }
   for (const o of spec.objects) {
     add('business_object', o.data.id, o.data.name, o.data.lifecycle, o.component.slug, 'objects', { kind: 'business_object', component: o.component.slug, object: forAudience(o.data, businessObjectSchema, 'agent'), usedBy: o.usedBy, issues: o.issues }, o.issues.length);
@@ -65,6 +65,8 @@ export function renderAgent(spec: SpecModel, meta: { labelsLanguage: string; lab
     ready: spec.counts.errors === 0,
     counts: { ...spec.counts, features: spec.features.length, objects: spec.objects.length, workflows: spec.workflows.length },
     chunkBudgetBytes: CHUNK_BUDGET_BYTES,
+    /** screenshots[].file are relative to the spec folder (the parent of this bundle) */
+    screenshotsBase: '..',
     entries,
     issues: spec.issues.map(({ severity, code, kind, id, field, message }) => ({ severity, code, kind, id, ...(field ? { field } : {}), message })),
   });

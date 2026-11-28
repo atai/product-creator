@@ -5,6 +5,10 @@ entity: matrix
 action: show
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Entity × action coverage per bounded context.
 source_file: renderer/src/pages/matrix.tsx
 objects:
@@ -12,3 +16,7 @@ objects:
     access: read
 tickets:
   - PRODUCTCREATOR-7
+screens:
+  - id: S1
+    title: Entity × action matrix
+    path: /matrix

@@ -1,0 +1,58 @@
+{
+  "screens": [
+    {
+      "feature": "catalog.feature.edit",
+      "id": "S1",
+      "file": "catalog.feature.edit/S1.png",
+      "ok": true
+    },
+    {
+      "feature": "catalog.feature.edit",
+      "id": "S2",
+      "file": "catalog.feature.edit/S2.png",
+      "ok": true
+    },
+    {
+      "feature": "catalog.graph.show",
+      "id": "S1",
+      "file": "catalog.graph.show/S1.png",
+      "ok": true
+    },
+    {
+      "feature": "catalog.matrix.show",
+      "id": "S1",
+      "file": "catalog.matrix.show/S1.png",
+      "ok": true
+    },
+    {
+      "feature": "catalog.problems.show",
+      "id": "S1",
+      "file": "catalog.problems.show/S1.png",
+      "ok": true
+    },
+    {
+      "feature": "catalog.workflow.edit",
+      "id": "S1",
+      "file": "catalog.workflow.edit/S1.png",
+      "ok": true
+    },
+    {
+      "feature": "project.component.edit",
+      "id": "S1",
+      "file": "project.component.edit/S1.png",
+      "ok": true
+    },
+    {
+      "feature": "project.context.edit",
+      "id": "S1",
+      "file": "project.context.edit/S1.png",
+      "ok": true
+    },
+    {
+      "feature": "spec.document.render",
+      "id": "S1",
+      "file": "spec.document.render/S1.png",
+      "ok": true
+    }
+  ]
+}

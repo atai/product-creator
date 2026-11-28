@@ -1,7 +1,6 @@
-import { execFile, spawn, spawnSync } from 'child_process';
 import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
+import { MAX_LOG, runCommand } from '../process/command';
 import { loadOpenApiSpec } from './openapi';
 import {
   assertInsideRoot,
@@ -58,69 +57,8 @@ export interface RunOptions {
   signal?: AbortSignal;
 }
 
-const MAX_LOG = 200_000;
-
-/** PATH entries usually missing in GUI-launched apps (Finder/Dock) */
-export function extraPathEntries(cwd: string, projectRoot: string, env: NodeJS.ProcessEnv = process.env): string[] {
-  const home = os.homedir();
-  const entries: string[] = [];
-  // node_modules/.bin of the cwd and its parents up to the project root
-  for (let dir = cwd; ; dir = path.dirname(dir)) {
-    entries.push(path.join(dir, 'node_modules', '.bin'));
-    if (dir === projectRoot || dir === path.dirname(dir)) break;
-  }
-  if (process.platform !== 'win32') {
-    entries.push(
-      env.PNPM_HOME ?? '',
-      path.join(home, 'Library/pnpm'),
-      path.join(home, '.local/share/pnpm'),
-      path.join(home, '.volta/bin'),
-      '/opt/homebrew/bin',
-      '/usr/local/bin'
-    );
-  }
-  return entries.filter(Boolean);
-}
-
-export function buildEnv(cwd: string, projectRoot: string, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
-  const pathKey = Object.keys(base).find((k) => k.toLowerCase() === 'path') ?? 'PATH';
-  const current = (base[pathKey] ?? '').split(path.delimiter).filter(Boolean);
-  const merged = [...extraPathEntries(cwd, projectRoot, base), ...current].filter((p, i, a) => a.indexOf(p) === i);
-  // non-interactive: no colours/prompts from tools
-  return { ...base, [pathKey]: merged.join(path.delimiter), CI: base.CI ?? '1', FORCE_COLOR: '0', NO_COLOR: '1' };
-}
-
-/** PATH of the user's login shell (best effort, POSIX only) — used by the desktop app on start */
-export function loginShellPath(): Promise<string | undefined> {
-  if (process.platform === 'win32') return Promise.resolve(undefined);
-  const shell = process.env.SHELL || '/bin/zsh';
-  return new Promise((resolve) => {
-    execFile(shell, ['-l', '-c', 'printf %s "$PATH"'], { encoding: 'utf-8', timeout: 4000 }, (error, stdout) => {
-      resolve(!error && stdout.trim() ? stdout.trim() : undefined);
-    });
-  });
-}
-
-function killTree(pid: number | undefined, child: { kill: (s?: NodeJS.Signals) => boolean }) {
-  if (!pid) return;
-  if (process.platform === 'win32') {
-    spawnSync('taskkill', ['/pid', String(pid), '/T', '/F']);
-  } else {
-    try {
-      process.kill(-pid, 'SIGTERM');
-    } catch {
-      child.kill('SIGTERM');
-    }
-    // escalate if it does not exit
-    setTimeout(() => {
-      try {
-        process.kill(-pid, 'SIGKILL');
-      } catch {
-        /* already gone */
-      }
-    }, 3000).unref();
-  }
-}
+// moved to process/command.ts (PRODUCTCREATOR-36); re-exported for existing callers
+export { buildEnv, extraPathEntries, loginShellPath } from '../process/command';
 
 function resolveCwd(project: ProjectModel, component: ComponentModel): string {
   const gen = component.openapiGenerate;
@@ -164,58 +102,16 @@ export async function runOpenApiGenerate(
   }
   const gen = component.openapiGenerate!;
   const timeoutMs = (gen.timeoutSec ?? DEFAULT_GENERATE_TIMEOUT_SEC) * 1000;
-  append(`$ ${gen.command}\n(cwd: ${path.relative(project.root, cwd) || '.'})\n`, 'stdout');
-
-  return new Promise<GenerateStatus>((resolve) => {
-    let settled = false;
-    let timedOut = false;
-    let cancelled = false;
-    const child = spawn(gen.command, {
-      cwd,
-      shell: true,
-      detached: process.platform !== 'win32',
-      windowsHide: true,
-      env: buildEnv(cwd, project.root, { ...process.env, ...options.env }),
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    const finish = (patch: Partial<GenerateStatus>) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      options.signal?.removeEventListener('abort', onAbort);
-      resolve({ ...status, finishedAt: Date.now(), ...patch });
-    };
-    const timer = setTimeout(() => {
-      timedOut = true;
-      append(`\n[timeout after ${timeoutMs / 1000}s — terminating]\n`, 'stderr');
-      killTree(child.pid, child);
-    }, timeoutMs);
-    const onAbort = () => {
-      cancelled = true;
-      append('\n[cancelled — terminating]\n', 'stderr');
-      killTree(child.pid, child);
-    };
-    if (options.signal?.aborted) onAbort();
-    else options.signal?.addEventListener('abort', onAbort, { once: true });
-
-    child.stdout.setEncoding('utf-8').on('data', (c: string) => append(c, 'stdout'));
-    child.stderr.setEncoding('utf-8').on('data', (c: string) => append(c, 'stderr'));
-    child.on('error', (error) => finish({ state: 'failed', message: `Failed to start: ${error.message}` }));
-    child.on('close', (code, signal) => {
-      if (timedOut) return finish({ state: 'timeout', exitCode: code, signal, message: `Timed out after ${timeoutMs / 1000}s` });
-      if (cancelled) return finish({ state: 'cancelled', exitCode: code, signal, message: 'Cancelled' });
-      if (code !== 0) return finish({ state: 'failed', exitCode: code, signal, message: `Command exited with code ${code ?? signal}` });
-      // exit 0: the declared spec files must exist and parse
-      const specs = specStatus(project, component);
-      const missing = specs.filter((s) => !s.exists).map((s) => s.path);
-      if (missing.length) {
-        return finish({ state: 'failed', exitCode: 0, message: `Command succeeded but the spec was not written: ${missing.join(', ')}` });
-      }
-      const broken = (component.openapi ?? []).map((rel) => loadOpenApiSpec(path.resolve(project.root, rel))).find((s) => s.error);
-      if (broken) return finish({ state: 'failed', exitCode: 0, message: `Generated spec is not valid: ${broken.error}` });
-      finish({ state: 'ok', exitCode: 0, operations: specs.reduce((n, s) => n + (s.operations ?? 0), 0) });
-    });
-  });
+  const run = await runCommand({ command: gen.command, cwd, projectRoot: project.root, timeoutMs, env: options.env, signal: options.signal, onLog: append });
+  const done = (patch: Partial<GenerateStatus>) => ({ ...status, finishedAt: Date.now(), exitCode: run.exitCode, signal: run.signal, ...patch });
+  if (run.state !== 'ok') return done({ state: run.state, message: run.message });
+  // exit 0: the declared spec files must exist and parse
+  const specs = specStatus(project, component);
+  const missing = specs.filter((s) => !s.exists).map((s) => s.path);
+  if (missing.length) return done({ state: 'failed', message: `Command succeeded but the spec was not written: ${missing.join(', ')}` });
+  const broken = (component.openapi ?? []).map((rel) => loadOpenApiSpec(path.resolve(project.root, rel))).find((s) => s.error);
+  if (broken) return done({ state: 'failed', message: `Generated spec is not valid: ${broken.error}` });
+  return done({ state: 'ok', operations: specs.reduce((n, s) => n + (s.operations ?? 0), 0) });
 }
 
 /**

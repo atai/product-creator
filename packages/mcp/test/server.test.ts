@@ -109,7 +109,7 @@ describe('tools (read-write token)', () => {
   it('lists the tools including write tools', async () => {
     const { client } = await connect(bearer());
     const names = (await client.listTools()).tools.map((t) => t.name);
-    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'get_schema', 'get_object', 'find_duplicates', 'impact_of_change', 'validate_plan', 'validate_catalog', 'sync_code_preview', 'get_project', 'get_spec', 'update_project', 'apply_plan', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
+    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'get_schema', 'get_object', 'find_duplicates', 'impact_of_change', 'validate_plan', 'validate_catalog', 'sync_code_preview', 'get_project', 'get_spec', 'update_project', 'capture_screens', 'apply_plan', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
     await client.close();
   });
 
@@ -211,6 +211,20 @@ describe('tools (read-write token)', () => {
     expect((await call('get_spec', { entry: 'features/nope.json' })).isError).toBe(true);
     await client.close();
   });
+
+  it('captures screenshots with the project command and serves them in the spec (PRODUCTCREATOR-36)', async () => {
+    const { client } = await connect(bearer());
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    write('capture.js', "const fs=require('fs'),p=require('path');const q=JSON.parse(fs.readFileSync(process.env.PC_SCREENS_REQUEST,'utf8'));for(const s of q.screens){const f=p.join(q.output,s.file);fs.mkdirSync(p.dirname(f),{recursive:true});fs.writeFileSync(f,'png')}fs.writeFileSync(p.join(q.output,'screens.json'),JSON.stringify({screens:q.screens.map(s=>({feature:s.feature,id:s.id,file:s.file,ok:true}))}))");
+    expect((await call('update_project', { screenshots: { capture: { command: 'node capture.js' } } })).isError).toBeFalsy();
+    const f = { id: 'ui.cart.view', name: 'View the cart', bounded_context: 'ui', entity: 'cart', action: 'view', owner: 'team-a', lifecycle: 'implemented', screens: [{ id: 'S1', title: 'Cart', path: '/cart' }] };
+    expect((await call('apply_plan', { changes: [{ kind: 'feature', data: f, component: 'svc' }] })).isError).toBeFalsy();
+    const captured = json(await call('capture_screens', {}));
+    expect(captured.report).toMatchObject({ state: 'ok', requested: 1, captured: 1 });
+    const chunk = json(await call('get_spec', { entry: 'features/ui.cart.view.json' }));
+    expect(chunk.screenshots).toEqual([expect.objectContaining({ id: 'S1', exists: true, file: 'screens/ui.cart.view/S1.png' })]);
+    await client.close();
+  }, 30000);
 
   it('reads and updates the product context (PRODUCTCREATOR-33)', async () => {
     const { client } = await connect(bearer());

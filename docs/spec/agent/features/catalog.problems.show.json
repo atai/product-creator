@@ -30,6 +30,13 @@
     ],
     "tickets": [
       "PRODUCTCREATOR-29"
+    ],
+    "screens": [
+      {
+        "id": "S1",
+        "title": "Problems of the catalog",
+        "path": "/problems"
+      }
     ]
   },
   "objects": [
@@ -77,5 +84,14 @@
   ],
   "calledBy": [],
   "workflows": [],
+  "screenshots": [
+    {
+      "id": "S1",
+      "title": "Problems of the catalog",
+      "path": "/problems",
+      "file": "screens/catalog.problems.show/S1.png",
+      "exists": true
+    }
+  ],
   "issues": []
 }

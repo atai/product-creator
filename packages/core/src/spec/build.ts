@@ -3,6 +3,9 @@ import type { ProjectModel, ProductContext } from '../project/model';
 import { DEFAULT_SPEC_LANGUAGE } from '../project/model';
 import type { BusinessObject, Feature, Workflow } from '../types';
 import { validateModel, type CatalogModel, type ValidationIssue } from '../validation/model';
+import { readScreensResult, screenFile, screensDir, SCREENS_DIR } from '../screens/index';
+import * as fs from 'fs';
+import type { FeatureScreen } from '../types';
 
 /**
  * The spec of a project as data (PRODUCTCREATOR-35): one model, rendered as the human view (human.ts) and the
@@ -22,7 +25,18 @@ export interface SpecEntry<T> {
   issues: ValidationIssue[];
 }
 
+/** A declared screenshot and its image (PRODUCTCREATOR-36) */
+export interface SpecScreen {
+  screen: FeatureScreen;
+  /** Path relative to the spec output folder (screens/<feature>/<id>.png) */
+  file: string;
+  exists: boolean;
+  /** Error of the last capture */
+  error?: string;
+}
+
 export interface SpecFeature extends SpecEntry<Feature> {
+  screens: SpecScreen[];
   /** Features of the project that call this one */
   calledBy: string[];
   /** Workflows that have this feature as a step or compensation */
@@ -55,11 +69,33 @@ export function buildSpec(project: ProjectModel, model: CatalogModel): SpecModel
   // issues of the project's entries; duplicate ids carry files instead of a component
   const inProject = (i: ValidationIssue) => (i.component !== undefined && components.has(i.component)) || (!!i.file && path.resolve(i.file).startsWith(path.resolve(project.root) + path.sep));
   const issues = validateModel(model).filter(inProject);
+
+  // screenshots: image present? last capture failed? Problems are warnings of the spec, next to the feature
+  let outputDir: string | null = null;
+  try {
+    outputDir = screensDir(project);
+  } catch {
+    outputDir = null;
+  }
+  const captured = new Map(readScreensResultSafe(project).map((r) => [`${r.feature}#${r.id}`, r]));
+  const screensOf = (e: { data: Feature; component: string }): SpecScreen[] =>
+    (Array.isArray(e.data.screens) ? e.data.screens : []).map((screen) => {
+      const file = screenFile(e.data.id, screen.id);
+      const exists = outputDir ? fs.existsSync(path.join(outputDir, file)) : false;
+      const result = captured.get(`${e.data.id}#${screen.id}`);
+      return { screen, file: `${SCREENS_DIR}/${file}`, exists, ...(result && !result.ok ? { error: result.error ?? 'capture failed' } : {}) };
+    });
   const issuesOf = (kind: ValidationIssue['kind'], id: string) => issues.filter((i) => i.kind === kind && i.id === id);
   const mine = <T>(entries: CatalogModel['features' | 'objects' | 'workflows']) =>
     (entries as { data: T; component?: string }[]).filter((e) => e.component && components.has(e.component)) as { data: T; component: string }[];
 
   const features = mine<Feature>(model.features).filter((e) => e.data.lifecycle !== 'removed');
+  for (const e of features) {
+    for (const s of screensOf(e)) {
+      if (s.error) issues.push({ severity: 'warning', code: 'screen_failed', kind: 'feature', id: e.data.id, field: `screens.${s.screen.id}`, message: `Screenshot ${s.screen.id} "${s.screen.title}" was not captured: ${s.error}`, component: e.component });
+      else if (!s.exists) issues.push({ severity: 'warning', code: 'screen_missing', kind: 'feature', id: e.data.id, field: `screens.${s.screen.id}`, message: `Screenshot ${s.screen.id} "${s.screen.title}" has no image: run the capture (product-creator spec)`, component: e.component });
+    }
+  }
   const objects = mine<BusinessObject>(model.objects).filter((e) => e.data.lifecycle !== 'removed');
   const workflows = mine<Workflow>(model.workflows).filter((e) => e.data.lifecycle !== 'removed');
 
@@ -82,6 +118,7 @@ export function buildSpec(project: ProjectModel, model: CatalogModel): SpecModel
         data: e.data,
         component: components.get(e.component) as SpecComponent,
         issues: issuesOf('feature', e.data.id),
+        screens: screensOf(e),
         calledBy: features.filter((f) => f.data.calls?.includes(e.data.id)).map((f) => f.data.id).sort(),
         workflows: workflows
           .filter((w) => w.data.steps?.includes(e.data.id) || Object.entries(w.data.compensations ?? {}).some(([step, comp]) => step === e.data.id || comp === e.data.id))
@@ -103,4 +140,12 @@ export function buildSpec(project: ProjectModel, model: CatalogModel): SpecModel
     issues,
     counts: { errors: issues.filter((i) => i.severity === 'error').length, warnings: issues.filter((i) => i.severity === 'warning').length },
   };
+}
+
+function readScreensResultSafe(project: ProjectModel) {
+  try {
+    return readScreensResult(project).screens;
+  } catch {
+    return [];
+  }
 }

@@ -67,6 +67,20 @@
     "tickets": [
       "PRODUCTCREATOR-7",
       "PRODUCTCREATOR-32"
+    ],
+    "screens": [
+      {
+        "id": "S1",
+        "title": "New feature form: links and spec",
+        "path": "/features/new",
+        "wait": "form"
+      },
+      {
+        "id": "S2",
+        "title": "A feature page with its spec, tickets and impact",
+        "path": "/features/catalog.feature.edit",
+        "wait": "h3"
+      }
     ]
   },
   "objects": [
@@ -145,5 +159,21 @@
     "mcp.catalog.write"
   ],
   "workflows": [],
+  "screenshots": [
+    {
+      "id": "S1",
+      "title": "New feature form: links and spec",
+      "path": "/features/new",
+      "file": "screens/catalog.feature.edit/S1.png",
+      "exists": true
+    },
+    {
+      "id": "S2",
+      "title": "A feature page with its spec, tickets and impact",
+      "path": "/features/catalog.feature.edit",
+      "file": "screens/catalog.feature.edit/S2.png",
+      "exists": true
+    }
+  ],
   "issues": []
 }

@@ -18,6 +18,14 @@
     ],
     "tickets": [
       "PRODUCTCREATOR-7"
+    ],
+    "screens": [
+      {
+        "id": "S1",
+        "title": "Feature graph: calls, workflow steps and events",
+        "path": "/graph",
+        "wait": "canvas"
+      }
     ]
   },
   "objects": [
@@ -94,5 +102,14 @@
   ],
   "calledBy": [],
   "workflows": [],
+  "screenshots": [
+    {
+      "id": "S1",
+      "title": "Feature graph: calls, workflow steps and events",
+      "path": "/graph",
+      "file": "screens/catalog.graph.show/S1.png",
+      "exists": true
+    }
+  ],
   "issues": []
 }

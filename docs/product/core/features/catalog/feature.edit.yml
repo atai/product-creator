@@ -5,6 +5,10 @@ entity: feature
 action: edit
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Creates or changes a feature card with its spec; the save is validated before writing.
 source_file: http/routes/save/route.ts
 calls:
@@ -42,3 +46,12 @@ code_refs:
   - component: desktop
     file: renderer/src/components/FeatureForm.tsx
     role: UI
+screens:
+  - id: S1
+    title: 'New feature form: links and spec'
+    path: /features/new
+    wait: form
+  - id: S2
+    title: A feature page with its spec, tickets and impact
+    path: /features/catalog.feature.edit
+    wait: h3

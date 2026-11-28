@@ -113,6 +113,9 @@ File format
    tracker:
      issueUrl: https://example.youtrack.cloud/issue/{id}   # tickets of entries link here
 
+``spec`` (language, output folder) and ``screenshots`` (how screenshots of the UI are captured) configure
+the generated specification, see :doc:`spec`.
+
 The product context is the first part of a generated spec: why the product exists, what it aims at,
 who uses it and the words it uses. Goal ids, actor ids and glossary terms must be unique; the tracker
 URL must contain ``{id}``.

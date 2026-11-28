@@ -5,6 +5,10 @@ entity: context
 action: edit
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: 'Vision, goals, actors, glossary and tracker of a project, stored in product-creator.yml: the first part of a spec.'
 source_file: renderer/src/pages/workspace.tsx
 objects:
@@ -34,3 +38,7 @@ acceptance:
       - R3
     text: get_project returns what update_project wrote; a bad goal id is rejected
     verify: pnpm --filter @pc/mcp test -- server
+screens:
+  - id: S1
+    title: Workspace with the project and its components
+    path: /workspace

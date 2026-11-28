@@ -57,3 +57,10 @@ glossary:
     definition: 'The document generated from the model: a human view and an agent bundle'
 tracker:
   issueUrl: https://ecooz.youtrack.cloud/issue/{id}
+screenshots:
+  setup:
+    - command: pnpm desktop:build
+      timeoutSec: 300
+  capture:
+    command: node scripts/capture-screens.mjs
+    timeoutSec: 300

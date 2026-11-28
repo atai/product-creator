@@ -219,7 +219,7 @@ const planChangeSchema = z.object({
 });
 
 /** Tools that change files; offered only to read-write principals (named in the server instructions for read-only ones) */
-export const WRITE_TOOLS = ['apply_plan', 'update_project', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'sync_schema_apply', 'generate_openapi'] as const;
+export const WRITE_TOOLS = ['apply_plan', 'update_project', 'capture_screens', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'sync_schema_apply', 'generate_openapi'] as const;
 
 /** All tools. `write: true` tools exist only for read-write principals. */
 export function registerTools(server: McpServer, ctx: ToolContext): void {
@@ -554,6 +554,18 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
         actors: z.array(z.object({ id: z.string(), name: z.string(), description: z.string().optional() })).optional(),
         glossary: z.array(z.object({ term: z.string(), definition: z.string() })).optional(),
         tracker: z.object({ issueUrl: z.string() }).nullable().optional(),
+        screenshots: z
+          .object({
+            baseUrl: z.string().optional(),
+            env: z.record(z.string(), z.string()).optional(),
+            setup: z.array(z.object({ command: z.string(), cwd: z.string().optional(), timeoutSec: z.number().optional() })).optional(),
+            start: z.array(z.object({ command: z.string(), cwd: z.string().optional(), timeoutSec: z.number().optional(), readyUrl: z.string().optional(), readyTimeoutSec: z.number().optional() })).optional(),
+            capture: z.object({ command: z.string(), cwd: z.string().optional(), timeoutSec: z.number().optional() }),
+            teardown: z.array(z.object({ command: z.string(), cwd: z.string().optional(), timeoutSec: z.number().optional() })).optional(),
+          })
+          .nullable()
+          .optional()
+          .describe('How screenshots are captured: setup → start (background, readyUrl) → capture (the project command; contract: PC_SCREENS_REQUEST) → teardown'),
         spec: z
           .object({ language: z.string().optional().describe('Language the catalog is written in (en, ru, pt-BR); spec labels follow it'), output: z.string().optional().describe('Output folder of product-creator spec, default docs/spec') })
           .nullable()
@@ -565,6 +577,32 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       const next = updateProject(p.root, patch);
       await host.changed?.();
       return { updated: next.slug, changed: Object.keys(patch) };
+    }
+  );
+
+  define(
+    'capture_screens',
+    {
+      title: 'Capture UI screenshots for the spec',
+      write: true,
+      description:
+        'Runs the screenshot commands of the project (screenshots in product-creator.yml: setup, start, capture, teardown) for the screens features declare (`screens` of a feature). Images go to <spec.output>/screens and are embedded by get_spec / product-creator spec. Waits until the run ends (up to 15 minutes) and returns the report.',
+      input: { project: projectArg },
+    },
+    async ({ project }) => {
+      const p = resolveProject(host, project);
+      const query = `/api/screens?project=${encodeURIComponent(p.id)}`;
+      await api(host, 'POST', '/api/screens', { project: p.id });
+      const deadline = Date.now() + 15 * 60_000;
+      for (;;) {
+        const status = (await api(host, 'GET', query)) as { running: boolean; report?: Rec; log: string };
+        if (!status.running) return { report: status.report, logTail: status.log.slice(-4000) };
+        if (Date.now() > deadline) {
+          await api(host, 'DELETE', query);
+          throw new ToolError('The capture did not finish in 15 minutes and was cancelled');
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+      }
     }
   );
 

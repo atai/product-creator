@@ -37,6 +37,8 @@ export interface Messages {
   decisions: string;
   superseded: string;
   openQuestions: string;
+  screens: string;
+  screenNotCaptured: string;
   objects: string;
   read: string;
   write: string;
@@ -92,6 +94,8 @@ const en: Messages = {
   decisions: 'Decisions',
   superseded: 'superseded',
   openQuestions: 'Open questions',
+  screens: 'Screens',
+  screenNotCaptured: 'no screenshot yet',
   objects: 'Business objects',
   read: 'read',
   write: 'write',

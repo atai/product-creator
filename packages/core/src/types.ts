@@ -43,6 +43,27 @@ export interface Feature {
   code_refs?: FeatureCodeRef[];
   /** Tracker issues, e.g. PRODUCTCREATOR-34 */
   tickets?: string[];
+  /** Screenshots of the UI for the spec (PRODUCTCREATOR-36) */
+  screens?: FeatureScreen[];
+}
+
+/** One step before a screenshot: exactly one of click / fill / wait */
+export interface FeatureScreenAction {
+  click?: string;
+  fill?: [string, string];
+  wait?: string;
+}
+
+export interface FeatureScreen {
+  /** S1, S2, … */
+  id: string;
+  title: string;
+  /** Route or URL path relative to screenshots.baseUrl */
+  path: string;
+  wait?: string;
+  actions?: FeatureScreenAction[];
+  element?: string;
+  viewport?: [number, number];
 }
 
 export interface FeatureCodeRef {
@@ -103,7 +124,7 @@ export interface FeatureQuestion {
 }
 
 /** Spec lists of a feature, in the order they appear in a spec */
-export const FEATURE_SPEC_LISTS = ['requirements', 'acceptance', 'constraints', 'decisions', 'open_questions'] as const;
+export const FEATURE_SPEC_LISTS = ['requirements', 'acceptance', 'constraints', 'decisions', 'open_questions', 'screens'] as const;
 export type FeatureSpecList = (typeof FEATURE_SPEC_LISTS)[number];
 
 export interface FeatureObjectRef {

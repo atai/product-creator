@@ -56,3 +56,73 @@ language it is written in. Languages without label translations use English labe
 so). ``output`` must be inside the project and must not overlap the catalog. Writing replaces
 ``spec.md`` and ``agent/`` in that folder and keeps other files there. The folder is independent of
 the Sphinx documentation.
+
+.. _spec-screenshots:
+
+Screenshots
+-----------
+
+A product with a UI gets screenshots in its spec. Product Creator does not drive a browser itself: the
+project brings its own capture command (Playwright, Cypress, a script — anything), and Product Creator
+runs it with the services it needs.
+
+**What to capture** — ``screens`` of a feature (form section *Screens*, or YAML):
+
+.. code-block:: yaml
+
+   screens:
+     - id: S1                          # S1, S2, … per feature
+       title: The order form           # caption in the spec
+       path: /orders/new               # route, relative to screenshots.baseUrl
+       wait: form                      # hints for the capturer (optional):
+       actions:                        #   selectors to wait for, click or fill before capturing
+         - click: "#add-line"
+         - fill: ["#line-0 input", "Coffee"]
+       element: main                   #   capture one element instead of the page
+       viewport: [1280, 800]
+
+**How to run** — ``screenshots`` in ``product-creator.yml``:
+
+.. code-block:: yaml
+
+   screenshots:
+     baseUrl: http://localhost:3000    # passed to the capturer as PC_BASE_URL
+     env: { NODE_ENV: test }           # added to every command
+     setup:                            # run to completion, in order (migrate, seed, build)
+       - command: pnpm db:reset && pnpm db:seed
+         timeoutSec: 300
+     start:                            # long-running, in the background; the run waits for readyUrl
+       - command: docker compose up web api
+         readyUrl: http://localhost:3000/health
+         readyTimeoutSec: 180
+     capture:                          # the project's capturer
+       command: pnpm e2e:screens
+       cwd: e2e
+     teardown:                         # always, also after a failure or a cancel
+       - command: docker compose down
+
+Commands run in the project folder (or ``cwd`` inside it) with the PATH of your login shell; each has a
+timeout (default 300 s). Background services are stopped after the capture.
+
+**The contract.** Product Creator writes ``screens.request.json`` into the screenshots folder and passes
+its path in ``PC_SCREENS_REQUEST`` (also ``PC_SCREENS_OUTPUT`` and ``PC_BASE_URL``):
+
+.. code-block:: json
+
+   { "format": "product-creator.screens/1", "baseUrl": "http://localhost:3000",
+     "output": "/repo/docs/spec/screens",
+     "screens": [ { "feature": "shop.order.create", "id": "S1", "title": "The order form",
+                    "path": "/orders/new", "wait": "form", "file": "shop.order.create/S1.png" } ] }
+
+The capturer writes each image to ``<output>/<file>`` and a result ``<output>/screens.json``:
+``{ "screens": [ { "feature": "…", "id": "S1", "file": "…", "ok": true } ] }`` (``ok: false`` with
+``error`` for a screen it could not capture). Images of screens that are no longer declared are removed.
+
+**When.** ``product-creator spec`` captures first when ``screenshots`` is configured; ``--no-screens``
+uses the images that are there. In the app: **Doc → Capture screenshots** (with the log and *Cancel*).
+Agents: MCP ``capture_screens``. The images are written to ``<spec.output>/screens`` and committed with
+the spec.
+
+**In the spec** each screenshot appears under its feature with its caption. A declared screen without an
+image (never captured, or the capture failed) is shown as *no screenshot yet* and listed as a warning in
+*Problems*.

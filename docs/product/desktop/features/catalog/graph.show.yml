@@ -5,6 +5,10 @@ entity: graph
 action: show
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Features connected by emitted and consumed events, coloured by lifecycle.
 source_file: renderer/src/pages/graph.tsx
 objects:
@@ -12,3 +16,8 @@ objects:
     access: read
 tickets:
   - PRODUCTCREATOR-7
+screens:
+  - id: S1
+    title: 'Feature graph: calls, workflow steps and events'
+    path: /graph
+    wait: canvas

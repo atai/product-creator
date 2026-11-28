@@ -18,6 +18,13 @@
     ],
     "tickets": [
       "PRODUCTCREATOR-7"
+    ],
+    "screens": [
+      {
+        "id": "S1",
+        "title": "Entity × action matrix",
+        "path": "/matrix"
+      }
     ]
   },
   "objects": [
@@ -94,5 +101,14 @@
   ],
   "calledBy": [],
   "workflows": [],
+  "screenshots": [
+    {
+      "id": "S1",
+      "title": "Entity × action matrix",
+      "path": "/matrix",
+      "file": "screens/catalog.matrix.show/S1.png",
+      "exists": true
+    }
+  ],
   "issues": []
 }

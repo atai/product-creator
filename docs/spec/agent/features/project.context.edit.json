@@ -56,6 +56,13 @@
         "text": "get_project returns what update_project wrote; a bad goal id is rejected",
         "verify": "pnpm --filter @pc/mcp test -- server"
       }
+    ],
+    "screens": [
+      {
+        "id": "S1",
+        "title": "Workspace with the project and its components",
+        "path": "/workspace"
+      }
     ]
   },
   "objects": [
@@ -120,5 +127,14 @@
     "mcp.catalog.write"
   ],
   "workflows": [],
+  "screenshots": [
+    {
+      "id": "S1",
+      "title": "Workspace with the project and its components",
+      "path": "/workspace",
+      "file": "screens/project.context.edit/S1.png",
+      "exists": true
+    }
+  ],
   "issues": []
 }

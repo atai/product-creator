@@ -5,6 +5,10 @@ entity: workflow
 action: edit
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: 'Creates or changes a workflow: ordered steps (features) with compensations.'
 source_file: http/routes/save-workflow/route.ts
 calls:
@@ -28,3 +32,8 @@ code_refs:
   - component: desktop
     file: renderer/src/pages/workflows-id.tsx
     role: UI
+screens:
+  - id: S1
+    title: Workflow form with lifecycle and steps
+    path: /workflows/agent.plan_change
+    wait: form

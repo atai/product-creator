@@ -5,6 +5,10 @@ entity: component
 action: edit
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Edits the project and its components in the app; the YAML files are the database.
 source_file: renderer/src/pages/workspace.tsx
 objects:
@@ -31,3 +35,7 @@ code_refs:
     file: project/model.ts
     symbol: saveComponent
     role: storage
+screens:
+  - id: S1
+    title: Projects, services and libraries in the workspace
+    path: /workspace

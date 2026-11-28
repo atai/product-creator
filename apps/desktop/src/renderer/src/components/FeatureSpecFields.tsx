@@ -1,5 +1,5 @@
 import { useFieldArray, type Control, type UseFormRegister } from 'react-hook-form';
-import type { Feature, FeatureAcceptance, FeatureCodeRef, FeatureConstraint, FeatureDecision, FeatureQuestion, FeatureRequirement } from '@pc/core/types';
+import type { Feature, FeatureAcceptance, FeatureCodeRef, FeatureConstraint, FeatureDecision, FeatureQuestion, FeatureRequirement, FeatureScreen } from '@pc/core/types';
 
 /**
  * Spec fields of a feature (PRODUCTCREATOR-32): actors, requirements, acceptance, constraints, decisions, open questions.
@@ -15,6 +15,8 @@ export interface SpecFormData {
   /** comma-separated issue keys (PRODUCTCREATOR-33) */
   tickets: string;
   code_refs: FeatureCodeRef[];
+  /** PRODUCTCREATOR-36; actions and viewport are kept from the card (edited in YAML) */
+  screens: FeatureScreen[];
 }
 
 /** Values of the feature form (FeatureForm): string lists are `{ value }` rows for useFieldArray */
@@ -25,7 +27,7 @@ export type FeatureFormData = Omit<Feature, 'tags' | 'emits' | 'consumes' | keyo
     consumes: { value: string }[];
   };
 
-type SpecFields = Pick<Feature, 'actors' | 'requirements' | 'acceptance' | 'constraints' | 'decisions' | 'open_questions' | 'tickets' | 'code_refs'>;
+type SpecFields = Pick<Feature, 'actors' | 'requirements' | 'acceptance' | 'constraints' | 'decisions' | 'open_questions' | 'tickets' | 'code_refs' | 'screens'>;
 
 export function specToForm(f: Partial<Feature> | null | undefined): SpecFormData {
   return {
@@ -37,6 +39,7 @@ export function specToForm(f: Partial<Feature> | null | undefined): SpecFormData
     open_questions: f?.open_questions ?? [],
     tickets: (f?.tickets ?? []).join(', '),
     code_refs: f?.code_refs ?? [],
+    screens: f?.screens ?? [],
   };
 }
 
@@ -65,6 +68,7 @@ export function specFromForm(d: Partial<SpecFormData>): SpecFields {
     open_questions: (d.open_questions ?? []).map(compact).filter((q) => q.question),
     tickets: (d.tickets ?? '').split(/[\s,]+/).filter(Boolean),
     code_refs: (d.code_refs ?? []).map(compact).filter((c) => c.component && c.file),
+    screens: (d.screens ?? []).map(compact).filter((s) => s.title && s.path),
   };
   for (const key of Object.keys(spec) as (keyof SpecFields)[]) if (!spec[key]?.length) delete spec[key];
   return spec;
@@ -80,7 +84,7 @@ const select = 'px-2 py-2 border border-border-strong rounded bg-surface text-fg
 const removeBtn = 'px-3 py-2 bg-danger-fill text-on rounded hover:bg-danger-fill-hover self-start';
 const addBtn = 'px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm';
 
-type ListName = 'requirements' | 'acceptance' | 'constraints' | 'decisions' | 'open_questions';
+type ListName = 'requirements' | 'acceptance' | 'constraints' | 'decisions' | 'open_questions' | 'screens';
 type Form = { control: Control<FeatureFormData>; register: UseFormRegister<FeatureFormData> };
 
 const EMPTY: { [K in ListName]: Omit<FeatureFormData[K][number], 'id'> } = {
@@ -89,8 +93,9 @@ const EMPTY: { [K in ListName]: Omit<FeatureFormData[K][number], 'id'> } = {
   constraints: { text: '', kind: 'other' },
   decisions: { decision: '', reason: '', date: '', status: 'accepted' },
   open_questions: { question: '', owner: '' },
+  screens: { title: '', path: '', wait: '', element: '' },
 };
-const PREFIX: Record<ListName, string> = { requirements: 'R', acceptance: 'A', constraints: 'C', decisions: 'D', open_questions: 'Q' };
+const PREFIX: Record<ListName, string> = { requirements: 'R', acceptance: 'A', constraints: 'C', decisions: 'D', open_questions: 'Q', screens: 'S' };
 
 function SpecList({ control, register, name, label, hint, addLabel, children }: Form & { name: ListName; label: string; hint: string; addLabel: string; children: (index: number) => React.ReactNode }) {
   const { fields, append, remove } = useFieldArray({ control, name, keyName: 'key' });
@@ -228,6 +233,19 @@ export default function FeatureSpecFields({ control, register }: Form) {
                 <option value="accepted">accepted</option>
                 <option value="superseded">superseded</option>
               </select>
+            </div>
+          </>
+        )}
+      </SpecList>
+
+      <SpecList {...form} name="screens" label="Screens" hint="Screenshots of the UI for the spec, captured by the project's capture command (screenshots in product-creator.yml). Click/fill actions and viewport: in the YAML." addLabel="+ Add screen">
+        {(i) => (
+          <>
+            <input {...register(`screens.${i}.title`)} className={input} placeholder="caption: The feature form" />
+            <input {...register(`screens.${i}.path`)} className={`${input} font-mono text-sm`} placeholder="path: /features/new" />
+            <div className="flex gap-2">
+              <input {...register(`screens.${i}.wait`)} className={`${input} font-mono text-sm`} placeholder="wait for selector (optional)" />
+              <input {...register(`screens.${i}.element`)} className={`${input} font-mono text-sm`} placeholder="capture element (optional)" />
             </div>
           </>
         )}

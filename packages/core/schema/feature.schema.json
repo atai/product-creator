@@ -429,6 +429,89 @@
         "pattern": "^([A-Z][A-Z0-9_]*-|#)[1-9][0-9]*$",
         "description": "Issue key: PROJECT-123 or #123"
       }
+    },
+    "screens": {
+      "type": "array",
+      "x-audience": "both",
+      "description": "Screenshots of the UI that illustrate the feature in the spec. Captured by the project's capture command (screenshots in product-creator.yml); wait/actions/element/viewport are hints for it.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^S[1-9][0-9]*$",
+            "description": "Id inside the feature: S1, S2, … The image is screens/<feature id>/<id>.png"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Caption of the screenshot in the spec"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Route or URL path to open, relative to screenshots.baseUrl"
+          },
+          "wait": {
+            "type": "string",
+            "minLength": 1,
+            "description": "CSS selector to wait for before capturing"
+          },
+          "actions": {
+            "type": "array",
+            "description": "Steps before capturing",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "minProperties": 1,
+              "maxProperties": 1,
+              "properties": {
+                "click": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "CSS selector to click"
+                },
+                "fill": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "description": "[CSS selector, value]"
+                },
+                "wait": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "CSS selector to wait for"
+                }
+              }
+            }
+          },
+          "element": {
+            "type": "string",
+            "minLength": 1,
+            "description": "CSS selector of the element to capture instead of the whole page"
+          },
+          "viewport": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 200,
+              "maximum": 4000
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[width, height] in CSS pixels"
+          }
+        }
+      }
     }
   }
 }

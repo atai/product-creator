@@ -16,6 +16,19 @@ function useIssueUrl(): string | null {
   return url;
 }
 
+/** Names of the actors defined in product-creator.yml of the open projects, by id (first project wins on a clash) */
+function useActorNames(): Map<string, string> {
+  const [names, setNames] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    void window.pc.workspace.get().then((info) => {
+      const map = new Map<string, string>();
+      for (const p of info.projects) for (const a of p.project?.actors ?? []) if (!map.has(a.id)) map.set(a.id, a.name);
+      setNames(map);
+    });
+  }, []);
+  return names;
+}
+
 /** Tickets and other places of the implementation (PRODUCTCREATOR-33) */
 export function FeatureLinksView({ feature }: { feature: Feature }) {
   const issueUrl = useIssueUrl();
@@ -61,6 +74,7 @@ export function FeatureLinksView({ feature }: { feature: Feature }) {
 
 /** Read-only spec of a feature (PRODUCTCREATOR-32): actors, requirements, acceptance, constraints, decisions, open questions */
 export default function FeatureSpecView({ feature }: { feature: Feature }) {
+  const actorNames = useActorNames();
   const { actors = [], requirements = [], acceptance = [], constraints = [], decisions = [], open_questions = [] } = feature;
   if (![actors, requirements, acceptance, constraints, decisions, open_questions].some((l) => l.length)) return null;
   const tag = (id: string) => <span className="font-mono text-xs text-meta mr-2">{id}</span>;
@@ -73,7 +87,18 @@ export default function FeatureSpecView({ feature }: { feature: Feature }) {
 
   return (
     <>
-      {actors.length > 0 && section('Actors', <p className="text-fg-2">{actors.join(', ')}</p>)}
+      {actors.length > 0 &&
+        section(
+          'Actors',
+          <p className="text-fg-2">
+            {actors.map((id, i) => (
+              <span key={id} title={id}>
+                {i > 0 ? ', ' : ''}
+                {actorNames.get(id) ?? id}
+              </span>
+            ))}
+          </p>
+        )}
       {requirements.length > 0 &&
         section(
           'Requirements',

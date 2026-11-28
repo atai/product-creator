@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { getStorage, type FunctionStorage } from '../../../storage';
 import logger from '../../../logger';
 import { readProject, type ProjectModel } from '../../../project/model';
@@ -24,6 +26,14 @@ export async function GET(request: Request) {
     const storage = await getStorage();
     const project = projectOf(storage, url.searchParams.get('project'));
     if (project instanceof Response) return project;
+    // an image of the spec folder for the Doc page (PRODUCTCREATOR-36): PNG only, inside spec.output
+    const asset = url.searchParams.get('asset');
+    if (asset) {
+      const dir = specOutputDir(project);
+      const file = path.resolve(dir, asset);
+      if (!file.startsWith(dir + path.sep) || !file.endsWith('.png') || !fs.existsSync(file)) return Response.json({ error: `no image "${asset}"` }, { status: 404 });
+      return Response.json({ dataUrl: `data:image/png;base64,${fs.readFileSync(file).toString('base64')}` });
+    }
     const generated = generateSpec(project, storage.modelSnapshot());
     const entry = url.searchParams.get('entry');
     if (entry) {

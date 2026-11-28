@@ -5,6 +5,10 @@ entity: problems
 action: show
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: The Problems page lists validation errors and warnings with links to the entries.
 source_file: renderer/src/pages/problems.tsx
 calls:
@@ -19,3 +23,7 @@ requirements:
     text: Errors and warnings are grouped by entry and link to it
 tickets:
   - PRODUCTCREATOR-29
+screens:
+  - id: S1
+    title: Problems of the catalog
+    path: /problems

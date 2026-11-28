@@ -104,6 +104,16 @@ Generator (PRODUCTCREATOR-35)
 * ``index.ts`` — ``generateSpec``, ``specOutputDir`` (inside the project, not overlapping the catalog),
   ``writeSpec`` (replaces ``spec.md`` and ``agent/``).
 
+Screenshots (PRODUCTCREATOR-36, *exists*): ``packages/core/src/screens`` — ``screensRequest`` (screens of the
+features), ``captureScreens`` (setup → start + ``readyUrl`` → capture → teardown, always stopping services,
+cancellable), ``readScreensResult``; contract files ``screens.request.json`` / ``screens.json`` in
+``<spec.output>/screens``. Commands run through ``packages/core/src/process/command.ts`` (``runCommand``,
+``startBackground``, ``setCommandEnv`` for the login-shell PATH), shared with OpenAPI generation. The spec
+model (``SpecFeature.screens``) embeds images and reports ``screen_missing`` / ``screen_failed`` warnings.
+Routes: ``/api/screens`` (POST start, GET status/log, DELETE cancel), ``/api/spec?asset=`` (PNG as data URL
+for the Doc page). Product Creator's own capturer: ``scripts/capture-screens.mjs`` → smoke mode
+``PC_SMOKE_SCREENS`` → ``apps/desktop/src/main/screens.ts``.
+
 Entry points: ``/api/spec`` (GET: human view or ``entry`` of the bundle; POST: write), CLI
 ``product-creator spec``, MCP ``get_spec``, the Doc page (``react-markdown``, raw HTML not rendered).
 Settings: ``spec.language`` / ``spec.output`` in ``product-creator.yml``.

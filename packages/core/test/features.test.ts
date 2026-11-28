@@ -118,6 +118,8 @@ describe('feature spec fields in storage (PRODUCTCREATOR-32)', () => {
     const saved = fs.readFileSync(path.join(catalog, 'features/orders/order.create.yml'), 'utf8');
     expect(saved).toContain('requirements:');
     expect(saved).toContain('covers:');
+    // the card keeps id, name … on top after a save (PRODUCTCREATOR-36)
+    expect(saved.split('\n')[0]).toBe('id: orders.order.create');
     expect(storage.getFeatureById('orders.order.create')?.actors).toEqual(['AI agent']);
     // a YAML date stays a YYYY-MM-DD string through read and save (no Date / ISO timestamp)
     expect(storage.getFeatureById('orders.order.create')?.decisions?.[0].date).toBe('2026-11-28');

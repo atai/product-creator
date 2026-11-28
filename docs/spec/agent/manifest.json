@@ -122,6 +122,7 @@
     "workflows": 3
   },
   "chunkBudgetBytes": 16000,
+  "screenshotsBase": "..",
   "entries": [
     {
       "kind": "feature",
@@ -140,7 +141,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/catalog.feature.edit.json",
-      "bytes": 3442,
+      "bytes": 4218,
       "issues": 0
     },
     {
@@ -150,7 +151,7 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/catalog.graph.show.json",
-      "bytes": 2119,
+      "bytes": 2514,
       "issues": 0
     },
     {
@@ -160,7 +161,7 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/catalog.matrix.show.json",
-      "bytes": 2107,
+      "bytes": 2431,
       "issues": 0
     },
     {
@@ -180,7 +181,7 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/catalog.problems.show.json",
-      "bytes": 1794,
+      "bytes": 2124,
       "issues": 0
     },
     {
@@ -200,7 +201,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/catalog.workflow.edit.json",
-      "bytes": 2006,
+      "bytes": 2428,
       "issues": 0
     },
     {
@@ -300,7 +301,7 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/project.component.edit.json",
-      "bytes": 3636,
+      "bytes": 4021,
       "issues": 0
     },
     {
@@ -310,7 +311,7 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/project.context.edit.json",
-      "bytes": 3022,
+      "bytes": 3397,
       "issues": 0
     },
     {
@@ -350,7 +351,7 @@
       "lifecycle": "draft",
       "component": "desktop",
       "file": "features/spec.document.render.json",
-      "bytes": 1223,
+      "bytes": 1591,
       "issues": 0
     },
     {

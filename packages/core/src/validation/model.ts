@@ -44,7 +44,10 @@ export type IssueCode =
   | 'unknown_type'
   | 'compensation_not_in_steps'
   | 'duplicate_item_id'
-  | 'unknown_requirement';
+  | 'unknown_requirement'
+  /** spec only (PRODUCTCREATOR-36): a declared screenshot has no image, or its capture failed */
+  | 'screen_missing'
+  | 'screen_failed';
 
 export interface ValidationIssue {
   severity: 'error' | 'warning';

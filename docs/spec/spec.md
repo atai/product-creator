@@ -88,6 +88,16 @@ Creates or changes a feature card with its spec; the save is validated before wr
 - **A1** (covers R2): Reading a card and saving it back keeps every field
 - **A2** (covers R3): **Given** a feature whose calls name a missing feature; **When** it is saved; **Then** the response is 400 with unknown_feature
 
+**Screens**
+
+![S1 — New feature form: links and spec](screens/catalog.feature.edit/S1.png)
+
+*S1 — New feature form: links and spec*
+
+![S2 — A feature page with its spec, tickets and impact](screens/catalog.feature.edit/S2.png)
+
+*S2 — A feature page with its spec, tickets and impact*
+
 **Business objects:** `feature` (write)
 
 #### Show the event graph (`catalog.graph.show`)
@@ -96,6 +106,12 @@ Creates or changes a feature card with its spec; the save is validated before wr
 
 Features connected by emitted and consumed events, coloured by lifecycle.
 
+**Screens**
+
+![S1 — Feature graph: calls, workflow steps and events](screens/catalog.graph.show/S1.png)
+
+*S1 — Feature graph: calls, workflow steps and events*
+
 **Business objects:** `feature` (read)
 
 #### Show the entity × action matrix (`catalog.matrix.show`)
@@ -103,6 +119,12 @@ Features connected by emitted and consumed events, coloured by lifecycle.
 *implemented* · Component: Desktop app (Electron) · Tickets: [PRODUCTCREATOR-7](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-7)
 
 Entity × action coverage per bounded context.
+
+**Screens**
+
+![S1 — Entity × action matrix](screens/catalog.matrix.show/S1.png)
+
+*S1 — Entity × action matrix*
 
 **Business objects:** `feature` (read)
 
@@ -134,6 +156,12 @@ The Problems page lists validation errors and warnings with links to the entries
 
 - **R1** Errors and warnings are grouped by entry and link to it
 
+**Screens**
+
+![S1 — Problems of the catalog](screens/catalog.problems.show/S1.png)
+
+*S1 — Problems of the catalog*
+
 **Business objects:** `validation_issue` (read)
 
 #### Create and edit a stream (`catalog.stream.edit`)
@@ -163,6 +191,12 @@ Creates or changes a workflow: ordered steps (features) with compensations.
 **Acceptance criteria**
 
 - **A1** (covers R1): A step that is not a feature is rejected with unknown_feature
+
+**Screens**
+
+![S1 — Workflow form with lifecycle and steps](screens/catalog.workflow.edit/S1.png)
+
+*S1 — Workflow form with lifecycle and steps*
 
 **Business objects:** `workflow` (write)
 
@@ -344,6 +378,12 @@ Edits the project and its components in the app; the YAML files are the database
 
 - **A1** (covers R2): Renaming a component keeps its id
 
+**Screens**
+
+![S1 — Projects, services and libraries in the workspace](screens/project.component.edit/S1.png)
+
+*S1 — Projects, services and libraries in the workspace*
+
 **Business objects:** `project` (write), `component` (write)
 
 #### Edit the product context (`project.context.edit`)
@@ -365,6 +405,12 @@ Vision, goals, actors, glossary and tracker of a project, stored in product-crea
 
 - **A1** (covers R1, R2): updateProject saves, keeps and clears the context and rejects bad ids
 - **A2** (covers R3): get_project returns what update_project wrote; a bad goal id is rejected
+
+**Screens**
+
+![S1 — Workspace with the project and its components](screens/project.context.edit/S1.png)
+
+*S1 — Workspace with the project and its components*
 
 **Business objects:** `project` (write)
 
@@ -867,6 +913,12 @@ The Doc page renders the human spec (ТЗ) from the model and exports Markdown/H
 **Open questions**
 
 - **Q1** Language of the human spec: one per project, or Russian for people and English for agents? — atai
+
+**Screens**
+
+![S1 — The generated spec on the Doc page](screens/spec.document.render/S1.png)
+
+*S1 — The generated spec on the Doc page*
 
 ## 6. Problems
 

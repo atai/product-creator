@@ -41,12 +41,29 @@
     "tickets": [
       "PRODUCTCREATOR-19",
       "PRODUCTCREATOR-35"
+    ],
+    "screens": [
+      {
+        "id": "S1",
+        "title": "The generated spec on the Doc page",
+        "path": "/doc",
+        "wait": "article"
+      }
     ]
   },
   "objects": [],
   "calledBy": [],
   "workflows": [
     "spec.release"
+  ],
+  "screenshots": [
+    {
+      "id": "S1",
+      "title": "The generated spec on the Doc page",
+      "path": "/doc",
+      "file": "screens/spec.document.render/S1.png",
+      "exists": true
+    }
   ],
   "issues": []
 }

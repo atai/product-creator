@@ -45,6 +45,14 @@
     "tickets": [
       "PRODUCTCREATOR-7",
       "PRODUCTCREATOR-33"
+    ],
+    "screens": [
+      {
+        "id": "S1",
+        "title": "Workflow form with lifecycle and steps",
+        "path": "/workflows/agent.plan_change",
+        "wait": "form"
+      }
     ]
   },
   "objects": [
@@ -89,5 +97,14 @@
     "mcp.catalog.write"
   ],
   "workflows": [],
+  "screenshots": [
+    {
+      "id": "S1",
+      "title": "Workflow form with lifecycle and steps",
+      "path": "/workflows/agent.plan_change",
+      "file": "screens/catalog.workflow.edit/S1.png",
+      "exists": true
+    }
+  ],
   "issues": []
 }

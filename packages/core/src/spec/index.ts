@@ -1,11 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { DEFAULT_SPEC_OUTPUT, PROJECT_FILE, type ProjectModel } from '../project/model';
+import type { ProjectModel } from '../project/model';
+import { specOutputDir } from './output';
 import type { CatalogModel } from '../validation/model';
 import { renderAgent } from './agent';
 import { buildSpec, type SpecModel } from './build';
 import { renderHuman } from './human';
 import { messagesFor } from './messages';
+
+export { specOutputDir };
 
 /**
  * Spec generation (PRODUCTCREATOR-35): the catalog of a project → `spec.md` (people) + `agent/` (manifest and
@@ -30,19 +33,6 @@ export function generateSpec(project: ProjectModel, model: CatalogModel): Genera
   const files: Record<string, string> = { [HUMAN_FILE]: renderHuman(spec, messages) };
   for (const [file, content] of Object.entries(renderAgent(spec, { labelsLanguage: language, labelsFallback: fallback }))) files[`${AGENT_DIR}/${file}`] = content;
   return { spec, files, labelsLanguage: language, labelsFallback: fallback };
-}
-
-/** Absolute output folder; refuses folders that would mix the spec with the project files or the catalog */
-export function specOutputDir(project: ProjectModel): string {
-  const rel = project.spec?.output ?? DEFAULT_SPEC_OUTPUT;
-  const root = path.resolve(project.root);
-  const out = path.resolve(root, rel);
-  const inside = (child: string, parent: string) => child === parent || child.startsWith(parent + path.sep);
-  if (!inside(out, root) || out === root) throw new Error(`spec.output "${rel}" must be a folder inside the project`);
-  const catalog = path.resolve(root, project.catalogRoot);
-  if (inside(out, catalog) || inside(catalog, out)) throw new Error(`spec.output "${rel}" must not contain or be inside the catalog (${project.catalogRoot})`);
-  if (fs.existsSync(path.join(out, PROJECT_FILE))) throw new Error(`spec.output "${rel}" holds a ${PROJECT_FILE}: choose another folder`);
-  return out;
 }
 
 /** Writes the files; spec.md and agent/ are replaced as a whole (no stale chunks), other files of the folder are kept */

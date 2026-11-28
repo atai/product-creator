@@ -18,6 +18,26 @@ interface SpecResponse {
   error?: string;
 }
 
+interface ScreensStatus {
+  configured: boolean;
+  screens: number;
+  running: boolean;
+  log: string;
+  report?: { state: string; message?: string; requested: number; captured: number; failed: { feature: string; id: string; error?: string }[] };
+}
+
+/** Images of the spec are files next to spec.md; the renderer gets them as data URLs through the API */
+function SpecImage({ projectId, src, alt }: { projectId: string; src?: string; alt?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!src) return;
+    void fetch(`/api/spec?project=${encodeURIComponent(projectId)}&asset=${encodeURIComponent(src)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b: { dataUrl?: string } | null) => setUrl(b?.dataUrl ?? null));
+  }, [projectId, src]);
+  return url ? <img src={url} alt={alt} className="my-3 max-w-full rounded border border-border shadow-sm" /> : <span className="text-sm text-meta">[{alt}]</span>;
+}
+
 const md: Components = {
   h1: ({ children }) => <h1 className="text-3xl font-bold text-fg mb-4">{children}</h1>,
   h2: ({ children }) => <h2 className="text-2xl font-semibold text-fg mt-10 mb-3 border-b border-border pb-1">{children}</h2>,
@@ -44,6 +64,7 @@ export default function DocPage() {
   const [spec, setSpec] = useState<SpecResponse | null>(null);
   const [error, setError] = useState('');
   const [written, setWritten] = useState('');
+  const [screens, setScreens] = useState<ScreensStatus | null>(null);
 
   useEffect(() => {
     void window.pc.workspace.get().then((info) => {
@@ -65,6 +86,41 @@ export default function DocPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const loadScreens = useCallback(async () => {
+    if (!projectId) return;
+    const res = await fetch(`/api/screens?project=${encodeURIComponent(projectId)}`);
+    if (res.ok) setScreens((await res.json()) as ScreensStatus);
+  }, [projectId]);
+
+  useEffect(() => {
+    void loadScreens();
+  }, [loadScreens]);
+
+  // poll while a capture runs; regenerate the spec when it ends
+  useEffect(() => {
+    if (!screens?.running) return;
+    const timer = setInterval(() => {
+      void fetch(`/api/screens?project=${encodeURIComponent(projectId)}`)
+        .then((r) => r.json())
+        .then((s: ScreensStatus) => {
+          setScreens(s);
+          if (!s.running) void load();
+        });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [screens?.running, projectId, load]);
+
+  const capture = async () => {
+    setError('');
+    const res = await fetch('/api/screens', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project: projectId }) });
+    if (!res.ok) setError(((await res.json()) as { error?: string }).error ?? 'Failed to start the capture');
+    await loadScreens();
+  };
+
+  const cancelCapture = async () => {
+    await fetch(`/api/screens?project=${encodeURIComponent(projectId)}`, { method: 'DELETE' });
+  };
 
   const write = async () => {
     setWritten('');
@@ -93,6 +149,11 @@ export default function DocPage() {
           <button type="button" onClick={() => void write()} disabled={!spec?.output} className="px-3 py-2 bg-accent text-on rounded hover:bg-accent-hover disabled:bg-surface-disabled text-sm">
             Write files{spec?.output ? '' : ' (output folder not allowed)'}
           </button>
+          {screens?.configured && screens.screens > 0 && (
+            <button type="button" onClick={() => void (screens.running ? cancelCapture() : capture())} className="px-3 py-2 bg-surface-strong text-fg-2 rounded hover:bg-surface-stronger text-sm">
+              {screens.running ? 'Cancel capture' : `Capture screenshots (${screens.screens})`}
+            </button>
+          )}
           {spec && (
             <span className="text-sm text-meta">
               {spec.counts.errors} error(s), {spec.counts.warnings} warning(s) · language {spec.language}
@@ -100,12 +161,26 @@ export default function DocPage() {
             </span>
           )}
         </div>
+        {screens?.report && !screens.running && (
+          <div className={`mb-4 rounded px-4 py-2 text-sm ${screens.report.state === 'ok' && !screens.report.failed.length ? 'bg-success-muted text-success-fg' : 'bg-warn-soft text-warn-fg'}`}>
+            Screenshots: {screens.report.state}
+            {screens.report.message ? ` — ${screens.report.message}` : ''} · {screens.report.captured}/{screens.report.requested} with an image
+            {screens.report.failed.map((f) => (
+              <div key={`${f.feature}#${f.id}`}>
+                {f.feature} {f.id}: {f.error ?? 'failed'}
+              </div>
+            ))}
+          </div>
+        )}
+        {(screens?.running || (screens?.report && screens.report.state !== 'ok')) && screens.log && (
+          <pre className="mb-4 max-h-64 overflow-auto rounded bg-surface-muted p-3 text-xs">{screens.log}</pre>
+        )}
         {written && <div className="mb-4 rounded bg-success-muted px-4 py-2 text-sm text-success-fg">{written}</div>}
         {error && <div className="mb-4 rounded bg-danger-soft px-4 py-2 text-sm text-danger-fg-strong">{error}</div>}
         {!projects.length && <p className="text-muted">Open a project to generate its spec.</p>}
         {spec && (
           <article className="rounded-lg bg-surface p-8 shadow">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={md}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ ...md, img: ({ src, alt }) => <SpecImage projectId={projectId} src={typeof src === 'string' ? src : undefined} alt={alt} /> }}>
               {spec.markdown}
             </ReactMarkdown>
           </article>

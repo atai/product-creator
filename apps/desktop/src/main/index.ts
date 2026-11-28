@@ -1,8 +1,10 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, safeStorage, screen, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, Notification, safeStorage, screen, shell } from 'electron';
 import { mkdirSync } from 'fs';
 import * as path from 'path';
 import { deleteComponent, importNewComponents, readProject, saveComponent, updateProject, type ProjectModel } from '@pc/core/project/model';
 import { loginShellPath, OpenApiGenerationManager } from '@pc/core/interfaces/generator';
+import { setCommandEnv } from '@pc/core/process/command';
+import { captureAppScreens } from './screens';
 import { migrateProject, summarizeMigration } from '@pc/core/catalog/migrate';
 import { IPC, type ApiRequest, type ApiResponse, type ComponentInput, type EditResult, type ProjectPatch } from '../shared/ipc';
 import { parseProjectArgs, defaultProjectFolder } from './args';
@@ -92,6 +94,9 @@ relay.onChange(() => send(IPC.relayChanged, relay.status()));
 async function shutdown() {
   clearTimeout(workspaceChangedTimer);
   generation.cancelAll();
+  // a running screenshot capture is cancelled; shutdown waits for its services and teardown (PRODUCTCREATOR-36)
+  const { cancelAllCaptures } = await import('@pc/core/http/routes/screens/route');
+  await cancelAllCaptures();
   relay.stop();
   await mcp.stop();
 }
@@ -355,6 +360,11 @@ async function runSmokeTest() {
   const win = liveWindow();
   if (win) {
     if (win.webContents.isLoading()) await new Promise<void>((r) => win.webContents.once('did-finish-load', () => r()));
+    // PC_SMOKE_SCREENS=<screens.request.json>: capture this app's screens for the spec (PRODUCTCREATOR-36)
+    if (process.env.PC_SMOKE_SCREENS) {
+      await new Promise((r) => setTimeout(r, 1500));
+      report.screens = await captureAppScreens(win, process.env.PC_SMOKE_SCREENS);
+    }
     // PC_SMOKE_EDIT=<new name>: rename the first component through the renderer bridge (editor IPC → YAML)
     if (process.env.PC_SMOKE_EDIT) {
       report.edit = await win.webContents.executeJavaScript(`(async () => {
@@ -425,6 +435,8 @@ if (!app.requestSingleInstanceLock()) {
     await mcp.apply();
     void loginShellPath().then((p) => {
       shellPath = p;
+      // every project command (screenshots, …) gets the PATH of the login shell, like OpenAPI generation
+      setCommandEnv(p ? { PATH: p } : undefined);
     });
     app.setAboutPanelOptions({
       copyright: copyrightNotice(),
@@ -444,14 +456,29 @@ if (!app.requestSingleInstanceLock()) {
   // The quit is cancelled once to await the cleanup, then the process ends with app.exit: a second app.quit()
   // from inside will-quit is not reliable on macOS (the app stayed alive). A cleanup that hangs does not keep the
   // app open either: after SHUTDOWN_TIMEOUT_MS it exits anyway.
+  // A running screenshot capture extends the wait by what its teardown may take (its configured timeouts), so a
+  // `docker compose down` is not cut off; the user is told why the app is still running.
   const SHUTDOWN_TIMEOUT_MS = 3000;
   let shutdownStarted = false;
   app.on('will-quit', (event) => {
     if (shutdownStarted) return;
     event.preventDefault();
     shutdownStarted = true;
-    const timeout = new Promise<void>((resolve) => setTimeout(resolve, SHUTDOWN_TIMEOUT_MS).unref());
-    void Promise.race([shutdown().catch((error) => console.error('Shutdown failed', error)), timeout]).finally(() => app.exit(0));
+    void (async () => {
+      try {
+        const { captureStopBudgetMs } = await import('@pc/core/http/routes/screens/route');
+        const captureMs = captureStopBudgetMs();
+        if (captureMs > 0 && Notification.isSupported()) {
+          new Notification({ title: 'Product Creator', body: 'Stopping the screenshot run: services and teardown commands are finishing.' }).show();
+        }
+        const timeout = new Promise<void>((resolve) => setTimeout(resolve, Math.max(SHUTDOWN_TIMEOUT_MS, captureMs)).unref());
+        await Promise.race([shutdown(), timeout]);
+      } catch (error) {
+        console.error('Shutdown failed', error);
+      } finally {
+        app.exit(0);
+      }
+    })();
   });
 
   // macOS keeps an app running without windows (Dock). A dev run quits with its last window, like on Windows/Linux.

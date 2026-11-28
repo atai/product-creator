@@ -3,6 +3,7 @@ import * as path from 'path';
 import { readProject, toStorageEntities, PROJECT_FILE } from '@pc/core/project/model';
 import { migrateProject, summarizeMigration } from '@pc/core/catalog/migrate';
 import { generateSpec, writeSpec } from '@pc/core/spec/index';
+import { captureScreens } from '@pc/core/screens/index';
 import { configureStorage, getStorage, resetStorage } from '@pc/core/storage';
 import { countIssues, validateModel, type ValidationIssue } from '@pc/core/validation/model';
 import type { AppEntity } from '@pc/core/types';
@@ -13,7 +14,9 @@ import logger from '@pc/core/logger';
  *   product-creator migrate [folder...] [--dry-run]   move functions/ → features/ in all catalogs (PRODUCTCREATOR-28)
  *   product-creator lint [folder...] [--warnings] [--json]   model validation of the catalogs (PRODUCTCREATOR-29)
  *   product-creator lint --catalog <dir> [...]        validate one catalog folder of a repo without product-creator.yml (read only)
- *   product-creator spec [folder...] [--strict]        write spec.md + agent/ to spec.output (PRODUCTCREATOR-35);
+ *   product-creator spec [folder...] [--strict] [--no-screens]   write spec.md + agent/ to spec.output (PRODUCTCREATOR-35);
+ *                                                     screenshots are captured first when configured (PRODUCTCREATOR-36);
+ *                                                     --no-screens reuses the images there are;
  *                                                     --strict: exit 1 when the model has errors (the spec is written anyway)
  * Exit code: 0 ok, 1 problems found (conflicts, model errors), 2 usage error.
  */
@@ -126,6 +129,21 @@ async function spec(folders: string[], flags: Set<string>, io: CliIo): Promise<n
   let exit = 0;
   for (const project of projects) {
     try {
+      if (project.screenshots && !flags.has('--no-screens')) {
+        io.log(`${project.name}: capturing screenshots`);
+        // command output, line by line through io
+        let pending = '';
+        const onLog = (chunk: string) => {
+          const lines = (pending + chunk).split('\n');
+          pending = lines.pop() ?? '';
+          lines.forEach((l) => io.log(`  | ${l}`));
+        };
+        const report = await captureScreens(project, model, { onLog });
+        if (pending) io.log(`  | ${pending}`);
+        io.log(`  screenshots: ${report.state}${report.message ? ` (${report.message})` : ''}, ${report.captured}/${report.requested} with an image`);
+        for (const f of report.failed) io.log(`  failed ${f.feature} ${f.id}: ${f.error ?? 'capture failed'}`);
+        if (report.state === 'failed' || report.state === 'cancelled') exit = Math.max(exit, 1);
+      }
       const generated = generateSpec(project, model);
       const { dir, files } = writeSpec(project, generated);
       const { errors, warnings } = generated.spec.counts;

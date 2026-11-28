@@ -131,6 +131,10 @@ name from ``list_projects``) as an argument.
      - Write several changes at once (same input as ``validate_plan``). The plan is checked as a whole,
        so entries that reference each other are written together in any order; nothing is written if
        it adds errors, and a failed write is rolled back. Use it instead of many single writes
+   * - ``capture_screens``
+     - read-write
+     - Run the screenshot commands of the project (``screenshots``) for the screens features declare, wait
+       for the end and return the report (see :ref:`spec-screenshots`)
    * - ``update_project``
      - read-write
      - Change name, description, vision, goals, actors, glossary or tracker of a project

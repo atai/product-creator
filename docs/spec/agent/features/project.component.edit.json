@@ -51,6 +51,13 @@
     "tickets": [
       "PRODUCTCREATOR-12",
       "PRODUCTCREATOR-14"
+    ],
+    "screens": [
+      {
+        "id": "S1",
+        "title": "Projects, services and libraries in the workspace",
+        "path": "/workspace"
+      }
     ]
   },
   "objects": [
@@ -160,5 +167,14 @@
   ],
   "calledBy": [],
   "workflows": [],
+  "screenshots": [
+    {
+      "id": "S1",
+      "title": "Projects, services and libraries in the workspace",
+      "path": "/workspace",
+      "file": "screens/project.component.edit/S1.png",
+      "exists": true
+    }
+  ],
   "issues": []
 }

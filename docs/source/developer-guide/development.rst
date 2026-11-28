@@ -98,6 +98,10 @@ a script in the renderer (e.g. clicks a button; override ``window.confirm`` firs
 ``PC_SMOKE_TEXT_FILTER`` prints matching lines of the page. Smoke runs use the development folder; set
 ``PC_USER_DATA_DIR=<tmp>`` to keep a run's workspace separate.
 
+``PC_SMOKE_SCREENS=<screens.request.json>`` captures the requested screens of this app and writes
+``screens.json`` (used by ``scripts/capture-screens.mjs``, the capturer of this repo's spec; ``pnpm
+catalog:spec`` runs it).
+
 ``PC_SMOKE_QUIT=1`` ends the smoke run through ``app.quit()`` (the path of Cmd+Q: ``will-quit`` →
 cleanup → ``app.exit``) instead of exiting directly; a run that does not end in time means quitting hangs.
 

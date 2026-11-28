@@ -20,7 +20,8 @@ function keepAllFields<T extends object>(config: EntityConfig<T>): EntityConfig<
       const extra = Object.fromEntries(Object.entries(entity).filter(([k, v]) => !(k in row) && v !== undefined));
       return Object.keys(extra).length ? { ...row, extra: JSON.stringify(extra) } : row;
     },
-    fromRow: (row) => ({ ...(row.extra ? (JSON.parse(row.extra as string) as Partial<T>) : {}), ...config.fromRow(row) }),
+    // columns first, then the other fields in their saved order: a card read and saved back keeps id, name … on top
+    fromRow: (row) => ({ ...config.fromRow(row), ...(row.extra ? (JSON.parse(row.extra as string) as Partial<T>) : {}) }),
   };
 }
 

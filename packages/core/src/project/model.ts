@@ -99,6 +99,36 @@ export interface SpecSettings {
   output?: string;
 }
 
+/** A command of the screenshot run (PRODUCTCREATOR-36); cwd relative to the project root */
+export interface ScreenshotCommand {
+  command: string;
+  cwd?: string;
+  timeoutSec?: number;
+}
+
+/** A long-running command (dev server, docker compose up); the run waits until readyUrl answers */
+export interface ScreenshotService extends ScreenshotCommand {
+  readyUrl?: string;
+  readyTimeoutSec?: number;
+}
+
+/**
+ * How screenshots of the product are captured (PRODUCTCREATOR-36). Product Creator runs setup (in order, to
+ * completion) → start (background, waits for readyUrl) → capture (the project's capturer) → teardown (always).
+ */
+export interface ScreenshotSettings {
+  /** Base URL of the running product, passed to the capturer (PC_BASE_URL) */
+  baseUrl?: string;
+  env?: Record<string, string>;
+  setup?: ScreenshotCommand[];
+  start?: ScreenshotService[];
+  capture: ScreenshotCommand;
+  teardown?: ScreenshotCommand[];
+}
+
+export const DEFAULT_SCREENSHOT_TIMEOUT_SEC = 300;
+export const DEFAULT_READY_TIMEOUT_SEC = 120;
+
 export const DEFAULT_SPEC_LANGUAGE = 'en';
 export const DEFAULT_SPEC_OUTPUT = 'docs/spec';
 
@@ -110,6 +140,7 @@ export interface ProductContext {
   glossary?: GlossaryTerm[];
   tracker?: TrackerConfig;
   spec?: SpecSettings;
+  screenshots?: ScreenshotSettings;
 }
 
 export const PRODUCT_KEYS = ['vision', 'goals', 'actors', 'glossary', 'tracker'] as const;
@@ -160,6 +191,7 @@ interface RawProjectFile {
   glossary?: unknown;
   tracker?: unknown;
   spec?: unknown;
+  screenshots?: unknown;
   /** v1 format: inline services */
   services?: Array<Record<string, unknown>>;
 }
@@ -277,6 +309,41 @@ export function readProductContext(raw: { vision?: unknown; goals?: unknown; act
   };
 }
 
+const commandOf = (v: unknown): ScreenshotCommand | undefined => {
+  const r = typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : typeof v === 'string' ? { command: v } : {};
+  const command = str(r.command);
+  if (!command) return undefined;
+  const timeout = Number(r.timeoutSec);
+  return { command, ...(str(r.cwd) ? { cwd: str(r.cwd) } : {}), ...(Number.isFinite(timeout) && timeout > 0 ? { timeoutSec: timeout } : {}) };
+};
+const commandsOf = (v: unknown): ScreenshotCommand[] => (Array.isArray(v) ? v : v ? [v] : []).flatMap((c) => (commandOf(c) ? [commandOf(c) as ScreenshotCommand] : []));
+
+/** `screenshots` of product-creator.yml; a single command may be written as a string. No capture command = not configured */
+export function readScreenshotSettings(raw: unknown): ScreenshotSettings | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const r = raw as Record<string, unknown>;
+  const capture = commandOf(r.capture);
+  if (!capture) return undefined;
+  const env = typeof r.env === 'object' && r.env !== null ? Object.fromEntries(Object.entries(r.env as Record<string, unknown>).filter(([, v]) => typeof v === 'string' || typeof v === 'number').map(([k, v]) => [k, String(v)])) : {};
+  const start = (Array.isArray(r.start) ? r.start : r.start ? [r.start] : []).flatMap((item): ScreenshotService[] => {
+    const c = commandOf(item);
+    if (!c) return [];
+    const o = (typeof item === 'object' && item !== null ? item : {}) as Record<string, unknown>;
+    const ready = Number(o.readyTimeoutSec);
+    return [{ ...c, ...(str(o.readyUrl) ? { readyUrl: str(o.readyUrl) } : {}), ...(Number.isFinite(ready) && ready > 0 ? { readyTimeoutSec: ready } : {}) }];
+  });
+  const setup = commandsOf(r.setup);
+  const teardown = commandsOf(r.teardown);
+  return {
+    ...(str(r.baseUrl) ? { baseUrl: str(r.baseUrl) } : {}),
+    ...(Object.keys(env).length ? { env } : {}),
+    ...(setup.length ? { setup } : {}),
+    ...(start.length ? { start } : {}),
+    capture,
+    ...(teardown.length ? { teardown } : {}),
+  };
+}
+
 /** Rejects a product context that cannot be saved: ids, duplicates, tracker URL */
 export function assertProductContext(c: ProductContext) {
   const unique = (values: string[], what: string) => {
@@ -296,6 +363,13 @@ export function assertProductContext(c: ProductContext) {
   }
   if (c.spec?.output && (path.isAbsolute(c.spec.output) || c.spec.output.split(/[\\/]/).includes('..'))) {
     throw new Error('spec.output must be a folder inside the project, e.g. docs/spec');
+  }
+  if (c.screenshots) {
+    const s = c.screenshots;
+    for (const cmd of [...(s.setup ?? []), ...(s.start ?? []), s.capture, ...(s.teardown ?? [])]) if (cmd.cwd) assertInsideRoot(cmd.cwd, 'screenshots command cwd');
+    for (const url of [s.baseUrl, ...(s.start ?? []).map((x) => x.readyUrl)]) {
+      if (url && !/^https?:\/\//.test(url) && !/^[a-z][a-z0-9+.-]*:/.test(url)) throw new Error(`screenshots URL "${url}" must be absolute, e.g. http://localhost:3000`);
+    }
   }
   if (c.tracker && !(/^https?:\/\//.test(c.tracker.issueUrl) && c.tracker.issueUrl.includes('{id}'))) {
     throw new Error('tracker.issueUrl must be an http(s) URL with {id}, e.g. https://example.youtrack.cloud/issue/{id}');
@@ -329,6 +403,7 @@ export function readProject(rootDir: string): ProjectModel | null {
     docs: raw.docs || undefined,
     catalogRoot,
     ...readProductContext(raw),
+    screenshots: readScreenshotSettings(raw.screenshots),
     root,
     components,
   };
@@ -367,6 +442,7 @@ export function projectFileContent(project: ProjectModel): string {
       glossary: project.glossary,
       tracker: project.tracker,
       spec: project.spec,
+      screenshots: project.screenshots,
     })
   );
 }
@@ -551,6 +627,7 @@ export function openProject(rootDir: string): OpenResult {
 export type ProjectPatch = Partial<Pick<ProjectModel, 'slug' | 'name' | 'description' | 'docs' | 'catalogRoot' | 'vision' | 'goals' | 'actors' | 'glossary'>> & {
   tracker?: TrackerConfig | null;
   spec?: SpecSettings | null;
+  screenshots?: ScreenshotSettings | null;
 };
 export type ComponentInput = Omit<ComponentModel, 'id' | 'catalog'> & { id?: string; catalog?: string };
 
@@ -573,6 +650,7 @@ export function updateProject(rootDir: string, patch: ProjectPatch): ProjectMode
   // product context (PRODUCTCREATOR-33): normalised like on read, then checked
   const product = readProductContext({ goals: patch.goals, actors: patch.actors, glossary: patch.glossary, tracker: patch.tracker, spec: patch.spec });
   if (patch.spec !== undefined) next.spec = product.spec;
+  if (patch.screenshots !== undefined) next.screenshots = patch.screenshots ? readScreenshotSettings(patch.screenshots) : undefined;
   if (patch.goals !== undefined) next.goals = product.goals;
   if (patch.actors !== undefined) next.actors = product.actors;
   if (patch.glossary !== undefined) next.glossary = product.glossary;

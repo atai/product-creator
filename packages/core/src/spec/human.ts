@@ -69,6 +69,13 @@ function featureSection(spec: SpecModel, m: Messages, entry: SpecFeature): strin
     out.push('', `**${m.openQuestions}**`, '');
     for (const q of f.open_questions) out.push(`- **${q.id}** ${cell(q.question)}${q.owner ? ` — ${q.owner}` : ''}`);
   }
+  if (entry.screens.length) {
+    out.push('', `**${m.screens}**`);
+    for (const s of entry.screens) {
+      const caption = `${s.screen.id} — ${cell(s.screen.title)}`;
+      out.push('', s.exists ? `![${caption}](${s.file})` : `> *${caption}: ${m.screenNotCaptured}*`, '', `*${caption}*`);
+    }
+  }
   if (f.objects?.length) out.push('', `**${m.objects}:** ${f.objects.map((o) => `\`${o.id}\` (${o.access === 'write' ? m.write : m.read})`).join(', ')}`);
   if (f.apis?.length) out.push('', `**${m.apis}:** ${f.apis.map((a) => `\`${a.method} ${a.path}\``).join(', ')}`);
   if (f.emits?.length) out.push('', `**${m.emits}:** ${f.emits.map((e) => `\`${e}\``).join(', ')}`);
