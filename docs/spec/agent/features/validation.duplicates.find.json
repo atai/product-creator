@@ -30,5 +30,18 @@
   "workflows": [
     "agent.plan_change"
   ],
-  "issues": []
+  "issues": [
+    {
+      "severity": "warning",
+      "intended": "error",
+      "check": "design",
+      "code": "requirement_not_covered",
+      "kind": "feature",
+      "id": "validation.duplicates.find",
+      "field": "requirements[0]",
+      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
+      "file": "/Users/ra/git/product-creator/docs/product/core/features/validation/duplicates.find.yml",
+      "component": "65b1a710-428c-4e33-baf7-b6047999dfad"
+    }
+  ]
 }

@@ -41,17 +41,17 @@
       },
       {
         "name": "goals",
-        "type": "json",
+        "type": "project.goal[]",
         "description": "G1… with text"
       },
       {
         "name": "actors",
-        "type": "json",
+        "type": "project.actor[]",
         "description": "id, name, description"
       },
       {
         "name": "glossary",
-        "type": "json"
+        "type": "project.glossary_term[]"
       },
       {
         "name": "tracker",

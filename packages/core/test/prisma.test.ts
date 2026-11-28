@@ -48,6 +48,28 @@ model Post {
     expect(JSON.stringify(user)).toContain('email_address');
   });
 
+  it('turns enum fields into enum<…> types (PRODUCTCREATOR-34)', async () => {
+    const file = schemaFile(`
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+model Account {
+  id    Int    @id
+  role  Role
+  roles Role[]
+}
+`);
+    const [account] = await parsePrismaSchema(file);
+    expect(account.fields.find((f) => f.name === 'role')).toMatchObject({ type: 'enum<ADMIN|MEMBER>', isList: false });
+    expect(account.fields.find((f) => f.name === 'roles')).toMatchObject({ type: 'enum<ADMIN|MEMBER>', isList: true });
+  });
+
   it('reports schema errors with a readable message', async () => {
     const file = schemaFile('model {');
     await expect(parsePrismaSchema(file)).rejects.toThrow(/Failed to parse Prisma schema .*schema\.prisma/);

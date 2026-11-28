@@ -14,6 +14,7 @@
     "docs": "make -C docs html SPHINXOPTS=-W",
     "lint": "eslint apps/desktop packages/core packages/mcp",
     "catalog:lint": "node apps/desktop/bin/product-creator.mjs lint . --warnings",
+    "catalog:check": "node apps/desktop/bin/product-creator.mjs lint . --info",
     "catalog:spec": "node apps/desktop/bin/product-creator.mjs spec .",
     "desktop:dist": "pnpm --filter desktop dist",
     "version:current": "node scripts/version-manager.mjs current",

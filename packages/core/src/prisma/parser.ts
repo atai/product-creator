@@ -21,6 +21,8 @@ export function withDatasourceUrl(schema: string): string {
 interface DmmfField {
   name: string;
   type: string;
+  /** scalar | object (relation) | enum */
+  kind?: string;
   dbName?: string | null;
   isId?: boolean;
   isUnique?: boolean;
@@ -62,7 +64,7 @@ export async function parsePrismaSchema(schemaPath: string): Promise<PrismaModel
   if (!getDmmf) throw new Error('@prisma/prisma-schema-wasm: get_dmmf not found');
 
   const schemaContent = fs.readFileSync(schemaPath, 'utf-8');
-  let dmmf: { datamodel?: { models?: DmmfModel[] } };
+  let dmmf: { datamodel?: { models?: DmmfModel[]; enums?: { name: string; values: { name: string }[] }[] } };
   try {
     dmmf = JSON.parse(getDmmf(JSON.stringify({ prismaSchema: withDatasourceUrl(schemaContent) })));
   } catch (error) {
@@ -73,13 +75,15 @@ export async function parsePrismaSchema(schemaPath: string): Promise<PrismaModel
     throw new Error('Failed to parse Prisma schema: invalid DMMF structure');
   }
 
-  return dmmf.datamodel.models.map((model: DmmfModel) => convertToPrismaModel(model));
+  // enum fields become `enum<A|B>`: a scalar type validation accepts (PRODUCTCREATOR-34), not a relation
+  const enums = new Map((dmmf.datamodel.enums ?? []).map((e) => [e.name, `enum<${e.values.map((v) => v.name).join('|')}>`]));
+  return dmmf.datamodel.models.map((model: DmmfModel) => convertToPrismaModel(model, enums));
 }
 
 /**
  * Convert Prisma DMMF model to our PrismaModel format
  */
-function convertToPrismaModel(dmmfModel: DmmfModel): PrismaModel {
+function convertToPrismaModel(dmmfModel: DmmfModel, enums: Map<string, string> = new Map()): PrismaModel {
   const attributes: PrismaAttribute[] = [];
   let tableName: string | undefined;
 
@@ -110,7 +114,7 @@ function convertToPrismaModel(dmmfModel: DmmfModel): PrismaModel {
 
     return {
       name: field.name,
-      type: field.type,
+      type: field.kind === 'enum' ? enums.get(field.type) ?? field.type : field.type,
       isOptional: !field.isRequired,
       isList: field.isList || false,
       attributes: fieldAttributes,

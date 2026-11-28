@@ -16,6 +16,21 @@
         "access": "read"
       }
     ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "For a bounded context, entities × actions show which features exist"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "Choosing a context shows its entity × action grid with the features in the cells"
+      }
+    ],
     "tickets": [
       "PRODUCTCREATOR-7"
     ],
@@ -56,7 +71,7 @@
         },
         {
           "name": "objects",
-          "type": "business_object[]",
+          "type": "feature.object_ref[]",
           "description": "With access read | write"
         },
         {
@@ -69,32 +84,37 @@
         },
         {
           "name": "requirements",
-          "type": "json"
+          "type": "feature.requirement[]"
         },
         {
           "name": "acceptance",
-          "type": "json"
+          "type": "feature.acceptance[]"
         },
         {
           "name": "constraints",
-          "type": "json"
+          "type": "feature.constraint[]"
         },
         {
           "name": "decisions",
-          "type": "json"
+          "type": "feature.decision[]"
         },
         {
           "name": "open_questions",
-          "type": "json"
+          "type": "feature.question[]"
         },
         {
           "name": "code_refs",
-          "type": "json",
+          "type": "feature.code_ref[]",
           "description": "component, file, symbol, role"
         },
         {
           "name": "tickets",
           "type": "string[]"
+        },
+        {
+          "name": "screens",
+          "type": "feature.screen[]",
+          "description": "screenshots for the spec"
         }
       ]
     }
@@ -110,5 +130,18 @@
       "exists": true
     }
   ],
-  "issues": []
+  "issues": [
+    {
+      "severity": "info",
+      "intended": "warning",
+      "check": "design",
+      "code": "acceptance_without_verify",
+      "kind": "feature",
+      "id": "catalog.matrix.show",
+      "field": "acceptance[0]",
+      "message": "Acceptance A1 has no verify: add the command or test that checks it.",
+      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/catalog/matrix.show.yml",
+      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
+    }
+  ]
 }

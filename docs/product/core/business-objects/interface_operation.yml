@@ -1,8 +1,9 @@
 id: interface_operation
 name: Interface operation
-description: An operation of a component's OpenAPI spec
 owner: atai
 lifecycle: implemented
+description: An operation of a component's OpenAPI spec
+active: true
 fields:
   - name: ref
     type: string
@@ -13,3 +14,7 @@ fields:
     type: string
   - name: component
     type: component
+tables: []
+kind: computed
+computedBy:
+  - interfaces.operation.list

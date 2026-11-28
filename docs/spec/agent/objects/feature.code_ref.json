@@ -1,0 +1,35 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "feature.code_ref",
+    "name": "Code place",
+    "description": "Another place that implements a feature",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "kind": "value",
+    "active": true,
+    "fields": [
+      {
+        "name": "component",
+        "type": "component",
+        "description": "slug or id"
+      },
+      {
+        "name": "file",
+        "type": "string"
+      },
+      {
+        "name": "symbol",
+        "type": "string?"
+      },
+      {
+        "name": "role",
+        "type": "string?",
+        "description": "UI, API, CLI …"
+      }
+    ]
+  },
+  "usedBy": [],
+  "issues": []
+}

@@ -163,7 +163,8 @@ Open questions
    values? Today an enum used as a field type is ``unknown_type``.
 #. Existing catalogs whose feature ids do not follow ``<context>.<entity>.<action>`` (e.g. ids of
    generated cards): migrate the ids (with reference rewrite) or relax the pattern?
-#. Moving a feature to another component through *save* is rejected as a duplicate id: add an
+#. *(answered, PRODUCTCREATOR-34)* ``apply_plan`` / ``validate_plan`` treat an upsert into another
+   component as a move. Before: moving a feature to another component through *save* was rejected as a duplicate id: add an
    explicit *move* operation?
 #. Should code sync refresh ``calls`` of already linked features on every run, or only on *link*?
 #. Language of generated documents (one per project, or human view in Russian and agent view in

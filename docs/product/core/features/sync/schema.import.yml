@@ -5,6 +5,10 @@ entity: schema
 action: import
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Schema sync creates and updates business objects from a Prisma schema.
 source_file: sync/syncService.ts
 objects:
@@ -21,9 +25,16 @@ acceptance:
       - R1
     text: A Prisma schema is parsed into models and fields
     verify: pnpm --filter @pc/core test -- prisma
-open_questions:
-  - id: Q1
-    question: Model a Prisma enum as a business object kind or as enum<…> field types?
-    owner: atai
+  - id: A2
+    covers:
+      - R2
+    text: Enum fields are parsed as enum<…> types
+    verify: pnpm --filter @pc/core test -- prisma
 tickets:
   - PRODUCTCREATOR-3
+  - PRODUCTCREATOR-34
+decisions:
+  - id: D1
+    decision: A Prisma enum becomes an enum<A|B> field type
+    reason: Validation accepts it as a scalar; no separate object kind needed
+    date: '2026-11-28'

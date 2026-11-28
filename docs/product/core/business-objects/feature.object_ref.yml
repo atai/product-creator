@@ -1,0 +1,12 @@
+id: feature.object_ref
+name: Object use
+description: A business object a feature reads or writes
+owner: atai
+lifecycle: implemented
+kind: value
+fields:
+  - name: id
+    type: business_object
+    description: business object id
+  - name: access
+    type: enum<read|write>

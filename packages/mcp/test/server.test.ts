@@ -226,6 +226,42 @@ describe('tools (read-write token)', () => {
     await client.close();
   }, 30000);
 
+  it('value and computed business objects (PRODUCTCREATOR-39)', async () => {
+    const { client } = await connect(bearer());
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    const bo = (id: string, extra: object) => ({ id, name: id, owner: 'team-a', lifecycle: 'draft', fields: [{ name: 'id', type: 'string' }], ...extra });
+    const applied = await call('apply_plan', {
+      changes: [
+        { kind: 'business_object', data: bo('basket', { fields: [{ name: 'items', type: 'basket.item[]' }] }), component: 'svc' },
+        { kind: 'business_object', data: bo('basket.item', { kind: 'value' }), component: 'svc' },
+        { kind: 'business_object', data: bo('basket_total', { kind: 'computed', computedBy: ['basket.total.compute'] }), component: 'svc' },
+      ],
+    });
+    expect(applied.isError).toBe(true);
+    expect(text(applied)).toContain('Computed by unknown feature');
+    const ok = await call('apply_plan', {
+      changes: [
+        { kind: 'business_object', data: bo('basket', { fields: [{ name: 'items', type: 'basket.item[]' }] }), component: 'svc' },
+        { kind: 'business_object', data: bo('basket.item', { kind: 'value' }), component: 'svc' },
+      ],
+    });
+    expect(ok.isError).toBeFalsy();
+    expect(json(await call('get_object', { id: 'basket.item' })).object.kind).toBe('value');
+    await client.close();
+  });
+
+  it('design checks are advisory: reported, never blocking (PRODUCTCREATOR-34)', async () => {
+    const { client } = await connect(bearer());
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    const f = { id: 'ops.job.run', name: 'Run a job', bounded_context: 'ops', entity: 'job', action: 'run', owner: 'team-a', lifecycle: 'implemented', description: 'Runs it' };
+    expect((await call('apply_plan', { changes: [{ kind: 'feature', data: f, component: 'svc' }] })).isError).toBeFalsy();
+    const all = json(await call('validate_catalog', { severity: 'info' }));
+    const mine = all.issues.filter((i: { id: string }) => i.id === 'ops.job.run');
+    expect(mine).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'missing_requirements', check: 'design', severity: 'warning', intended: 'error' })]));
+    expect(all.errors).toBe(0);
+    await client.close();
+  });
+
   it('reads and updates the product context (PRODUCTCREATOR-33)', async () => {
     const { client } = await connect(bearer());
     const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });

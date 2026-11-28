@@ -154,7 +154,10 @@ export default function BusinessObjectsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-fg">{bo.name}</td>
+                      <td className="px-6 py-4 text-sm text-fg">
+                        {bo.name}
+                        {bo.kind && bo.kind !== 'entity' && <span className="ml-2 rounded bg-surface-muted px-1.5 py-0.5 text-xs text-meta">{bo.kind}</span>}
+                      </td>
                       <td className="px-6 py-4 text-sm text-muted">{bo.owner}</td>
                       <td className="px-6 py-4">
                         <LifecycleBadge lifecycle={bo.lifecycle} />
@@ -282,7 +285,7 @@ export default function BusinessObjectsPage() {
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center gap-2">
                                             <span className="text-xs text-accent font-medium">
-                                              Table Part
+                                              {child.kind === 'value' ? 'Value object' : child.kind === 'computed' ? 'Computed' : 'Table Part'}
                                             </span>
                                             <span className="text-sm font-medium text-fg">
                                               {child.id}

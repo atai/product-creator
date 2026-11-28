@@ -212,7 +212,16 @@ export interface BusinessObject {
   tables?: BusinessObjectTable[];
   childObjects?: BusinessObject[];
   tickets?: string[];
+  /** PRODUCTCREATOR-39: entity (default, stored) | value (structure inside other objects) | computed (not stored) */
+  kind?: BusinessObjectKind;
+  /** Features that produce a computed object */
+  computedBy?: string[];
 }
+
+export const BUSINESS_OBJECT_KINDS = ['entity', 'value', 'computed'] as const;
+export type BusinessObjectKind = (typeof BUSINESS_OBJECT_KINDS)[number];
+/** Kind of an object; a card without `kind` is an entity */
+export const kindOf = (o: { kind?: BusinessObjectKind }): BusinessObjectKind => o.kind ?? 'entity';
 
 export interface Project {
   id: string;

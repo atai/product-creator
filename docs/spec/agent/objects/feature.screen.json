@@ -1,0 +1,47 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "feature.screen",
+    "name": "Screen",
+    "description": "A screenshot that illustrates a feature in the spec",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "kind": "value",
+    "active": true,
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "description": "S1, …"
+      },
+      {
+        "name": "title",
+        "type": "string"
+      },
+      {
+        "name": "path",
+        "type": "string"
+      },
+      {
+        "name": "wait",
+        "type": "string?"
+      },
+      {
+        "name": "actions",
+        "type": "json?",
+        "description": "click / fill / wait steps"
+      },
+      {
+        "name": "element",
+        "type": "string?"
+      },
+      {
+        "name": "viewport",
+        "type": "int[]?"
+      }
+    ]
+  },
+  "usedBy": [],
+  "issues": []
+}

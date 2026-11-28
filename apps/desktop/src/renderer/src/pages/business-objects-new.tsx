@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LIFECYCLES, BusinessObject, BusinessObjectField, BusinessObjectTable, BusinessObjectTableColumn } from '@pc/core/types';
+import { BUSINESS_OBJECT_KINDS, LIFECYCLES, type BusinessObject, type BusinessObjectField, type BusinessObjectKind, type BusinessObjectTable, type BusinessObjectTableColumn } from '@pc/core/types';
 import { BASE_FIELD_TYPES, buildTypeOptions } from '@pc/core/businessObjectTypeCatalog';
 
 type BusinessObjectFormState = {
@@ -11,11 +11,21 @@ type BusinessObjectFormState = {
   description: string;
   owner: string;
   lifecycle: BusinessObject['lifecycle'];
+  kind: BusinessObjectKind;
+  /** comma-separated feature ids (computed objects) */
+  computedBy: string;
   fields: BusinessObjectField[];
   tables: BusinessObjectTable[];
 };
 
 const lifecycleOptions = LIFECYCLES;
+
+/** PRODUCTCREATOR-39 */
+const KIND_LABELS: Record<BusinessObjectKind, string> = {
+  entity: 'entity — stored, has its own identity',
+  value: 'value — a structure inside other objects (use it as a field type)',
+  computed: 'computed — produced at runtime, not stored',
+};
 
 const defaultField = (): BusinessObjectField => ({
   name: '',
@@ -34,6 +44,8 @@ export default function NewBusinessObjectPage() {
     description: '',
     owner: '',
     lifecycle: 'draft',
+    kind: 'entity',
+    computedBy: '',
     fields: [defaultField()],
     tables: [],
   });
@@ -199,6 +211,9 @@ export default function NewBusinessObjectPage() {
         body: JSON.stringify({
           businessObject: {
             ...form,
+            // entity is the default: not written (PRODUCTCREATOR-39)
+            kind: form.kind === 'entity' ? undefined : form.kind,
+            computedBy: form.kind === 'computed' && form.computedBy.trim() ? form.computedBy.split(/[\s,]+/).filter(Boolean) : undefined,
             fields: form.fields.map((field) => ({
               ...field,
               name: field.name.trim(),
@@ -360,6 +375,26 @@ export default function NewBusinessObjectPage() {
                   ))}
                 </select>
               </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="object-kind" className="text-sm font-medium text-fg-2">
+                  Kind
+                </label>
+                <select id="object-kind" value={form.kind} onChange={(e) => updateForm('kind', e.target.value as BusinessObjectKind)} className="border border-border-strong rounded px-3 py-2">
+                  {BUSINESS_OBJECT_KINDS.map((k) => (
+                    <option key={k} value={k}>
+                      {KIND_LABELS[k]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {form.kind === 'computed' && (
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="object-computed-by" className="text-sm font-medium text-fg-2">
+                    Computed by
+                  </label>
+                  <input id="object-computed-by" value={form.computedBy} onChange={(e) => updateForm('computedBy', e.target.value)} placeholder="feature ids, e.g. validation.model.validate" className="border border-border-strong rounded px-3 py-2 font-mono text-sm" />
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <label htmlFor="object-description" className="text-sm font-medium text-fg-2">

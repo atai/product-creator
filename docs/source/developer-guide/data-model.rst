@@ -52,6 +52,21 @@ in ``product-creator.yml`` (``ProductContext`` in ``project/model.ts``: ``vision
 ``actors``, ``glossary``, ``tracker``; ``readProductContext`` / ``assertProductContext`` /
 ``issueLink``).
 
+PRODUCTCREATOR-39: business objects have ``kind`` (``entity`` default | ``value`` | ``computed``,
+``BUSINESS_OBJECT_KINDS`` / ``kindOf`` in ``types.ts``) and ``computedBy`` (feature ids, ``unknown_feature``
+when missing). Value objects are referenced by field types (``referencedType`` / ``typeKey`` resolve them like
+any object). ``impactOf`` links computed objects and their features (``via: computedBy``);
+``matchPrismaToBusinessObjects`` only considers entities.
+
+PRODUCTCREATOR-34: design checks live in ``validation/design.ts`` (``designIssues``, ``DESIGN_CHECKS`` with
+the intended severity of each code). They run inside ``validateModel`` when the model has a ``context``
+(``DesignContext``: projects, OpenAPI operations, file existence), which ``storage.modelSnapshot()`` fills;
+issues carry ``check: 'design'`` and ``intended``. Severity: ``checks.overrides[code]`` →
+``checks.mode === 'strict'`` ? intended : one level down; drafts are capped at warning. ``Severity`` has
+``info``; only ``error`` blocks (save guard, ``validate_plan``, lint exit code). Streams are part of the
+snapshot and validated (schema, ``unknown_workflow``). An upsert in a plan replaces the entry with the same
+id wherever it is, so an upsert into another component moves it.
+
 ``POST /api/apply-plan`` (``http/routes/apply-plan``) takes the ``changes`` of ``/api/validate-plan``
 (parsed by ``parsePlanChanges``), checks the whole plan once with ``planIssues``, writes every change
 through ``storage.saveEntry`` / ``deleteEntry`` and rolls the written ones back if a write fails.

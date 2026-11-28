@@ -7,26 +7,36 @@ import ValidationIssues, { type Issue } from '@/components/ValidationIssues';
 export default function ProblemsPage() {
   const searchParams = useSearchParams();
   const app = searchParams.get('app') || '';
-  const [data, setData] = useState<{ errors: number; warnings: number; issues: Issue[] } | null>(null);
-  const [showWarnings, setShowWarnings] = useState(false);
+  const [data, setData] = useState<{ errors: number; warnings: number; infos: number; issues: Issue[] } | null>(null);
+  /** lowest severity shown */
+  const [level, setLevel] = useState<Issue['severity']>('warning');
+  const [designOnly, setDesignOnly] = useState(false);
 
   useEffect(() => {
     fetch(app ? `/api/validation?app=${encodeURIComponent(app)}` : '/api/validation')
       .then((r) => r.json())
       .then(setData)
-      .catch(() => setData({ errors: 0, warnings: 0, issues: [] }));
+      .catch(() => setData({ errors: 0, warnings: 0, infos: 0, issues: [] }));
   }, [app]);
 
-  const issues = (data?.issues ?? []).filter((i) => showWarnings || i.severity === 'error');
+  const rank: Record<Issue['severity'], number> = { error: 0, warning: 1, info: 2 };
+  const issues = (data?.issues ?? []).filter((i) => rank[i.severity] <= rank[level] && (!designOnly || i.check === 'design')).sort((a, b) => rank[a.severity] - rank[b.severity]);
   return (
     <CatalogPageLayout
       title="Problems"
-      description="Проверка модели: шаги workflow и calls ссылаются на существующие фичи, objects фич — на бизнес-объекты, типы полей — на скаляры или объекты; дубли id и имён. Сохранение, которое добавляет ошибку, отклоняется."
+      description="Проверка модели: ссылки, типы, дубли и проверки проектирования (архитектура, события, объекты, статусы, полнота, код). Проверки проектирования пока рекомендательные (advisory): их уровень на ступень ниже, чем в strict-режиме, и они ничего не блокируют. Сохранение, которое добавляет ошибку, отклоняется."
       actions={
-        <label className="text-sm flex items-center gap-2">
-          <input type="checkbox" checked={showWarnings} onChange={(e) => setShowWarnings(e.target.checked)} />
-          Show warnings
-        </label>
+        <div className="flex items-center gap-4 text-sm">
+          <select value={level} onChange={(e) => setLevel(e.target.value as Issue['severity'])} className="border border-border-strong rounded px-2 py-1 bg-surface">
+            <option value="error">Errors</option>
+            <option value="warning">Errors and warnings</option>
+            <option value="info">Everything (info too)</option>
+          </select>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={designOnly} onChange={(e) => setDesignOnly(e.target.checked)} />
+            Design checks only
+          </label>
+        </div>
       }
     >
       {!data ? (
@@ -34,7 +44,7 @@ export default function ProblemsPage() {
       ) : (
         <div className="bg-surface rounded-lg shadow p-6 space-y-4">
           <div className="text-sm" data-testid="problem-counts">
-            <strong>{data.errors}</strong> error(s), <strong>{data.warnings}</strong> warning(s)
+            <strong>{data.errors}</strong> error(s), <strong>{data.warnings}</strong> warning(s), <strong>{data.infos ?? 0}</strong> info
             {app ? ' in the selected component' : ' in all open projects'}
           </div>
           {issues.length === 0 ? <div className="text-sm text-meta">No problems.</div> : <ValidationIssues issues={issues} app={app || undefined} />}

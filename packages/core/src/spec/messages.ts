@@ -1,4 +1,4 @@
-import type { Lifecycle } from '../types';
+import type { BusinessObjectKind, Lifecycle } from '../types';
 
 /**
  * Labels of the generated spec (PRODUCTCREATOR-35). The catalog content is written in one language
@@ -12,6 +12,7 @@ export interface Messages {
   statusErrors: (errors: number, warnings: number) => string;
   statusWarnings: (warnings: number) => string;
   statusClean: string;
+  statusHints: (infos: number) => string;
   contents: string;
   product: string;
   vision: string;
@@ -58,9 +59,13 @@ export interface Messages {
   message: string;
   error: string;
   warning: string;
+  /** label per severity, in the Problems table */
+  severity_: Record<'error' | 'warning' | 'info', string>;
   none: string;
   priority: Record<'must' | 'should' | 'could', string>;
   lifecycle: Record<Lifecycle, string>;
+  objectKind: Record<BusinessObjectKind, string>;
+  computedBy: string;
 }
 
 const en: Messages = {
@@ -69,6 +74,7 @@ const en: Messages = {
   statusErrors: (errors, warnings) => `**Not ready:** the model has ${errors} error(s) and ${warnings} warning(s). They are listed next to the affected entries and in “Problems”.`,
   statusWarnings: (warnings) => `The model has ${warnings} warning(s), listed next to the affected entries and in “Problems”.`,
   statusClean: 'The model has no validation problems.',
+  statusHints: (infos) => `No errors or warnings; ${infos} design hint(s) in “Problems”.`,
   contents: 'Contents',
   product: 'Product',
   vision: 'Vision',
@@ -115,9 +121,12 @@ const en: Messages = {
   message: 'Message',
   error: 'error',
   warning: 'warning',
+  severity_: { error: 'error', warning: 'warning', info: 'info' },
   none: 'none',
   priority: { must: 'must', should: 'should', could: 'could' },
   lifecycle: { draft: 'draft', approved: 'approved', implemented: 'implemented', deprecated: 'deprecated', removed: 'removed' },
+  objectKind: { entity: 'stored entity', value: 'value object (part of other objects, not stored on its own)', computed: 'computed (not stored)' },
+  computedBy: 'Computed by',
 };
 
 const CATALOGS: Record<string, Messages> = { en };

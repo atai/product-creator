@@ -7,6 +7,10 @@
     "description": "An operation of a component's OpenAPI spec",
     "owner": "atai",
     "lifecycle": "implemented",
+    "kind": "computed",
+    "computedBy": [
+      "interfaces.operation.list"
+    ],
     "active": true,
     "fields": [
       {
@@ -29,10 +33,6 @@
     ]
   },
   "usedBy": [
-    {
-      "id": "interfaces.openapi.generate",
-      "access": "write"
-    },
     {
       "id": "interfaces.operation.list",
       "access": "read"

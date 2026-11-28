@@ -164,7 +164,28 @@ Business objects, workflows, streams
 ------------------------------------
 
 * **Business objects** — fields, owner, lifecycle and physical tables; usually produced by
-  :doc:`sync` from the Prisma schema and then enriched manually.
+  :doc:`sync` from the Prisma schema and then enriched manually. A business object has a ``kind``:
+
+  - ``entity`` (default) — stored, has its own identity;
+  - ``value`` — a structure inside other objects, not stored on its own. A field uses it as its type,
+    e.g. ``requirements: feature.requirement[]``; a dotted id makes it a child of ``feature`` in the list;
+  - ``computed`` — produced at runtime, not stored (a report, a validation result); ``computedBy`` names
+    the features that produce it and is validated like ``calls``.
+
+  Schema sync from Prisma only matches entities: value and computed objects are never updated or
+  proposed for deletion. Impact analysis links a computed object and the features that compute it.
+
+  .. code-block:: yaml
+
+     id: feature.requirement
+     name: Requirement
+     kind: value
+     owner: product
+     lifecycle: implemented
+     fields:
+       - { name: id, type: string }
+       - { name: text, type: text }
+       - { name: priority, type: 'enum<must|should|could>?' }
 * **Workflows** — ordered ``steps`` (feature ids) with optional compensations, a ``lifecycle`` (the
   same statuses as features: a planned workflow is ``draft``), a ``description`` and ``tickets``.
   Business objects can carry ``tickets`` too.
@@ -230,7 +251,91 @@ can plan something that cannot be built:
      - error
      - An acceptance criterion ``covers`` a requirement id that the feature does not have
 
-Streams are not validated yet.
+Streams are validated too: their schema, and every stage workflow must exist (``unknown_workflow``).
+
+.. _design-checks:
+
+Design checks
+~~~~~~~~~~~~~
+
+Besides broken references, Product Creator checks how the product is *planned*. Each design check has
+an **intended** severity from the lifecycle rules (see :ref:`lifecycle`); a draft never gets more than a
+warning from them.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 34 10 56
+
+   * - Code
+     - Intended
+     - Meaning
+   * - ``call_outside_dependency``
+     - error
+     - A feature calls a feature of a component its component does not depend on (dependsOn, transitively)
+   * - ``dependency_cycle`` / ``call_cycle``
+     - warning
+     - Components depend on each other, or features call each other, in a cycle
+   * - ``event_not_consumed`` / ``event_not_emitted``
+     - warning
+     - An event nobody consumes (features, stream stages) or nobody emits (features, workflows)
+   * - ``object_never_written``
+     - warning
+     - An entity is read but no feature writes it
+   * - ``object_unused`` / ``value_unused``
+     - warning
+     - No feature or field uses the object; no field uses the value object
+   * - ``tables_on_non_entity``, ``computed_without_producer``, ``computed_written``, ``value_in_feature_objects``, ``entity_field_computed``
+     - warning
+     - Object kinds used against their meaning (value and computed objects are not stored)
+   * - ``uses_draft``
+     - error
+     - An agreed (approved, implemented, deprecated) feature calls a draft or writes a draft object; an agreed workflow has a draft step
+   * - ``workflow_step_not_implemented``
+     - error
+     - An implemented workflow has a step that is not implemented
+   * - ``uses_deprecated``
+     - warning
+     - New work calls or uses a deprecated entry
+   * - ``uses_removed``
+     - error
+     - A removed entry is still referenced (calls, objects, steps, field types, computedBy)
+   * - ``missing_description``, ``missing_requirements``, ``requirement_not_covered``, ``open_questions_left``
+     - error
+     - An agreed feature without description or requirements, with a requirement no acceptance criterion covers, or with open questions
+   * - ``acceptance_without_verify``
+     - warning
+     - An implemented feature has an acceptance criterion without verify
+   * - ``missing_source_file``, ``source_file_not_found``, ``code_ref_file_not_found``
+     - error
+     - An implemented feature without source_file, or its source_file / code_refs file does not exist
+   * - ``code_ref_unknown_component``
+     - error
+     - code_refs names a component that is not in the project
+   * - ``api_not_in_openapi``
+     - warning
+     - An apis entry is not an operation of the component's OpenAPI spec
+   * - ``unknown_actor``
+     - error
+     - A feature names an actor the project does not define (when it defines actors)
+   * - ``stream_event_unknown``
+     - warning
+     - A stream stage waits for an event nothing emits
+
+**Advisory by default.** While the checks are new they are *advisory*: every design check is reported one
+level below its intended severity — an intended error is a warning, an intended warning is ``info``. So
+they never reject a save, an agent's write or a CI run. The problem shows its intended level (*strict:
+error*). Switch a project to the intended levels, or tune single checks, in ``product-creator.yml``:
+
+.. code-block:: yaml
+
+   checks:
+     mode: strict                  # advisory (default) | strict
+     overrides:                    # per code: off | info | warning | error (wins over the mode)
+       event_not_consumed: off
+       requirement_not_covered: error
+
+The **Problems** page filters by level (errors / with warnings / everything) and can show design checks
+only. In the spec, errors and warnings appear next to the entry; ``info`` only in its *Problems* list.
 
 **Saving is guarded.** When you save an entry (in the editor, or an agent through MCP) the catalog is
 checked before and after the change. The save is rejected only if it *adds* an error, so a catalog
@@ -242,7 +347,8 @@ form runs the check without saving.
 .. code-block:: bash
 
    product-creator lint                    # the project in the current folder
-   product-creator lint ~/git/my-project --warnings
+   product-creator lint ~/git/my-project --warnings   # also warnings
+   product-creator lint --info                         # everything, design hints too
    product-creator lint --catalog docs/product/frontend --json
 
 ``lint`` exits with code 1 if there are errors (usable in CI). ``--catalog`` checks one catalog folder

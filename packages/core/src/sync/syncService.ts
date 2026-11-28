@@ -486,6 +486,8 @@ export class SchemaSyncService {
    * Map Prisma type to business object type
    */
   private mapPrismaTypeToBusinessType(prismaType: string): string {
+    // Prisma enums arrive as enum<A|B> (parser): keep the values as they are
+    if (prismaType.startsWith('enum<')) return prismaType;
     const cleanType = prismaType.replace(/[![\]]/g, '').trim();
     const typeMap: Record<string, string> = {
       String: 'string',

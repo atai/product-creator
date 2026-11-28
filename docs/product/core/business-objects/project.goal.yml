@@ -1,0 +1,12 @@
+id: project.goal
+name: Goal
+description: A goal of the product
+owner: atai
+lifecycle: implemented
+kind: value
+fields:
+  - name: id
+    type: string
+    description: G1, …
+  - name: text
+    type: text

@@ -57,7 +57,7 @@ export interface SpecModel {
   workflows: SpecEntry<Workflow>[];
   /** All issues of the project's entries */
   issues: ValidationIssue[];
-  counts: { errors: number; warnings: number };
+  counts: { errors: number; warnings: number; infos: number };
 }
 
 const byId = <T extends { data: { id?: string; workflow?: string } }>(a: T, b: T) =>
@@ -138,7 +138,7 @@ export function buildSpec(project: ProjectModel, model: CatalogModel): SpecModel
       .sort(byId),
     workflows: workflows.map((e) => ({ data: e.data, component: components.get(e.component) as SpecComponent, issues: issuesOf('workflow', e.data.workflow) })).sort(byId),
     issues,
-    counts: { errors: issues.filter((i) => i.severity === 'error').length, warnings: issues.filter((i) => i.severity === 'warning').length },
+    counts: { errors: issues.filter((i) => i.severity === 'error').length, warnings: issues.filter((i) => i.severity === 'warning').length, infos: issues.filter((i) => i.severity === 'info').length },
   };
 }
 

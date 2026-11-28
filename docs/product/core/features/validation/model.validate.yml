@@ -5,6 +5,10 @@ entity: model
 action: validate
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: 'Checks the whole model: schemas, ids, references, field types, duplicates, spec items. One implementation for the UI, MCP and CLI.'
 source_file: validation/model.ts
 objects:
@@ -14,8 +18,6 @@ objects:
     access: read
   - id: workflow
     access: read
-  - id: validation_issue
-    access: write
 actors:
   - ai_agent
   - ci

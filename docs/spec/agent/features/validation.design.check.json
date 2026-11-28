@@ -7,11 +7,12 @@
     "bounded_context": "validation",
     "entity": "design",
     "action": "check",
-    "lifecycle": "approved",
-    "description": "Design-level checks: architecture (calls vs dependsOn, cycles), events, object usage, lifecycle consistency, completeness, code links. Warnings in draft, errors from approved on.",
+    "lifecycle": "implemented",
+    "description": "Design-level checks: architecture (calls vs dependsOn, cycles), events, object usage and kinds, lifecycle consistency, completeness of agreed features, code links, OpenAPI, actors, streams. Advisory by default.",
     "calls": [
       "validation.model.validate"
     ],
+    "source_file": "validation/design.ts",
     "actors": [
       "ai_agent",
       "ci",
@@ -20,46 +21,70 @@
     "requirements": [
       {
         "id": "R1",
-        "text": "A feature calling a feature of a component it does not depend on is an error"
+        "text": "A feature calling a feature of a component its component does not depend on is reported"
       },
       {
         "id": "R2",
-        "text": "An approved feature without requirements, with a requirement not covered by acceptance, or with open questions is an error"
+        "text": "An agreed feature without requirements, with a requirement not covered by acceptance, or with open questions is reported"
       },
       {
         "id": "R3",
-        "text": "An approved feature calling a draft feature is an error"
+        "text": "An agreed feature or workflow depending on a draft is reported"
       },
       {
         "id": "R4",
-        "text": "An implemented feature without an existing source_file is an error"
+        "text": "An implemented feature without an existing source_file is reported"
       },
       {
         "id": "R5",
-        "text": "References to removed entries are errors; new references to deprecated ones are warnings"
+        "text": "References to removed entries and new references to deprecated ones are reported"
       },
       {
         "id": "R6",
-        "text": "In draft every design problem is a warning"
+        "text": "A draft never gets more than a warning from a design check"
+      },
+      {
+        "id": "R7",
+        "text": "In advisory mode (default) a check is reported one level below its intended severity and blocks nothing; strict and per-check overrides are set in product-creator.yml"
       }
     ],
     "acceptance": [
       {
         "id": "A1",
         "covers": [
-          "R2",
-          "R6"
+          "R1"
         ],
-        "given": "the same incomplete feature",
-        "when": "it is draft, then approved",
-        "then": "the problem is a warning, then an error"
+        "text": "Architecture checks find calls outside dependsOn and cycles",
+        "verify": "pnpm --filter @pc/core test -- design"
       },
       {
         "id": "A2",
         "covers": [
-          "R1"
+          "R2",
+          "R4"
         ],
-        "text": "A core feature calling a desktop feature is reported (core does not depend on desktop)"
+        "text": "Completeness and code-link checks report agreed / implemented gaps",
+        "verify": "pnpm --filter @pc/core test -- design"
+      },
+      {
+        "id": "A3",
+        "covers": [
+          "R3",
+          "R5"
+        ],
+        "text": "Lifecycle checks report drafts, deprecated and removed references",
+        "verify": "pnpm --filter @pc/core test -- design"
+      },
+      {
+        "id": "A4",
+        "covers": [
+          "R6",
+          "R7"
+        ],
+        "given": "the same model",
+        "when": "checks run in advisory, strict, with an override and off",
+        "then": "severities follow the mode, an advisory plan is not rejected, a strict one is",
+        "verify": "pnpm --filter @pc/core test -- design"
       }
     ],
     "decisions": [
@@ -67,6 +92,12 @@
         "id": "D1",
         "decision": "Strictness depends on lifecycle",
         "reason": "Drafting is never blocked; agreed work must be complete",
+        "date": "2026-11-28"
+      },
+      {
+        "id": "D2",
+        "decision": "Design checks start advisory: one level below the intended severity",
+        "reason": "Nothing is blocked while the checks are new; strict is opt-in per project",
         "date": "2026-11-28"
       }
     ],

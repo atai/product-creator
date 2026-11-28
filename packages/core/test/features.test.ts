@@ -112,7 +112,11 @@ describe('feature spec fields in storage (PRODUCTCREATOR-32)', () => {
     const feature = storage.getFeatureById('orders.order.create')!;
     expect(feature.requirements).toEqual([{ id: 'R1', text: 'Check a plan' }]);
     expect(feature.open_questions?.[0].question).toBe('Relax ids?');
-    expect(validateModel(storage.modelSnapshot()).map((i) => i.code)).toEqual(['unknown_requirement']);
+    const issues = validateModel(storage.modelSnapshot());
+    expect(issues.filter((i) => i.severity === 'error').map((i) => i.code)).toEqual(['unknown_requirement']);
+    // design checks run on a storage snapshot and stay advisory (PRODUCTCREATOR-34): never errors
+    expect(issues.filter((i) => i.check === 'design').every((i) => i.severity !== 'error')).toBe(true);
+    expect(issues.map((i) => i.code)).toContain('missing_source_file');
 
     await storage.saveFeature({ ...feature, name: 'Create order' }, catalog);
     const saved = fs.readFileSync(path.join(catalog, 'features/orders/order.create.yml'), 'utf8');
@@ -156,6 +160,17 @@ describe('apply plan (PRODUCTCREATOR-33)', () => {
     // existing entries keep their component; delete removes the file
     const update = await post('/api/apply-plan', { changes: [{ kind: 'feature', data: feature('orders.order.create', { name: 'Create order' }) }] });
     expect(update.status).toBe(200);
+    // an upsert into another component moves the file
+    const other = path.join(root, 'docs/product/other');
+    fs.mkdirSync(other, { recursive: true });
+    fs.writeFileSync(path.join(other, 'library.pc.yml'), `id: 5e0c1a2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b\nslug: other\nname: Other\npath: other\n`);
+    project = openProject(root).project;
+    await load();
+    const otherId = project.components.find((c) => c.slug === 'other')!.id;
+    const moved = await post('/api/apply-plan', { changes: [{ kind: 'feature', data: feature('orders.order.create', { name: 'Create order' }), component: otherId }] });
+    expect(moved.status).toBe(200);
+    expect(fs.existsSync(path.join(other, 'features/orders/order.create.yml'))).toBe(true);
+    expect(fs.existsSync(path.join(catalog, 'features/orders/order.create.yml'))).toBe(false);
     const del = await post('/api/apply-plan', { changes: [{ kind: 'workflow', op: 'delete', id: 'orders.checkout' }] });
     expect(del.status).toBe(200);
     expect(fs.existsSync(path.join(catalog, 'workflows/orders.checkout.yml'))).toBe(false);

@@ -2,7 +2,8 @@ import featureSchema from '../../schema/feature.schema.json';
 import workflowSchema from '../../schema/workflow.schema.json';
 import businessObjectSchema from '../../schema/business-object.schema.json';
 import { issueLink } from '../project/model';
-import type { BusinessObject, Feature, Workflow } from '../types';
+import { kindOf, type BusinessObject, type Feature, type Workflow } from '../types';
+import { referencedType, typeKey } from '../validation/model';
 import type { ValidationIssue } from '../validation/model';
 import { forAudience } from './audience';
 import type { SpecFeature, SpecModel } from './build';
@@ -16,7 +17,9 @@ import type { Messages } from './messages';
 /** One line of table cell or inline text: no line breaks, no column separators */
 const cell = (text: string | undefined) => (text ?? '').replace(/\s*\n\s*/g, ' ').replace(/\|/g, '\\|');
 
-function issueLines(m: Messages, issues: ValidationIssue[]): string[] {
+/** Errors and warnings next to the entry; info (low-confidence hints) only in the Problems list */
+function issueLines(m: Messages, all: ValidationIssue[]): string[] {
+  const issues = all.filter((i) => i.severity !== 'info');
   if (!issues.length) return [];
   return [
     '',
@@ -103,10 +106,10 @@ export function renderHuman(spec: SpecModel, m: Messages): string {
   const drafts = spec.features.filter((f) => f.data.lifecycle === 'draft');
   const featureName = new Map(spec.features.map((f) => [f.data.id, f.data.name]));
   const sections = [m.product, m.features, m.data, m.workflows, ...(drafts.length ? [m.drafts] : []), m.problems];
-  const status = spec.counts.errors ? m.statusErrors(spec.counts.errors, spec.counts.warnings) : spec.counts.warnings ? m.statusWarnings(spec.counts.warnings) : m.statusClean;
+  const status = spec.counts.errors ? m.statusErrors(spec.counts.errors, spec.counts.warnings) : spec.counts.warnings ? m.statusWarnings(spec.counts.warnings) : spec.counts.infos ? m.statusHints(spec.counts.infos) : m.statusClean;
 
-  // problems are a highlighted block; a clean model is a plain line
-  const out: string[] = [`# ${p.name}: ${m.title}`, '', spec.issues.length ? `> ${status}` : status, '', `*${m.generatedNote}*`, '', `## ${m.contents}`, ''];
+  // errors and warnings are a highlighted block; a clean model (hints at most) is a plain line
+  const out: string[] = [`# ${p.name}: ${m.title}`, '', spec.counts.errors || spec.counts.warnings ? `> ${status}` : status, '', `*${m.generatedNote}*`, '', `## ${m.contents}`, ''];
   sections.forEach((s, i) => out.push(`${i + 1}. ${s}`));
   let n = 0;
   const h2 = (title: string) => out.push('', `## ${++n}. ${title}`);
@@ -131,14 +134,22 @@ export function renderHuman(spec: SpecModel, m: Messages): string {
   out.push(...(agreed.length ? featureGroups(spec, m, agreed) : ['', m.none]));
 
   h2(m.data);
+  // field types that name an object (value objects, references) get the object's name (PRODUCTCREATOR-39)
+  const objectNames = new Map(spec.objects.flatMap((e) => [[typeKey(e.data.id), e.data.name] as const, [typeKey(e.data.name), e.data.name] as const]));
+  const typeLabel = (type: string) => {
+    const ref = referencedType(type);
+    const name = ref ? objectNames.get(typeKey(ref)) : undefined;
+    return `\`${cell(type)}\`${name ? ` — ${cell(name)}` : ''}`;
+  };
   for (const entry of spec.objects) {
     const o = forAudience(entry.data, businessObjectSchema, 'human') as Partial<BusinessObject>;
-    out.push('', `### ${cell(o.name)} (\`${entry.data.id}\`)`, '', `*${m.lifecycle[entry.data.lifecycle] ?? entry.data.lifecycle}* · ${m.component}: ${entry.component.name}`);
+    out.push('', `### ${cell(o.name)} (\`${entry.data.id}\`)`, '', `*${m.lifecycle[entry.data.lifecycle] ?? entry.data.lifecycle}* · ${m.objectKind[kindOf(entry.data)]} · ${m.component}: ${entry.component.name}`);
+    if (o.computedBy?.length) out.push('', `**${m.computedBy}:** ${o.computedBy.map((id) => `${featureName.get(id) ?? id} (\`${id}\`)`).join(', ')}`);
     if (o.tickets?.length) out.push('', `${m.tickets}: ${tickets(spec, o.tickets)}`);
     if (o.description) out.push('', o.description);
     if (o.fields?.length) {
       out.push('', `| ${m.field} | ${m.type} | ${m.description} |`, '| --- | --- | --- |');
-      for (const fl of o.fields) out.push(`| ${cell(fl.name)} | \`${cell(fl.type)}\` | ${cell(fl.description)} |`);
+      for (const fl of o.fields) out.push(`| ${cell(fl.name)} | ${typeLabel(fl.type)} | ${cell(fl.description)} |`);
     }
     if (entry.usedBy.length) out.push('', `**${m.usedBy}:** ${entry.usedBy.map((u) => `${featureName.get(u.id) ?? u.id} (${u.access === 'write' ? m.write : m.read})`).join(', ')}`);
     out.push(...issueLines(m, entry.issues));
@@ -171,7 +182,8 @@ export function renderHuman(spec: SpecModel, m: Messages): string {
   if (!spec.issues.length) out.push('', m.statusClean);
   else {
     out.push('', `| ${m.severity} | ${m.entry} | ${m.field} | ${m.message} |`, '| --- | --- | --- | --- |');
-    for (const i of spec.issues) out.push(`| ${i.severity === 'error' ? m.error : m.warning} | \`${i.id}\` | ${i.field ? `\`${cell(i.field)}\`` : ''} | ${cell(i.message)} |`);
+    const order = { error: 0, warning: 1, info: 2 };
+    for (const i of [...spec.issues].sort((a, b) => order[a.severity] - order[b.severity])) out.push(`| ${m.severity_[i.severity]} | \`${i.id}\` | ${i.field ? `\`${cell(i.field)}\`` : ''} | ${cell(i.message)} |`);
   }
   return out.join('\n') + '\n';
 }

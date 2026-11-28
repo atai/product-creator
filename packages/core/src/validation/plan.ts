@@ -49,6 +49,8 @@ const lists = (model: CatalogModel, kind: EntityKind): ModelEntry<unknown>[] =>
 /** The model after the changes (a copy) */
 export function applyPlan(model: CatalogModel, changes: PlanChange[]): CatalogModel {
   const next: CatalogModel = {
+    // context (design checks) and streams stay as they are
+    ...model,
     features: [...model.features],
     workflows: [...model.workflows],
     objects: [...model.objects],
@@ -62,7 +64,8 @@ export function applyPlan(model: CatalogModel, changes: PlanChange[]): CatalogMo
       next.duplicates = next.duplicates?.filter((d) => !(d.kind === change.kind && d.id === id));
       continue;
     }
-    const index = list.findIndex((e) => idOf(change.kind, e.data) === id && (!change.component || !e.component || e.component === change.component));
+    // ids are unique per kind: an upsert replaces the entry wherever it is; another component = a move (PRODUCTCREATOR-34)
+    const index = list.findIndex((e) => idOf(change.kind, e.data) === id);
     if (index >= 0) list[index] = { ...list[index], data: change.data, component: change.component ?? list[index].component };
     else list.push({ data: change.data, component: change.component });
   }
@@ -123,6 +126,11 @@ export function impactOf(model: CatalogModel, kind: 'feature' | 'business_object
       const uses = (Array.isArray(f.data.objects) ? f.data.objects : []).filter((o) => o?.id === id);
       if (uses.length) addFeature(f, `objects: ${[...new Set(uses.map((u) => u.access))].join(', ')}`);
     }
+    // features that compute the object (PRODUCTCREATOR-39)
+    for (const fid of object?.data.computedBy ?? []) {
+      const producer = model.features.find((f) => f.data.id === fid);
+      if (producer) addFeature(producer, 'computedBy');
+    }
     for (const direct of [...impact.features]) for (const caller of callersOf(direct.id)) addFeature(caller, `calls ${direct.id}`);
     for (const o of model.objects) {
       if (o.data.id === id) continue;
@@ -145,6 +153,10 @@ export function impactOf(model: CatalogModel, kind: 'feature' | 'business_object
     for (const use of feature?.data.objects ?? []) {
       const target = model.objects.find((o) => o.data.id === use.id);
       impact.objects.push(target ? ref(target, `objects: ${use.access}`) : { id: use.id, via: `objects: ${use.access} (unknown object)` });
+    }
+    // objects the feature computes (PRODUCTCREATOR-39)
+    for (const o of model.objects) {
+      if (Array.isArray(o.data.computedBy) && o.data.computedBy.includes(id) && !impact.objects.some((x) => x.id === o.data.id)) impact.objects.push(ref(o, 'computedBy'));
     }
   }
 
@@ -176,7 +188,7 @@ export interface DuplicateMatch extends ImpactRef {
 export function findDuplicates(model: CatalogModel, query: DuplicateQuery = {}): { issues: ValidationIssue[]; matches: DuplicateMatch[] } {
   const kinds: EntityKind[] = query.kind ? [query.kind] : ['feature', 'workflow', 'business_object'];
   if (!query.name && !query.id) {
-    const issues = validateModel(model).filter((i) => (i.code === 'duplicate_id' || i.code === 'duplicate_name') && kinds.includes(i.kind));
+    const issues = validateModel(model).filter((i) => (i.code === 'duplicate_id' || i.code === 'duplicate_name') && (kinds as string[]).includes(i.kind));
     return { issues, matches: [] };
   }
   const name = query.name?.trim().toLowerCase().replace(/\s+/g, ' ');

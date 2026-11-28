@@ -78,7 +78,7 @@
         },
         {
           "name": "objects",
-          "type": "business_object[]",
+          "type": "feature.object_ref[]",
           "description": "With access read | write"
         },
         {
@@ -91,32 +91,37 @@
         },
         {
           "name": "requirements",
-          "type": "json"
+          "type": "feature.requirement[]"
         },
         {
           "name": "acceptance",
-          "type": "json"
+          "type": "feature.acceptance[]"
         },
         {
           "name": "constraints",
-          "type": "json"
+          "type": "feature.constraint[]"
         },
         {
           "name": "decisions",
-          "type": "json"
+          "type": "feature.decision[]"
         },
         {
           "name": "open_questions",
-          "type": "json"
+          "type": "feature.question[]"
         },
         {
           "name": "code_refs",
-          "type": "json",
+          "type": "feature.code_ref[]",
           "description": "component, file, symbol, role"
         },
         {
           "name": "tickets",
           "type": "string[]"
+        },
+        {
+          "name": "screens",
+          "type": "feature.screen[]",
+          "description": "screenshots for the spec"
         }
       ]
     }

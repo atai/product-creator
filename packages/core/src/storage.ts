@@ -5,7 +5,10 @@ import type { FSWatcher } from 'chokidar';
 import chokidar from 'chokidar';
 import logger from './logger';
 import { Feature, Workflow, Stream, BusinessObject, Project, AppEntity } from './types';
-import type { CatalogModel, EntityKind, ModelEntry } from './validation/model';
+import type { CatalogModel, DesignContext, EntityKind, ModelEntry } from './validation/model';
+import { readProject, type ProjectModel } from './project/model';
+import { loadOpenApiSpec } from './interfaces/openapi';
+import { operationKey } from './validation/design';
 
 /** Store table of each validated catalog kind */
 const CATALOG_TABLES: Record<EntityKind, string> = { feature: 'features', workflow: 'workflows', business_object: 'business_objects' };
@@ -504,8 +507,53 @@ class FunctionStorage {
       features: entries('features', this.getAllFeatures(), (f) => f.id),
       workflows: entries('workflows', this.getAllWorkflows(), (w) => w.workflow),
       objects: entries('business_objects', this.getAllBusinessObjects(), (o) => o.id),
+      streams: entries('streams', this.getAllStreams(), (st) => st.stream),
       duplicates,
+      context: this.designContext(),
     };
+  }
+
+  /** OpenAPI operation keys per spec file, re-read when the file changes */
+  private specCache = new Map<string, { mtime: number; keys: Set<string> }>();
+
+  /** Projects (dependsOn, actors, roots, check settings) and OpenAPI operations for design checks (PRODUCTCREATOR-34) */
+  private designContext(): DesignContext | undefined {
+    if (!this.manifest) return undefined;
+    const projects: ProjectModel[] = [];
+    for (const p of this.manifest.projects) {
+      if (!p.root) continue;
+      try {
+        const project = readProject(p.root);
+        if (project) projects.push(project);
+      } catch {
+        /* a broken product-creator.yml is reported elsewhere */
+      }
+    }
+    if (!projects.length) return undefined;
+    const operations = (componentId: string): Set<string> | null => {
+      const project = projects.find((p) => p.components.some((c) => c.id === componentId));
+      const specs = project?.components.find((c) => c.id === componentId)?.openapi ?? [];
+      if (!project || !specs.length) return null;
+      const keys = new Set<string>();
+      for (const rel of specs) {
+        const file = path.resolve(project.root, rel);
+        let mtime = -1;
+        try {
+          mtime = fs.statSync(file).mtimeMs;
+        } catch {
+          continue;
+        }
+        let cached = this.specCache.get(file);
+        if (!cached || cached.mtime !== mtime) {
+          const spec = loadOpenApiSpec(file);
+          cached = { mtime, keys: new Set(spec.error ? [] : spec.operations.map((o) => operationKey(o.method, o.path))) };
+          this.specCache.set(file, cached);
+        }
+        cached.keys.forEach((k) => keys.add(k));
+      }
+      return keys.size ? keys : null;
+    };
+    return { projects, operations };
   }
 
   // Edges and Events

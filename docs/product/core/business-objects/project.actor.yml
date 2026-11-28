@@ -1,0 +1,14 @@
+id: project.actor
+name: Actor
+description: Who uses the product; features refer to actors by id
+owner: atai
+lifecycle: implemented
+kind: value
+fields:
+  - name: id
+    type: string
+    description: a-z, 0-9, _
+  - name: name
+    type: string
+  - name: description
+    type: text?

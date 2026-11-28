@@ -1,0 +1,14 @@
+id: feature.question
+name: Open question
+description: A question not answered yet
+owner: atai
+lifecycle: implemented
+kind: value
+fields:
+  - name: id
+    type: string
+    description: Q1, …
+  - name: question
+    type: text
+  - name: owner
+    type: string?

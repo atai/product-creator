@@ -34,6 +34,10 @@
   },
   "usedBy": [
     {
+      "id": "app.settings.edit",
+      "access": "write"
+    },
+    {
       "id": "mcp.relay.connect",
       "access": "read"
     },

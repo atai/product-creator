@@ -20,3 +20,11 @@ screens:
   - id: S1
     title: Entity × action matrix
     path: /matrix
+requirements:
+  - id: R1
+    text: For a bounded context, entities × actions show which features exist
+acceptance:
+  - id: A1
+    covers:
+      - R1
+    text: Choosing a context shows its entity × action grid with the features in the cells

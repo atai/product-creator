@@ -1,5 +1,5 @@
 import { PrismaModel } from '../prisma/types';
-import { BusinessObject } from '../types';
+import { BusinessObject, kindOf } from '../types';
 import { SyncMapping } from './mappingStorage';
 import * as crypto from 'crypto';
 
@@ -36,6 +36,8 @@ export function matchPrismaToBusinessObjects(
 ): MatchedObject[] {
   const matched: MatchedObject[] = [];
   const usedObjectIds = new Set<string>();
+  // only stored entities mirror Prisma models; value and computed objects are never matched, updated or deleted (PRODUCTCREATOR-39)
+  existingObjects = existingObjects.filter((o) => kindOf(o) === 'entity');
 
   // Create a map of existing objects by name and id for quick lookup
   const objectsByName = new Map<string, BusinessObject>();

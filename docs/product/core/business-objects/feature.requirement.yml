@@ -1,0 +1,15 @@
+id: feature.requirement
+name: Requirement
+description: One testable statement of what a feature must do
+owner: atai
+lifecycle: implemented
+kind: value
+fields:
+  - name: id
+    type: string
+    description: R1, R2, …
+  - name: text
+    type: text
+  - name: priority
+    type: enum<must|should|could>?
+    description: default must

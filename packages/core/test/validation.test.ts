@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { BusinessObject, Feature, Workflow } from '../src/types';
 import { referencedType, validateModel, type CatalogModel } from '../src/validation/model';
 import { findDuplicates, impactOf, planIssues } from '../src/validation/plan';
+import { matchPrismaToBusinessObjects } from '../src/sync/matcher';
+import type { SyncMapping } from '../src/sync/mappingStorage';
 
 const feature = (id: string, extra: Partial<Feature> = {}): Feature => {
   const [bounded_context, entity, action] = id.split('.');
@@ -65,6 +67,43 @@ describe('feature spec fields (PRODUCTCREATOR-32)', () => {
         'schema:acceptance.0',
       ])
     );
+  });
+});
+
+describe('business object kinds (PRODUCTCREATOR-39)', () => {
+  const withKinds = (): CatalogModel => {
+    const m = model();
+    m.objects.push({ data: { ...object('order.note', [{ name: 'text', type: 'text' }], 'Note'), kind: 'value' }, component: 'svc' });
+    m.objects.push({ data: { ...object('report', [{ name: 'total', type: 'decimal' }], 'Report'), kind: 'computed', computedBy: ['billing.invoice.create'] }, component: 'svc' });
+    m.objects[0] = { ...m.objects[0], data: { ...m.objects[0].data, fields: [...m.objects[0].data.fields, { name: 'notes', type: 'order.note[]' }] } };
+    return m;
+  };
+
+  it('value objects resolve as field types; computedBy must name features; kind is an enum', () => {
+    expect(validateModel(withKinds())).toEqual([]);
+    const m = withKinds();
+    m.objects.push({ data: { ...object('stat', [{ name: 'n', type: 'int' }]), kind: 'computed', computedBy: ['nope.x.y'] }, component: 'svc' });
+    // an invalid kind, as a hand-edited file could have it
+    m.objects.push({ data: Object.assign(object('odd', [{ name: 'n', type: 'int' }]), { kind: 'view' }), component: 'svc' });
+    const codes = validateModel(m).map((i) => `${i.code}:${i.id}:${i.field ?? ''}`);
+    expect(codes).toEqual(expect.arrayContaining(['unknown_feature:stat:computedBy[0]', 'schema:odd:kind']));
+  });
+
+  it('impact links computed objects and the features that compute them', () => {
+    const m = withKinds();
+    expect(impactOf(m, 'business_object', 'report').features).toEqual([expect.objectContaining({ id: 'billing.invoice.create', via: 'computedBy' })]);
+    expect(impactOf(m, 'feature', 'billing.invoice.create').objects).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'report', via: 'computedBy' })]));
+    expect(impactOf(m, 'business_object', 'order.note').objects).toEqual([expect.objectContaining({ id: 'order', via: 'fields: notes' })]);
+  });
+
+  it('Prisma schema sync never matches or deletes value and computed objects', () => {
+    const objects = withKinds().objects.map((e) => e.data);
+    const mapping: SyncMapping = Object.fromEntries(objects.map((o) => [o.name, { businessObjectId: o.id, action: 'create' as const, lastSync: 1 }]));
+    const result = matchPrismaToBusinessObjects([], objects, mapping, '/tmp');
+    const deleted = result.filter((r) => r.action === 'delete').map((r) => r.businessObjectId);
+    expect(deleted).toEqual(expect.arrayContaining(['order', 'customer']));
+    expect(deleted).not.toContain('order.note');
+    expect(deleted).not.toContain('report');
   });
 });
 

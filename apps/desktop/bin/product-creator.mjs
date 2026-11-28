@@ -4,7 +4,7 @@
 //   product-creator ~/git/repo-a ~/git/repo-b
 // Command-line mode (no window; exit code reports the result):
 //   product-creator migrate [folder...] [--dry-run]
-//   product-creator lint [folder...] [--warnings] [--json] [--catalog <dir>]
+//   product-creator lint [folder...] [--warnings] [--info] [--json] [--catalog <dir>]
 //   product-creator spec [folder...] [--strict] [--no-screens]
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';

@@ -1,6 +1,8 @@
 import type { ErrorObject } from 'ajv';
 import { validators } from './schemas';
-import { FEATURE_SPEC_LISTS, type BusinessObject, type Feature, type Workflow } from '../types';
+import { FEATURE_SPEC_LISTS, type BusinessObject, type Feature, type Stream, type Workflow } from '../types';
+import type { ProjectModel } from '../project/model';
+import { designIssues, type DesignCode } from './design';
 
 /**
  * Model validation (PRODUCTCREATOR-29): the catalog must not describe something that cannot be implemented.
@@ -12,7 +14,10 @@ import { FEATURE_SPEC_LISTS, type BusinessObject, type Feature, type Workflow } 
  *             spec items (requirements, acceptance, …) with the same id, acceptance covering an unknown requirement
  *   warnings  duplicate names (features of one component, business objects of one component)
  *
- * Streams are not validated. References are resolved across all loaded projects.
+ * References are resolved across all loaded projects.
+ *
+ * Design checks (PRODUCTCREATOR-34, design.ts) run when the model carries a context (projects, OpenAPI): they
+ * are advisory by default — their intended severity is shifted one level down (error → warning → info).
  */
 
 export type EntityKind = 'feature' | 'workflow' | 'business_object';
@@ -25,10 +30,23 @@ export interface ModelEntry<T> {
   component?: string;
 }
 
+/** What design checks need besides the catalog (PRODUCTCREATOR-34) */
+export interface DesignContext {
+  /** Projects of the components (dependsOn, actors, root for files on disk, check settings) */
+  projects: ProjectModel[];
+  /** OpenAPI operations of a component as `METHOD path`; null when the component has no spec */
+  operations?: (componentId: string) => Set<string> | null;
+  /** Does a file exist (tests replace it) */
+  exists?: (absolutePath: string) => boolean;
+}
+
 export interface CatalogModel {
   features: ModelEntry<Feature>[];
   workflows: ModelEntry<Workflow>[];
   objects: ModelEntry<BusinessObject>[];
+  streams?: ModelEntry<Stream>[];
+  /** Set by storage.modelSnapshot(); without it design checks do not run */
+  context?: DesignContext;
   /** Ids defined by more than one file (only one of them is in the lists above) */
   duplicates?: { kind: EntityKind; id: string; files: string[] }[];
 }
@@ -47,12 +65,17 @@ export type IssueCode =
   | 'unknown_requirement'
   /** spec only (PRODUCTCREATOR-36): a declared screenshot has no image, or its capture failed */
   | 'screen_missing'
-  | 'screen_failed';
+  | 'screen_failed'
+  | 'unknown_workflow'
+  | DesignCode;
+
+export type Severity = 'error' | 'warning' | 'info';
+export type IssueKind = EntityKind | 'stream' | 'component';
 
 export interface ValidationIssue {
-  severity: 'error' | 'warning';
+  severity: Severity;
   code: IssueCode;
-  kind: EntityKind;
+  kind: IssueKind;
   /** Feature / business-object id or workflow key */
   id: string;
   /** Where in the entry, e.g. `steps[2]`, `objects[0].id`, `fields.budget.type` */
@@ -60,6 +83,10 @@ export interface ValidationIssue {
   message: string;
   file?: string;
   component?: string;
+  /** 'design': a design check (PRODUCTCREATOR-34); its severity follows checks.mode / overrides */
+  check?: 'design';
+  /** Severity of a design check in strict mode */
+  intended?: Severity;
 }
 
 const KINDS = new Set<EntityKind>(['feature', 'workflow', 'business_object']);
@@ -76,7 +103,7 @@ export const idOf = (kind: EntityKind, data: unknown): string => {
 };
 
 /** Data as it is written to YAML: no undefined values, no UI-only fields (childObjects of the business-object list) */
-function plain(kind: EntityKind, data: unknown): unknown {
+function plain(kind: EntityKind | 'stream', data: unknown): unknown {
   const copy = JSON.parse(JSON.stringify(data ?? {})) as Record<string, unknown>;
   if (kind === 'business_object') delete copy.childObjects;
   return copy;
@@ -93,10 +120,10 @@ function schemaMessage(e: ErrorObject): string {
   return e.message ?? 'is invalid';
 }
 
-function schemaIssues(kind: EntityKind, entry: ModelEntry<unknown>): ValidationIssue[] {
+function schemaIssues(kind: EntityKind | 'stream', entry: ModelEntry<unknown>): ValidationIssue[] {
   const validate = validators[kind];
   if (validate(plain(kind, entry.data))) return [];
-  const id = idOf(kind, entry.data);
+  const id = kind === 'stream' ? String((entry.data as { stream?: unknown })?.stream ?? '') : idOf(kind, entry.data);
   // errors inside anyOf branches are summarised by the anyOf error itself
   const errors = (validate.errors ?? []).filter((e) => !e.schemaPath.includes('/anyOf/'));
   return errors.map((e: ErrorObject) => {
@@ -280,6 +307,10 @@ export function validateModel(model: CatalogModel): ValidationIssue[] {
   for (const e of model.objects) {
     const o = e.data;
     issues.push(...schemaIssues('business_object', e));
+    // computed objects name the features that produce them (PRODUCTCREATOR-39)
+    (Array.isArray(o.computedBy) ? o.computedBy : []).forEach((fid, i) => {
+      if (typeof fid === 'string' && !featureIds.has(fid)) issues.push({ severity: 'error', code: 'unknown_feature', kind: 'business_object', id: o.id, field: `computedBy[${i}]`, message: `Computed by unknown feature "${fid}"`, ...at(e) });
+    });
     (Array.isArray(o.fields) ? o.fields : []).forEach((field) => {
       if (!field || typeof field.type !== 'string') return;
       const ref = referencedType(field.type);
@@ -289,13 +320,26 @@ export function validateModel(model: CatalogModel): ValidationIssue[] {
     });
   }
 
+  const workflowKeys = new Set(model.workflows.map((w) => w.data.workflow));
+  for (const e of model.streams ?? []) {
+    const st = e.data;
+    issues.push(...schemaIssues('stream', e));
+    (Array.isArray(st.stages) ? st.stages : []).forEach((stage, i) => {
+      (Array.isArray(stage?.workflows) ? stage.workflows : []).forEach((wf, j) => {
+        if (!workflowKeys.has(wf)) issues.push({ severity: 'error', code: 'unknown_workflow', kind: 'stream', id: st.stream, field: `stages[${i}].workflows[${j}]`, message: `Stage "${stage.name}" runs unknown workflow "${wf}"`, ...at(e) });
+      });
+    });
+  }
+
   issues.push(...duplicateIds(model));
   issues.push(...duplicateNames('feature', model.features as ModelEntry<{ name?: string; id?: string }>[]));
   issues.push(...duplicateNames('business_object', model.objects as ModelEntry<{ name?: string; id?: string }>[]));
+  if (model.context) issues.push(...designIssues(model, model.context));
   return issues;
 }
 
 export const countIssues = (issues: ValidationIssue[]) => ({
   errors: issues.filter((i) => i.severity === 'error').length,
   warnings: issues.filter((i) => i.severity === 'warning').length,
+  infos: issues.filter((i) => i.severity === 'info').length,
 });

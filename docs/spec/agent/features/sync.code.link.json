@@ -91,7 +91,7 @@
         },
         {
           "name": "objects",
-          "type": "business_object[]",
+          "type": "feature.object_ref[]",
           "description": "With access read | write"
         },
         {
@@ -104,32 +104,37 @@
         },
         {
           "name": "requirements",
-          "type": "json"
+          "type": "feature.requirement[]"
         },
         {
           "name": "acceptance",
-          "type": "json"
+          "type": "feature.acceptance[]"
         },
         {
           "name": "constraints",
-          "type": "json"
+          "type": "feature.constraint[]"
         },
         {
           "name": "decisions",
-          "type": "json"
+          "type": "feature.decision[]"
         },
         {
           "name": "open_questions",
-          "type": "json"
+          "type": "feature.question[]"
         },
         {
           "name": "code_refs",
-          "type": "json",
+          "type": "feature.code_ref[]",
           "description": "component, file, symbol, role"
         },
         {
           "name": "tickets",
           "type": "string[]"
+        },
+        {
+          "name": "screens",
+          "type": "feature.screen[]",
+          "description": "screenshots for the spec"
         }
       ]
     },
@@ -162,5 +167,18 @@
   "workflows": [
     "project.onboard"
   ],
-  "issues": []
+  "issues": [
+    {
+      "severity": "warning",
+      "intended": "error",
+      "check": "design",
+      "code": "open_questions_left",
+      "kind": "feature",
+      "id": "sync.code.link",
+      "field": "open_questions",
+      "message": "1 open question(s) on an implemented feature (Q1). Answer them (turn them into decisions), or set the feature back to draft.",
+      "file": "/Users/ra/git/product-creator/docs/product/core/features/sync/code.link.yml",
+      "component": "65b1a710-428c-4e33-baf7-b6047999dfad"
+    }
+  ]
 }

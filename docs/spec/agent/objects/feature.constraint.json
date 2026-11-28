@@ -1,0 +1,30 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "feature.constraint",
+    "name": "Constraint",
+    "description": "A non-functional requirement or limit",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "kind": "value",
+    "active": true,
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "description": "C1, …"
+      },
+      {
+        "name": "kind",
+        "type": "enum<performance|security|reliability|compatibility|usability|compliance|other>?"
+      },
+      {
+        "name": "text",
+        "type": "text"
+      }
+    ]
+  },
+  "usedBy": [],
+  "issues": []
+}

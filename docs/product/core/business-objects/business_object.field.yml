@@ -1,0 +1,14 @@
+id: business_object.field
+name: Field
+description: A field of a business object
+owner: atai
+lifecycle: implemented
+kind: value
+fields:
+  - name: name
+    type: string
+  - name: type
+    type: string
+    description: scalar or business object, with ? and []
+  - name: description
+    type: text?

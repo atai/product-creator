@@ -8,7 +8,7 @@
     "entity": "graph",
     "action": "show",
     "lifecycle": "implemented",
-    "description": "Features connected by emitted and consumed events, coloured by lifecycle.",
+    "description": "Features and the links between them: calls, consecutive workflow steps and events, coloured by lifecycle.",
     "source_file": "renderer/src/pages/graph.tsx",
     "objects": [
       {
@@ -16,8 +16,34 @@
         "access": "read"
       }
     ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Calls, workflow steps and events are drawn as arrows of their own style, with a legend"
+      },
+      {
+        "id": "R2",
+        "text": "A node is as large as its name and no two nodes overlap"
+      },
+      {
+        "id": "R3",
+        "text": "A labelled arrow is long enough for its label plus a margin at both ends"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2",
+          "R3"
+        ],
+        "text": "On this repository the graph shows every name in full, arrows with their heads and labels between them"
+      }
+    ],
     "tickets": [
-      "PRODUCTCREATOR-7"
+      "PRODUCTCREATOR-7",
+      "PRODUCTCREATOR-35"
     ],
     "screens": [
       {
@@ -57,7 +83,7 @@
         },
         {
           "name": "objects",
-          "type": "business_object[]",
+          "type": "feature.object_ref[]",
           "description": "With access read | write"
         },
         {
@@ -70,32 +96,37 @@
         },
         {
           "name": "requirements",
-          "type": "json"
+          "type": "feature.requirement[]"
         },
         {
           "name": "acceptance",
-          "type": "json"
+          "type": "feature.acceptance[]"
         },
         {
           "name": "constraints",
-          "type": "json"
+          "type": "feature.constraint[]"
         },
         {
           "name": "decisions",
-          "type": "json"
+          "type": "feature.decision[]"
         },
         {
           "name": "open_questions",
-          "type": "json"
+          "type": "feature.question[]"
         },
         {
           "name": "code_refs",
-          "type": "json",
+          "type": "feature.code_ref[]",
           "description": "component, file, symbol, role"
         },
         {
           "name": "tickets",
           "type": "string[]"
+        },
+        {
+          "name": "screens",
+          "type": "feature.screen[]",
+          "description": "screenshots for the spec"
         }
       ]
     }
@@ -111,5 +142,18 @@
       "exists": true
     }
   ],
-  "issues": []
+  "issues": [
+    {
+      "severity": "info",
+      "intended": "warning",
+      "check": "design",
+      "code": "acceptance_without_verify",
+      "kind": "feature",
+      "id": "catalog.graph.show",
+      "field": "acceptance[0]",
+      "message": "Acceptance A1 has no verify: add the command or test that checks it.",
+      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/catalog/graph.show.yml",
+      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
+    }
+  ]
 }

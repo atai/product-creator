@@ -40,6 +40,25 @@
       ],
       "description": "draft: being worked out; approved: spec agreed, ready to build; implemented: in the code; deprecated: still in the code, do not use in new work; removed: gone from the code, kept for history"
     },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "entity",
+        "value",
+        "computed"
+      ],
+      "x-audience": "both",
+      "description": "entity (default): stored, has its own identity; value: a structure inside other objects (referenced by a field type, e.g. feature.requirement[]), not stored on its own; computed: produced at runtime, not stored (computedBy names the features)"
+    },
+    "computedBy": {
+      "type": "array",
+      "x-audience": "both",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Features that produce a computed object (feature ids). Validated like calls."
+    },
     "active": {
       "type": "boolean",
       "description": "Whether the object is active. Inactive objects are not deleted but marked as inactive."

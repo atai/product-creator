@@ -1,8 +1,9 @@
 id: business_object
 name: Business object
-description: 'A data entity of the product: business-objects/<id>.yml'
 owner: atai
 lifecycle: implemented
+description: 'A data entity of the product: business-objects/<id>.yml'
+active: true
 fields:
   - name: id
     type: string
@@ -11,8 +12,15 @@ fields:
   - name: lifecycle
     type: enum<draft|approved|implemented|deprecated|removed>
   - name: fields
-    type: json
+    type: business_object.field[]
     description: name, type, description
   - name: tables
     type: json?
     description: Physical tables (from Prisma)
+  - name: kind
+    type: enum<entity|value|computed>?
+    description: default entity
+  - name: computedBy
+    type: feature[]
+    description: features that produce a computed object
+tables: []

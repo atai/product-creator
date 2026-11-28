@@ -58,5 +58,18 @@
   ],
   "calledBy": [],
   "workflows": [],
-  "issues": []
+  "issues": [
+    {
+      "severity": "warning",
+      "intended": "error",
+      "check": "design",
+      "code": "requirement_not_covered",
+      "kind": "feature",
+      "id": "mcp.actions.log",
+      "field": "requirements[0]",
+      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
+      "file": "/Users/ra/git/product-creator/docs/product/mcp/features/mcp/actions.log.yml",
+      "component": "5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64"
+    }
+  ]
 }

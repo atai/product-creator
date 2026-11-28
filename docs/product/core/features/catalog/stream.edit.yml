@@ -5,18 +5,33 @@ entity: stream
 action: edit
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: 'Creates or changes a stream: a business process with stages, KPIs and workflows per stage.'
 source_file: http/routes/save-stream/route.ts
 requirements:
   - id: R1
     text: Streams are saved as YAML in streams/
-open_questions:
-  - id: Q1
-    question: 'Streams are not validated and not used by any other entity: keep, validate, or drop them?'
-    owner: atai
+  - id: R2
+    text: A stage runs existing workflows and waits for events something emits
 tickets:
   - PRODUCTCREATOR-7
+  - PRODUCTCREATOR-34
 code_refs:
   - component: desktop
     file: renderer/src/pages/streams-id.tsx
     role: UI
+decisions:
+  - id: D1
+    decision: 'Streams stay and are validated: schema, stage workflows, stage events'
+    reason: They describe the business process the workflows serve
+    date: '2026-11-28'
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+    text: Stream schema, unknown workflows and unknown stage events are reported
+    verify: pnpm --filter @pc/core test -- design

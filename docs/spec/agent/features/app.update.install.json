@@ -26,5 +26,18 @@
   "objects": [],
   "calledBy": [],
   "workflows": [],
-  "issues": []
+  "issues": [
+    {
+      "severity": "warning",
+      "intended": "error",
+      "check": "design",
+      "code": "requirement_not_covered",
+      "kind": "feature",
+      "id": "app.update.install",
+      "field": "requirements[0]",
+      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
+      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/app/update.install.yml",
+      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
+    }
+  ]
 }

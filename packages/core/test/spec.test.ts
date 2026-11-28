@@ -94,6 +94,18 @@ describe('spec generation (PRODUCTCREATOR-35)', () => {
     expect(refund.issues.map((i: { code: string }) => i.code)).toEqual(['unknown_feature']);
   });
 
+  it('data section shows object kinds, computed by and the names of value object types (PRODUCTCREATOR-39)', () => {
+    const m = model();
+    m.objects.push({ data: { id: 'order.line', name: 'Order line', owner: 'team-x', lifecycle: 'implemented', kind: 'value', fields: [{ name: 'qty', type: 'int' }] }, component: 'c1' });
+    m.objects.push({ data: { id: 'order_total', name: 'Order total', owner: 'team-x', lifecycle: 'implemented', kind: 'computed', computedBy: ['shop.order.create'], fields: [{ name: 'sum', type: 'decimal' }] }, component: 'c1' });
+    m.objects[0] = { ...m.objects[0], data: { ...m.objects[0].data, fields: [...m.objects[0].data.fields, { name: 'lines', type: 'order.line[]' }] } };
+    const md = generateSpec(project(), m).files['spec.md'];
+    expect(md).toContain('| lines | `order.line[]` — Order line |');
+    expect(md).toContain('*implemented* · value object (part of other objects, not stored on its own)');
+    expect(md).toContain('**Computed by:** order create (`shop.order.create`)');
+    expect(md).toContain('*implemented* · stored entity · Component: API');
+  });
+
   it('labels follow spec.language and fall back to English when there is no catalog for it', () => {
     expect(messagesFor('en-GB')).toMatchObject({ language: 'en', fallback: false });
     expect(messagesFor('xx')).toMatchObject({ language: 'en', fallback: true });

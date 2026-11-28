@@ -129,6 +129,27 @@ export interface ScreenshotSettings {
 export const DEFAULT_SCREENSHOT_TIMEOUT_SEC = 300;
 export const DEFAULT_READY_TIMEOUT_SEC = 120;
 
+/**
+ * Design checks (PRODUCTCREATOR-34). advisory (default): every design check is reported one level below its intended
+ * severity (error → warning, warning → info), so nothing is blocked; strict: intended severities. An override per
+ * check code wins over the mode; `off` hides the check.
+ */
+export type CheckLevel = 'off' | 'info' | 'warning' | 'error';
+export interface ChecksSettings {
+  mode?: 'advisory' | 'strict';
+  overrides?: Record<string, CheckLevel>;
+}
+const CHECK_LEVELS = new Set<CheckLevel>(['off', 'info', 'warning', 'error']);
+
+export function readChecksSettings(raw: unknown): ChecksSettings | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const r = raw as Record<string, unknown>;
+  const mode = r.mode === 'strict' || r.mode === 'advisory' ? r.mode : undefined;
+  const overrides = typeof r.overrides === 'object' && r.overrides !== null ? Object.fromEntries(Object.entries(r.overrides as Record<string, unknown>).filter((e): e is [string, CheckLevel] => CHECK_LEVELS.has(e[1] as CheckLevel))) : {};
+  if (!mode && !Object.keys(overrides).length) return undefined;
+  return { ...(mode ? { mode } : {}), ...(Object.keys(overrides).length ? { overrides } : {}) };
+}
+
 export const DEFAULT_SPEC_LANGUAGE = 'en';
 export const DEFAULT_SPEC_OUTPUT = 'docs/spec';
 
@@ -141,6 +162,7 @@ export interface ProductContext {
   tracker?: TrackerConfig;
   spec?: SpecSettings;
   screenshots?: ScreenshotSettings;
+  checks?: ChecksSettings;
 }
 
 export const PRODUCT_KEYS = ['vision', 'goals', 'actors', 'glossary', 'tracker'] as const;
@@ -192,6 +214,7 @@ interface RawProjectFile {
   tracker?: unknown;
   spec?: unknown;
   screenshots?: unknown;
+  checks?: unknown;
   /** v1 format: inline services */
   services?: Array<Record<string, unknown>>;
 }
@@ -404,6 +427,7 @@ export function readProject(rootDir: string): ProjectModel | null {
     catalogRoot,
     ...readProductContext(raw),
     screenshots: readScreenshotSettings(raw.screenshots),
+    checks: readChecksSettings(raw.checks),
     root,
     components,
   };
@@ -443,6 +467,7 @@ export function projectFileContent(project: ProjectModel): string {
       tracker: project.tracker,
       spec: project.spec,
       screenshots: project.screenshots,
+      checks: project.checks,
     })
   );
 }
@@ -628,6 +653,7 @@ export type ProjectPatch = Partial<Pick<ProjectModel, 'slug' | 'name' | 'descrip
   tracker?: TrackerConfig | null;
   spec?: SpecSettings | null;
   screenshots?: ScreenshotSettings | null;
+  checks?: ChecksSettings | null;
 };
 export type ComponentInput = Omit<ComponentModel, 'id' | 'catalog'> & { id?: string; catalog?: string };
 
@@ -650,6 +676,7 @@ export function updateProject(rootDir: string, patch: ProjectPatch): ProjectMode
   // product context (PRODUCTCREATOR-33): normalised like on read, then checked
   const product = readProductContext({ goals: patch.goals, actors: patch.actors, glossary: patch.glossary, tracker: patch.tracker, spec: patch.spec });
   if (patch.spec !== undefined) next.spec = product.spec;
+  if (patch.checks !== undefined) next.checks = patch.checks ? readChecksSettings(patch.checks) : undefined;
   if (patch.screenshots !== undefined) next.screenshots = patch.screenshots ? readScreenshotSettings(patch.screenshots) : undefined;
   if (patch.goals !== undefined) next.goals = product.goals;
   if (patch.actors !== undefined) next.actors = product.actors;

@@ -7,6 +7,10 @@
     "description": "A problem of the model found by validation (not stored; computed)",
     "owner": "atai",
     "lifecycle": "implemented",
+    "kind": "computed",
+    "computedBy": [
+      "validation.model.validate"
+    ],
     "active": true,
     "fields": [
       {
@@ -49,10 +53,6 @@
     {
       "id": "catalog.problems.show",
       "access": "read"
-    },
-    {
-      "id": "validation.model.validate",
-      "access": "write"
     }
   ],
   "issues": []

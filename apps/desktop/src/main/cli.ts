@@ -12,7 +12,8 @@ import logger from '@pc/core/logger';
 /**
  * Command-line mode without Electron (bin/product-creator.mjs runs it with node):
  *   product-creator migrate [folder...] [--dry-run]   move functions/ → features/ in all catalogs (PRODUCTCREATOR-28)
- *   product-creator lint [folder...] [--warnings] [--json]   model validation of the catalogs (PRODUCTCREATOR-29)
+ *   product-creator lint [folder...] [--warnings] [--info] [--json]   model validation of the catalogs (PRODUCTCREATOR-29);
+ *                                                     design checks (PRODUCTCREATOR-34) are advisory by default: warnings and info
  *   product-creator lint --catalog <dir> [...]        validate one catalog folder of a repo without product-creator.yml (read only)
  *   product-creator spec [folder...] [--strict] [--no-screens]   write spec.md + agent/ to spec.output (PRODUCTCREATOR-35);
  *                                                     screenshots are captured first when configured (PRODUCTCREATOR-36);
@@ -92,7 +93,8 @@ async function lint(args: string[], io: CliIo): Promise<number> {
   await resetStorage();
   configureStorage({ manifest: { projects: [...entities.projects, ...(apps.length ? [{ id: 'catalogs', name: 'catalogs' }] : [])], apps: [...entities.apps, ...apps], source: PROJECT_FILE }, watch: false });
   const storage = await getStorage();
-  const issues = validateModel(storage.modelSnapshot()).filter((i) => flags.has('--warnings') || i.severity === 'error');
+  const shown = (s: string) => s === 'error' || (s === 'warning' && (flags.has('--warnings') || flags.has('--info'))) || (s === 'info' && flags.has('--info'));
+  const issues = validateModel(storage.modelSnapshot()).filter((i) => shown(i.severity));
   const all = validateModel(storage.modelSnapshot());
   await resetStorage();
   const counts = countIssues(all);
@@ -104,10 +106,11 @@ async function lint(args: string[], io: CliIo): Promise<number> {
     for (const i of issues) byFile.set(i.file ?? `(${i.kind} ${i.id})`, [...(byFile.get(i.file ?? `(${i.kind} ${i.id})`) ?? []), i]);
     for (const [file, list] of byFile) {
       io.log(path.isAbsolute(file) ? path.relative(io.cwd, file) || file : file);
-      for (const i of list) io.log(`  ${i.severity === 'error' ? 'error' : 'warn '}  ${i.code.padEnd(26)} ${i.field ? `${i.field}: ` : ''}${i.message}`);
+      for (const i of list) io.log(`  ${i.severity === 'error' ? 'error' : i.severity === 'warning' ? 'warn ' : 'info '}  ${i.code.padEnd(28)} ${i.field ? `${i.field}: ` : ''}${i.message}`);
     }
     const scope = [...new Set([...entities.apps, ...apps].map((a) => names.get(a.id)))].join(', ');
-    io.log(`${counts.errors} error(s), ${counts.warnings} warning(s) in ${scope || 'no catalogs'}${flags.has('--warnings') ? '' : ' (warnings hidden; --warnings shows them)'}`);
+    const hidden = flags.has('--info') ? '' : flags.has('--warnings') ? ' (info hidden; --info shows it)' : ' (warnings and info hidden; --warnings / --info show them)';
+    io.log(`${counts.errors} error(s), ${counts.warnings} warning(s), ${counts.infos} info in ${scope || 'no catalogs'}${hidden}`);
   }
   return counts.errors > 0 ? 1 : 0;
 }

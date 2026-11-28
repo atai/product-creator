@@ -1,6 +1,6 @@
 {
   "kind": "feature",
-  "component": "desktop",
+  "component": "core",
   "feature": {
     "id": "project.context.edit",
     "name": "Edit the product context",
@@ -9,7 +9,7 @@
     "action": "edit",
     "lifecycle": "implemented",
     "description": "Vision, goals, actors, glossary and tracker of a project, stored in product-creator.yml: the first part of a spec.",
-    "source_file": "renderer/src/pages/workspace.tsx",
+    "source_file": "project/model.ts",
     "objects": [
       {
         "id": "project",
@@ -55,6 +55,20 @@
         ],
         "text": "get_project returns what update_project wrote; a bad goal id is rejected",
         "verify": "pnpm --filter @pc/mcp test -- server"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "desktop",
+        "file": "renderer/src/pages/workspace.tsx",
+        "symbol": "ProjectForm",
+        "role": "UI"
+      },
+      {
+        "component": "mcp",
+        "file": "tools.ts",
+        "symbol": "update_project",
+        "role": "MCP"
       }
     ],
     "screens": [
@@ -103,17 +117,17 @@
         },
         {
           "name": "goals",
-          "type": "json",
+          "type": "project.goal[]",
           "description": "G1… with text"
         },
         {
           "name": "actors",
-          "type": "json",
+          "type": "project.actor[]",
           "description": "id, name, description"
         },
         {
           "name": "glossary",
-          "type": "json"
+          "type": "project.glossary_term[]"
         },
         {
           "name": "tracker",
@@ -136,5 +150,18 @@
       "exists": true
     }
   ],
-  "issues": []
+  "issues": [
+    {
+      "severity": "warning",
+      "intended": "error",
+      "check": "design",
+      "code": "requirement_not_covered",
+      "kind": "feature",
+      "id": "project.context.edit",
+      "field": "requirements[3]",
+      "message": "Requirement R4 has no acceptance criterion. Add one with covers: [R4].",
+      "file": "/Users/ra/git/product-creator/docs/product/core/features/project/context.edit.yml",
+      "component": "65b1a710-428c-4e33-baf7-b6047999dfad"
+    }
+  ]
 }

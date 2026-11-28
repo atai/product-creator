@@ -1,0 +1,25 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "project.glossary_term",
+    "name": "Glossary term",
+    "description": "A word of the product and what it means",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "kind": "value",
+    "active": true,
+    "fields": [
+      {
+        "name": "term",
+        "type": "string"
+      },
+      {
+        "name": "definition",
+        "type": "text"
+      }
+    ]
+  },
+  "usedBy": [],
+  "issues": []
+}

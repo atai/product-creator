@@ -1,8 +1,9 @@
 id: project
 name: Project
-description: A repository opened in Product Creator; product-creator.yml at its root
 owner: atai
 lifecycle: implemented
+description: A repository opened in Product Creator; product-creator.yml at its root
+active: true
 fields:
   - name: id
     type: uuid
@@ -21,13 +22,14 @@ fields:
   - name: vision
     type: text?
   - name: goals
-    type: json
+    type: project.goal[]
     description: G1… with text
   - name: actors
-    type: json
+    type: project.actor[]
     description: id, name, description
   - name: glossary
-    type: json
+    type: project.glossary_term[]
   - name: tracker
     type: json?
     description: issueUrl with {id}
+tables: []

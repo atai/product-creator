@@ -9,15 +9,30 @@ tags: []
 emits: []
 consumes: []
 apis: []
-description: Features connected by emitted and consumed events, coloured by lifecycle.
+description: 'Features and the links between them: calls, consecutive workflow steps and events, coloured by lifecycle.'
 source_file: renderer/src/pages/graph.tsx
 objects:
   - id: feature
     access: read
 tickets:
   - PRODUCTCREATOR-7
+  - PRODUCTCREATOR-35
 screens:
   - id: S1
     title: 'Feature graph: calls, workflow steps and events'
     path: /graph
     wait: canvas
+requirements:
+  - id: R1
+    text: Calls, workflow steps and events are drawn as arrows of their own style, with a legend
+  - id: R2
+    text: A node is as large as its name and no two nodes overlap
+  - id: R3
+    text: A labelled arrow is long enough for its label plus a margin at both ends
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+      - R3
+    text: On this repository the graph shows every name in full, arrows with their heads and labels between them

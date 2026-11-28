@@ -85,7 +85,7 @@
         },
         {
           "name": "objects",
-          "type": "business_object[]",
+          "type": "feature.object_ref[]",
           "description": "With access read | write"
         },
         {
@@ -98,32 +98,37 @@
         },
         {
           "name": "requirements",
-          "type": "json"
+          "type": "feature.requirement[]"
         },
         {
           "name": "acceptance",
-          "type": "json"
+          "type": "feature.acceptance[]"
         },
         {
           "name": "constraints",
-          "type": "json"
+          "type": "feature.constraint[]"
         },
         {
           "name": "decisions",
-          "type": "json"
+          "type": "feature.decision[]"
         },
         {
           "name": "open_questions",
-          "type": "json"
+          "type": "feature.question[]"
         },
         {
           "name": "code_refs",
-          "type": "json",
+          "type": "feature.code_ref[]",
           "description": "component, file, symbol, role"
         },
         {
           "name": "tickets",
           "type": "string[]"
+        },
+        {
+          "name": "screens",
+          "type": "feature.screen[]",
+          "description": "screenshots for the spec"
         }
       ]
     },
@@ -146,13 +151,23 @@
         },
         {
           "name": "fields",
-          "type": "json",
+          "type": "business_object.field[]",
           "description": "name, type, description"
         },
         {
           "name": "tables",
           "type": "json?",
           "description": "Physical tables (from Prisma)"
+        },
+        {
+          "name": "kind",
+          "type": "enum<entity|value|computed>?",
+          "description": "default entity"
+        },
+        {
+          "name": "computedBy",
+          "type": "feature[]",
+          "description": "features that produce a computed object"
         }
       ]
     },
@@ -197,5 +212,18 @@
   "workflows": [
     "agent.plan_change"
   ],
-  "issues": []
+  "issues": [
+    {
+      "severity": "warning",
+      "intended": "error",
+      "check": "design",
+      "code": "requirement_not_covered",
+      "kind": "feature",
+      "id": "mcp.catalog.read",
+      "field": "requirements[1]",
+      "message": "Requirement R2 has no acceptance criterion. Add one with covers: [R2].",
+      "file": "/Users/ra/git/product-creator/docs/product/mcp/features/mcp/catalog.read.yml",
+      "component": "5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64"
+    }
+  ]
 }

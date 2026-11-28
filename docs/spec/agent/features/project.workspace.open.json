@@ -92,17 +92,17 @@
         },
         {
           "name": "goals",
-          "type": "json",
+          "type": "project.goal[]",
           "description": "G1… with text"
         },
         {
           "name": "actors",
-          "type": "json",
+          "type": "project.actor[]",
           "description": "id, name, description"
         },
         {
           "name": "glossary",
-          "type": "json"
+          "type": "project.glossary_term[]"
         },
         {
           "name": "tracker",
@@ -116,5 +116,42 @@
   "workflows": [
     "project.onboard"
   ],
-  "issues": []
+  "issues": [
+    {
+      "severity": "warning",
+      "intended": "error",
+      "check": "design",
+      "code": "requirement_not_covered",
+      "kind": "feature",
+      "id": "project.workspace.open",
+      "field": "requirements[1]",
+      "message": "Requirement R2 has no acceptance criterion. Add one with covers: [R2].",
+      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/project/workspace.open.yml",
+      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
+    },
+    {
+      "severity": "warning",
+      "intended": "error",
+      "check": "design",
+      "code": "open_questions_left",
+      "kind": "feature",
+      "id": "project.workspace.open",
+      "field": "open_questions",
+      "message": "1 open question(s) on an implemented feature (Q1). Answer them (turn them into decisions), or set the feature back to draft.",
+      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/project/workspace.open.yml",
+      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
+    },
+    {
+      "severity": "info",
+      "intended": "warning",
+      "check": "design",
+      "code": "acceptance_without_verify",
+      "kind": "feature",
+      "id": "project.workspace.open",
+      "field": "acceptance[0]",
+      "message": "Acceptance A1 has no verify: add the command or test that checks it.",
+      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/project/workspace.open.yml",
+      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
+    }
+  ]
 }

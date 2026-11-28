@@ -1,8 +1,9 @@
 id: feature
 name: Feature
-description: 'A business capability: features/<context>/<entity>.<action>.yml'
 owner: atai
 lifecycle: implemented
+description: 'A business capability: features/<context>/<entity>.<action>.yml'
+active: true
 fields:
   - name: id
     type: string
@@ -16,24 +17,28 @@ fields:
   - name: calls
     type: feature[]
   - name: objects
-    type: business_object[]
+    type: feature.object_ref[]
     description: With access read | write
   - name: source_file
     type: string?
   - name: actors
     type: string[]
   - name: requirements
-    type: json
+    type: feature.requirement[]
   - name: acceptance
-    type: json
+    type: feature.acceptance[]
   - name: constraints
-    type: json
+    type: feature.constraint[]
   - name: decisions
-    type: json
+    type: feature.decision[]
   - name: open_questions
-    type: json
+    type: feature.question[]
   - name: code_refs
-    type: json
+    type: feature.code_ref[]
     description: component, file, symbol, role
   - name: tickets
     type: string[]
+  - name: screens
+    type: feature.screen[]
+    description: screenshots for the spec
+tables: []

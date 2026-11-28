@@ -5,13 +5,15 @@ entity: openapi
 action: generate
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Runs the OpenAPI generate command of a component and reloads its operations.
 source_file: interfaces/generator.ts
 objects:
   - id: component
     access: read
-  - id: interface_operation
-    access: write
 requirements:
   - id: R1
     text: The command runs in the component folder with the login shell PATH

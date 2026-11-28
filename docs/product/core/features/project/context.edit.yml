@@ -10,7 +10,7 @@ emits: []
 consumes: []
 apis: []
 description: 'Vision, goals, actors, glossary and tracker of a project, stored in product-creator.yml: the first part of a spec.'
-source_file: renderer/src/pages/workspace.tsx
+source_file: project/model.ts
 objects:
   - id: project
     access: write
@@ -42,3 +42,12 @@ screens:
   - id: S1
     title: Workspace with the project and its components
     path: /workspace
+code_refs:
+  - component: desktop
+    file: renderer/src/pages/workspace.tsx
+    symbol: ProjectForm
+    role: UI
+  - component: mcp
+    file: tools.ts
+    symbol: update_project
+    role: MCP

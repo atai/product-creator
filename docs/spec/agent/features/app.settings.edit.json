@@ -1,0 +1,96 @@
+{
+  "kind": "feature",
+  "component": "desktop",
+  "feature": {
+    "id": "app.settings.edit",
+    "name": "Edit the app settings",
+    "bounded_context": "app",
+    "entity": "settings",
+    "action": "edit",
+    "lifecycle": "implemented",
+    "description": "Settings: run the MCP server, its scope, port and token; remote access through the relay.",
+    "source_file": "renderer/src/pages/settings.tsx",
+    "objects": [
+      {
+        "id": "mcp_settings",
+        "access": "write"
+      }
+    ],
+    "actors": [
+      "product_owner",
+      "developer"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "The token is generated once and kept in the app data folder (mode 0600)"
+      },
+      {
+        "id": "R2",
+        "text": "Changing scope or token ends the open agent sessions"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "SettingsStore generates, keeps and regenerates the token",
+        "verify": "pnpm --filter desktop test -- settings"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R2"
+        ],
+        "text": "A token change ends local sessions",
+        "verify": "pnpm --filter @pc/mcp test -- server"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "desktop",
+        "file": "main/settings.ts",
+        "role": "storage"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-18",
+      "PRODUCTCREATOR-20"
+    ]
+  },
+  "objects": [
+    {
+      "id": "mcp_settings",
+      "access": "write",
+      "name": "MCP settings",
+      "fields": [
+        {
+          "name": "enabled",
+          "type": "boolean"
+        },
+        {
+          "name": "scope",
+          "type": "enum<read|write>"
+        },
+        {
+          "name": "port",
+          "type": "int"
+        },
+        {
+          "name": "token",
+          "type": "string",
+          "description": "Bearer token"
+        },
+        {
+          "name": "relayEnabled",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

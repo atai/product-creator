@@ -369,17 +369,20 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Validate the catalog',
       description:
-        'Model problems of a project: workflow steps/compensations and feature calls that are not features, feature objects that are not business objects, business-object field types that are neither scalars nor objects, duplicate ids and names, id patterns, schemas. Streams are not checked.',
-      input: { project: projectArg, component: componentArg.optional(), severity: z.enum(['error', 'warning']).optional(), limit: z.number().int().min(1).max(MAX_LIST).optional() },
+        'Model problems of a project: references (calls, steps, objects, field types, computedBy, stream workflows), duplicates, id patterns, schemas, and design checks (check: design — architecture vs dependsOn, cycles, events, object usage and kinds, lifecycle consistency, completeness of agreed features, code links, OpenAPI, actors, streams). Design checks are advisory by default: reported one level below their intended severity (`intended`), info for hints; they block nothing unless checks.mode is strict. `severity` filters: error, warning (errors too), info (everything).',
+      input: { project: projectArg, component: componentArg.optional(), severity: z.enum(['error', 'warning', 'info']).optional(), limit: z.number().int().min(1).max(MAX_LIST).optional() },
     },
     async ({ project, component, severity, limit }) => {
       const p = resolveProject(host, project);
       const c = component ? resolveComponent(p, component) : undefined;
       const res = (await api(host, 'GET', `/api/validation${c ? `?app=${encodeURIComponent(c.id)}` : ''}`)) as { issues: Issue[] };
-      const issues = projectView(p, res.issues).filter((i) => !severity || i.severity === severity);
+      const all = projectView(p, res.issues);
+      const rank: Record<string, number> = { error: 0, warning: 1, info: 2 };
+      const issues = all.filter((i) => !severity || rank[i.severity] <= rank[severity]).sort((a, b) => rank[a.severity] - rank[b.severity]);
       return {
-        errors: issues.filter((i) => i.severity === 'error').length,
-        warnings: issues.filter((i) => i.severity === 'warning').length,
+        errors: all.filter((i) => i.severity === 'error').length,
+        warnings: all.filter((i) => i.severity === 'warning').length,
+        infos: all.filter((i) => i.severity === 'info').length,
         issues: issues.slice(0, limit ?? DEFAULT_LIST),
       };
     }

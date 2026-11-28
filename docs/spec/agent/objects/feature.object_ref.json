@@ -1,0 +1,26 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "feature.object_ref",
+    "name": "Object use",
+    "description": "A business object a feature reads or writes",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "kind": "value",
+    "active": true,
+    "fields": [
+      {
+        "name": "id",
+        "type": "business_object",
+        "description": "business object id"
+      },
+      {
+        "name": "access",
+        "type": "enum<read|write>"
+      }
+    ]
+  },
+  "usedBy": [],
+  "issues": []
+}

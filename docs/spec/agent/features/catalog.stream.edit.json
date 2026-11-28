@@ -14,13 +14,29 @@
       {
         "id": "R1",
         "text": "Streams are saved as YAML in streams/"
+      },
+      {
+        "id": "R2",
+        "text": "A stage runs existing workflows and waits for events something emits"
       }
     ],
-    "open_questions": [
+    "acceptance": [
       {
-        "id": "Q1",
-        "question": "Streams are not validated and not used by any other entity: keep, validate, or drop them?",
-        "owner": "atai"
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2"
+        ],
+        "text": "Stream schema, unknown workflows and unknown stage events are reported",
+        "verify": "pnpm --filter @pc/core test -- design"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "Streams stay and are validated: schema, stage workflows, stage events",
+        "reason": "They describe the business process the workflows serve",
+        "date": "2026-11-28"
       }
     ],
     "code_refs": [
@@ -31,7 +47,8 @@
       }
     ],
     "tickets": [
-      "PRODUCTCREATOR-7"
+      "PRODUCTCREATOR-7",
+      "PRODUCTCREATOR-34"
     ]
   },
   "objects": [],

@@ -98,17 +98,17 @@
         },
         {
           "name": "goals",
-          "type": "json",
+          "type": "project.goal[]",
           "description": "G1… with text"
         },
         {
           "name": "actors",
-          "type": "json",
+          "type": "project.actor[]",
           "description": "id, name, description"
         },
         {
           "name": "glossary",
-          "type": "json"
+          "type": "project.glossary_term[]"
         },
         {
           "name": "tracker",
@@ -176,5 +176,18 @@
       "exists": true
     }
   ],
-  "issues": []
+  "issues": [
+    {
+      "severity": "warning",
+      "intended": "error",
+      "check": "design",
+      "code": "requirement_not_covered",
+      "kind": "feature",
+      "id": "project.component.edit",
+      "field": "requirements[0]",
+      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
+      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/project/component.edit.yml",
+      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
+    }
+  ]
 }

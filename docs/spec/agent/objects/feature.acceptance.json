@@ -1,0 +1,49 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "feature.acceptance",
+    "name": "Acceptance criterion",
+    "description": "How to check that a feature is done",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "kind": "value",
+    "active": true,
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "description": "A1, A2, …"
+      },
+      {
+        "name": "covers",
+        "type": "string[]",
+        "description": "requirement ids"
+      },
+      {
+        "name": "given",
+        "type": "text?"
+      },
+      {
+        "name": "when",
+        "type": "text?"
+      },
+      {
+        "name": "then",
+        "type": "text?"
+      },
+      {
+        "name": "text",
+        "type": "text?",
+        "description": "when given/when/then does not fit"
+      },
+      {
+        "name": "verify",
+        "type": "string?",
+        "description": "command or test that checks it"
+      }
+    ]
+  },
+  "usedBy": [],
+  "issues": []
+}

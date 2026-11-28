@@ -1,8 +1,9 @@
 id: validation_issue
 name: Validation issue
-description: A problem of the model found by validation (not stored; computed)
 owner: atai
 lifecycle: implemented
+description: A problem of the model found by validation (not stored; computed)
+active: true
 fields:
   - name: severity
     type: enum<error|warning>
@@ -22,3 +23,7 @@ fields:
     type: string?
   - name: component
     type: component?
+tables: []
+kind: computed
+computedBy:
+  - validation.model.validate

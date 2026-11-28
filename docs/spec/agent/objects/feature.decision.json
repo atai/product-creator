@@ -1,0 +1,38 @@
+{
+  "kind": "business_object",
+  "component": "core",
+  "object": {
+    "id": "feature.decision",
+    "name": "Decision",
+    "description": "What was decided for a feature and why",
+    "owner": "atai",
+    "lifecycle": "implemented",
+    "kind": "value",
+    "active": true,
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "description": "D1, …"
+      },
+      {
+        "name": "decision",
+        "type": "text"
+      },
+      {
+        "name": "reason",
+        "type": "text?"
+      },
+      {
+        "name": "date",
+        "type": "date?"
+      },
+      {
+        "name": "status",
+        "type": "enum<accepted|superseded>?"
+      }
+    ]
+  },
+  "usedBy": [],
+  "issues": []
+}
