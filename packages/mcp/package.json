@@ -1,6 +1,6 @@
 {
   "name": "@pc/mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Product Creator MCP server (Streamable HTTP, bearer token, scopes) and the client of the Emperor MCP relay (pc-relay.v1)",
   "type": "module",

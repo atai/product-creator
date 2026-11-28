@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-28
+
+### Changed
+- Refactor screenshot capture functionality and update documentation ([d4d8686](https://github.com/atai/product-creator/commit/d4d868604089ee4b70b955239d74732dde42b7d6))
+- PRODUCTCREATOR-34 Clear all catalog warnings: acceptance with real verify tests, answered questions, requirements matched to code; fix verify filter syntax. ([8eff65c](https://github.com/atai/product-creator/commit/8eff65c5da3c056ccd136b1f01ece525b23ae07d))
+- PRODUCTCREATOR-34 Design checks (advisory by default, strict and per-check overrides), info level, streams validated, Prisma enums, plan move; catalog fixes from dogfooding. ([5edbbfe](https://github.com/atai/product-creator/commit/5edbbfe586f0510091e59ad79826fbd1b6a465a9))
+
 ## [0.2.0] - 2026-11-28
 
 ### Added
