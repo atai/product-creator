@@ -49,6 +49,7 @@ export const DESIGN_CHECKS = {
   stream_stage_not_implemented: { intended: 'error', title: 'An implemented stream has a stage whose features or workflows are not implemented' },
   unknown_performer: { intended: 'error', title: 'A stream stage is performed by someone the project does not define' },
   stage_without_work: { intended: 'warning', title: 'A stream stage names no feature, workflow or performer' },
+  library_emits: { intended: 'error', title: 'A library declares runtime events (a library runs inside a service)' },
   translation_stale: { intended: 'warning', title: 'The primary text changed after it was translated' },
   translation_orphan: { intended: 'warning', title: 'A translation of an item that no longer exists' },
   translation_unknown_language: { intended: 'warning', title: 'A translation into a language the project does not have' },
@@ -159,6 +160,13 @@ export function designIssues(model: CatalogModel, context: DesignContext): Valid
   for (const st of streams) for (const stage of st.data.stages ?? []) [...(stage.entry_events ?? []), ...(stage.exit_events ?? [])].forEach((ev) => consumed.add(ev));
   // external systems of the product context emit and consume events too (PRODUCTCREATOR-43)
   for (const project of context.projects) {
+    // runtime events of running components: unhandled errors, start, scheduled jobs (PRODUCTCREATOR-43)
+    for (const component of project.components) {
+      (component.emits ?? []).forEach((ev, i) => {
+        if (component.kind === 'library') add('library_emits', { kind: 'component', id: component.slug, component: component.id }, `emits[${i}]`, `The library ${component.slug} declares the event "${ev}", but a library runs inside a service. Declare it on the service that loads the library.`);
+        else emitted.add(ev);
+      });
+    }
     for (const system of project.systems ?? []) {
       (system.emits ?? []).forEach((ev) => emitted.add(ev));
       (system.consumes ?? []).forEach((ev) => consumed.add(ev));

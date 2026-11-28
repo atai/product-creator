@@ -63,6 +63,8 @@ export interface ComponentModel {
   openapiGenerate?: OpenApiGenerate;
   /** UUIDs of components (usually libraries) this component depends on */
   dependsOn?: string[];
+  /** Events the running component emits by itself, not through a feature: unhandled errors, start, scheduled jobs (PRODUCTCREATOR-43). Services only: a library runs inside a service */
+  emits?: string[];
   /** Catalog folder relative to root = folder of the component file (derived, not stored) */
   catalog: string;
 }
@@ -338,6 +340,7 @@ export function readComponentFile(root: string, file: string, kind: ComponentKin
     openapi: parseOpenApi(raw.openapi).specs,
     openapiGenerate: parseOpenApi(raw.openapi).generate,
     dependsOn: asList(raw.dependsOn),
+    emits: asList(raw.emits),
     catalog,
   };
 }
@@ -551,6 +554,7 @@ export function componentFileContent(c: ComponentModel): string {
       ? { spec: c.openapi?.length === 1 ? c.openapi[0] : c.openapi, generate: stripUndefined({ ...c.openapiGenerate }) }
       : c.openapi,
     dependsOn: c.dependsOn,
+    emits: c.emits,
   });
 }
 
@@ -779,6 +783,8 @@ export function saveComponent(rootDir: string, input: ComponentInput): Component
   (input.openapi ?? []).filter((s) => s.trim()).forEach((s) => assertInsideRoot(s.trim(), 'OpenAPI spec path'));
   const ids = new Set(project.components.map((c) => c.id));
   const dependsOn = (input.dependsOn ?? []).filter((d) => ids.has(d) && d !== input.id);
+  const emits = asList((input.emits ?? []).map((e) => e.trim()).filter(Boolean));
+  for (const e of emits ?? []) if (!EVENT_NAME.test(e)) throw new Error(`Event "${e}" must be dotted a-z, 0-9, _ (e.g. app.error.raised)`);
 
   const current = input.id ? project.components.find((c) => c.id === input.id) : undefined;
   if (input.id && !current) throw new Error(`Component ${input.id} not found`);
@@ -798,6 +804,7 @@ export function saveComponent(rootDir: string, input: ComponentInput): Component
     openapi: asList((input.openapi ?? []).map((s) => s.trim())),
     openapiGenerate,
     dependsOn: dependsOn.length ? dependsOn : undefined,
+    emits,
     catalog,
   };
   writeComponentFile(project, component);

@@ -183,4 +183,13 @@ describe('design checks (PRODUCTCREATOR-34)', () => {
     // an unstamped translation already in the model is still reported
     expect(validateModel(model({ features: [f] }, project(undefined, { languages: ['en', 'ru'] }))).map((i) => i.code)).toContain('translation_stale');
   });
+
+  it('runtime events of a service count as emitted; a library cannot declare them (PRODUCTCREATOR-43)', () => {
+    const base = project();
+    const p = { ...base, components: [{ ...base.components[0], emits: ['core.started'] }, { ...base.components[1], emits: ['app.error.raised'] }] };
+    const stream: Stream = { stream: 'app.errors', name: 'Errors', goal: 'g', lifecycle: 'draft', stages: [{ id: 'ST1', name: 'Raised', entry_events: ['app.error.raised'], exit_events: ['app.error.raised'], performed_by: ['t'] }] };
+    const found = codes(design(model({ streams: [{ data: stream, component: 'app' }] }, p)));
+    expect(found.filter((c) => c.startsWith('stream_event_unknown'))).toEqual([]);
+    expect(found).toContain('library_emits:core:emits[0]');
+  });
 });
