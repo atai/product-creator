@@ -120,7 +120,9 @@ The capturer writes each image to ``<output>/<file>`` and a result ``<output>/sc
 
 **When.** ``product-creator spec`` captures first when ``screenshots`` is configured; ``--no-screens``
 uses the images that are there. In the app: **Doc → Capture screenshots** (with the log and *Cancel*).
-Agents: MCP ``capture_screens``. The images are written to ``<spec.output>/screens`` and committed with
+Agents: MCP ``capture_screens``. Quitting the app during a capture cancels it but waits until the
+background services are stopped and the teardown commands have run (up to their timeouts); a
+notification says so. The images are written to ``<spec.output>/screens`` and committed with
 the spec.
 
 **In the spec** each screenshot appears under its feature with its caption. A declared screen without an
