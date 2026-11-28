@@ -1,9 +1,7 @@
-import Ajv from 'ajv';
-import featureSchema from '../../../../schema/feature.schema.json';
+import { validators } from '../../../validation/schemas';
 import logger from '../../../logger';
 
-const ajv = new Ajv();
-const validate = ajv.compile(featureSchema);
+const validate = validators.feature;
 
 export async function POST(request: Request) {
   try {

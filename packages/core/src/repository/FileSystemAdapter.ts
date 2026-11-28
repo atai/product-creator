@@ -42,7 +42,8 @@ export class FileSystemAdapter {
   loadYamlFile<T>(filePath: string): T | null {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
-      return yaml.load(content) as T;
+      // CORE_SCHEMA: no timestamp type, so `date: 2026-11-28` stays the string the schema expects (not a Date)
+      return yaml.load(content, { schema: yaml.CORE_SCHEMA }) as T;
     } catch (error) {
       logger.error('Failed to load YAML file', { filePath, error });
       return null;

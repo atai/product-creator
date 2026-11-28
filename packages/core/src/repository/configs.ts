@@ -7,6 +7,15 @@ export const FEATURES_DIR = 'features';
 /** Old folder name, still read so that existing catalogs keep working; `migrateFeatureFolders` moves it */
 export const LEGACY_FEATURES_DIR = 'functions';
 
+/** Feature fields with their own row column; every other field of the card goes to the `extra` column */
+const FEATURE_COLUMNS = new Set(['id', 'name', 'bounded_context', 'entity', 'action', 'owner', 'lifecycle', 'tags', 'emits', 'consumes', 'apis', 'description', 'source_file', 'calls', 'objects', 'filePath']);
+
+/** Fields without a column (spec fields of PRODUCTCREATOR-32 and any field added later), so that reading a card never drops them */
+function extraFields(entity: Feature): string | undefined {
+  const extra = Object.fromEntries(Object.entries(entity).filter(([k, v]) => !FEATURE_COLUMNS.has(k) && v !== undefined));
+  return Object.keys(extra).length ? JSON.stringify(extra) : undefined;
+}
+
 /**
  * Configuration for the Feature repository
  */
@@ -55,10 +64,12 @@ export const featureConfig: EntityConfig<Feature> = {
     ...(entity.source_file ? { source_file: entity.source_file } : {}),
     ...(entity.calls?.length ? { calls: JSON.stringify(entity.calls) } : {}),
     ...(entity.objects?.length ? { objects: JSON.stringify(entity.objects) } : {}),
+    ...(extraFields(entity) ? { extra: extraFields(entity) } : {}),
     filePath,
   }),
 
   fromRow: (row) => ({
+    ...(row.extra ? (JSON.parse(row.extra as string) as Partial<Feature>) : {}),
     id: row.id as string,
     name: row.name as string,
     bounded_context: row.bounded_context as string,

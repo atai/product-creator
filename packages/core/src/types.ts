@@ -1,4 +1,12 @@
 /**
+ * Lifecycle of a feature or business object (PRODUCTCREATOR-32). Each status has its own rules (PRODUCTCREATOR-34):
+ * draft — being worked out; approved — spec agreed, ready to build; implemented — in the code;
+ * deprecated — still in the code, not for new work; removed — gone from the code, kept for history.
+ */
+export const LIFECYCLES = ['draft', 'approved', 'implemented', 'deprecated', 'removed'] as const;
+export type Lifecycle = (typeof LIFECYCLES)[number];
+
+/**
  * Feature: a business capability of the product (PRODUCTCREATOR-28; formerly "function card").
  * Stored in `<catalog>/features/<bounded_context>/<entity>.<action>.yml`; the old folder `functions/` is still read.
  * The implementation in code is `source_file` (file) and `calls` (features used by that code).
@@ -10,7 +18,7 @@ export interface Feature {
   entity: string;
   action: string;
   owner: string;
-  lifecycle: 'draft' | 'active' | 'deprecated' | 'removed';
+  lifecycle: Lifecycle;
   tags?: string[];
   emits?: string[];
   consumes?: string[];
@@ -23,7 +31,66 @@ export interface Feature {
   source_file?: string;
   /** Business objects the feature uses (PRODUCTCREATOR-29); each id must be a business object of the catalog */
   objects?: FeatureObjectRef[];
+  // Spec fields (PRODUCTCREATOR-32): what the feature must do. Item ids are local to the feature (R1, A1, …)
+  /** Who uses the feature: roles of people or systems */
+  actors?: string[];
+  requirements?: FeatureRequirement[];
+  acceptance?: FeatureAcceptance[];
+  constraints?: FeatureConstraint[];
+  decisions?: FeatureDecision[];
+  open_questions?: FeatureQuestion[];
 }
+
+export interface FeatureRequirement {
+  /** R1, R2, … */
+  id: string;
+  text: string;
+  /** MoSCoW; default must */
+  priority?: 'must' | 'should' | 'could';
+}
+
+/** Acceptance criterion: given/when/then, or text */
+export interface FeatureAcceptance {
+  /** A1, A2, … */
+  id: string;
+  /** Requirement ids this criterion checks */
+  covers?: string[];
+  given?: string;
+  when?: string;
+  then?: string;
+  text?: string;
+  /** Command or test reference that verifies the criterion */
+  verify?: string;
+}
+
+export interface FeatureConstraint {
+  /** C1, C2, … */
+  id: string;
+  kind?: 'performance' | 'security' | 'reliability' | 'compatibility' | 'usability' | 'compliance' | 'other';
+  text: string;
+}
+
+export interface FeatureDecision {
+  /** D1, D2, … */
+  id: string;
+  decision: string;
+  reason?: string;
+  /** YYYY-MM-DD */
+  date?: string;
+  /** default accepted */
+  status?: 'accepted' | 'superseded';
+}
+
+export interface FeatureQuestion {
+  /** Q1, Q2, … */
+  id: string;
+  question: string;
+  owner?: string;
+}
+
+/** Spec lists of a feature, in the order they appear in a spec */
+export const FEATURE_SPEC_LISTS = ['requirements', 'acceptance', 'constraints', 'decisions', 'open_questions'] as const;
+export type FeatureSpecList = (typeof FEATURE_SPEC_LISTS)[number];
 
 export interface FeatureObjectRef {
   /** Business object id */
@@ -97,7 +164,7 @@ export interface BusinessObject {
   name: string;
   description?: string;
   owner: string;
-  lifecycle: 'draft' | 'active' | 'deprecated' | 'removed';
+  lifecycle: Lifecycle;
   active?: boolean;
   fields: BusinessObjectField[];
   tables?: BusinessObjectTable[];

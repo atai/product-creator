@@ -7,6 +7,7 @@ import FeatureForm from '@/components/FeatureForm';
 import Link from 'next/link';
 import FormHelpHint from '@/components/FormHelpHint';
 import ImpactPanel from '@/components/ImpactPanel';
+import FeatureSpecView from '../components/FeatureSpecView';
 
 export default function FeatureDetail() {
   const params = useParams();
@@ -121,6 +122,8 @@ export default function FeatureDetail() {
                   <p className="text-fg-2">{feature.description}</p>
                 </div>
               )}
+
+              <FeatureSpecView feature={feature} />
 
               {feature.tags && feature.tags.length > 0 && (
                 <div className="mt-6">

@@ -19,7 +19,7 @@ function write(rel: string, content: string | object) {
 }
 const card = (id: string, name = id) => {
   const [ctx, entity, action] = id.split('.');
-  return `id: ${id}\nname: ${name}\nbounded_context: ${ctx}\nentity: ${entity}\naction: ${action}\nowner: team\nlifecycle: active\n`;
+  return `id: ${id}\nname: ${name}\nbounded_context: ${ctx}\nentity: ${entity}\naction: ${action}\nowner: team\nlifecycle: implemented\n`;
 };
 
 async function load() {
@@ -103,6 +103,28 @@ describe('features folder (PRODUCTCREATOR-28)', () => {
   }, 20000);
 });
 
+describe('feature spec fields in storage (PRODUCTCREATOR-32)', () => {
+  const spec = 'actors: [AI agent]\nrequirements:\n  - id: R1\n    text: Check a plan\nacceptance:\n  - id: A1\n    covers: [R1, R9]\n    then: ok is false\nopen_questions:\n  - id: Q1\n    question: Relax ids?\ndecisions:\n  - id: D1\n    decision: Core validates\n    date: 2026-11-28\n';
+
+  it('reads spec fields, validates them and keeps them when the card is saved back', async () => {
+    write(path.join(project.components[0].catalog, 'features/orders/order.create.yml'), card('orders.order.create') + spec);
+    const storage = await load();
+    const feature = storage.getFeatureById('orders.order.create')!;
+    expect(feature.requirements).toEqual([{ id: 'R1', text: 'Check a plan' }]);
+    expect(feature.open_questions?.[0].question).toBe('Relax ids?');
+    expect(validateModel(storage.modelSnapshot()).map((i) => i.code)).toEqual(['unknown_requirement']);
+
+    await storage.saveFeature({ ...feature, name: 'Create order' }, catalog);
+    const saved = fs.readFileSync(path.join(catalog, 'features/orders/order.create.yml'), 'utf8');
+    expect(saved).toContain('requirements:');
+    expect(saved).toContain('covers:');
+    expect(storage.getFeatureById('orders.order.create')?.actors).toEqual(['AI agent']);
+    // a YAML date stays a YYYY-MM-DD string through read and save (no Date / ISO timestamp)
+    expect(storage.getFeatureById('orders.order.create')?.decisions?.[0].date).toBe('2026-11-28');
+    expect(saved).not.toContain('T00:00:00');
+  });
+});
+
 describe('file watcher', () => {
   it('picks up files written outside the app, also in a features/ folder created later', async () => {
     write(path.join(project.components[0].catalog, 'functions/orders/order.create.yml'), card('orders.order.create'));
@@ -130,12 +152,12 @@ describe('save guard (PRODUCTCREATOR-29)', () => {
     const body = (await wf.json()) as { issues: { code: string }[] };
     expect(body.issues[0].code).toBe('unknown_feature');
 
-    const feature = { id: 'orders.order.create', name: 'Create order', bounded_context: 'orders', entity: 'order', action: 'create', owner: 'team', lifecycle: 'active', objects: [{ id: 'order', access: 'write' }] };
+    const feature = { id: 'orders.order.create', name: 'Create order', bounded_context: 'orders', entity: 'order', action: 'create', owner: 'team', lifecycle: 'implemented', objects: [{ id: 'order', access: 'write' }] };
     const missingObject = await post('/api/save-feature', { data: feature, appId });
     expect(missingObject.status).toBe(400);
     expect(await missingObject.text()).toContain('unknown_object');
 
-    const bo = await post('/api/save-business-object', { businessObject: { id: 'order', name: 'Order', owner: 'team', lifecycle: 'active', fields: [{ name: 'id', type: 'string' }] }, appId });
+    const bo = await post('/api/save-business-object', { businessObject: { id: 'order', name: 'Order', owner: 'team', lifecycle: 'implemented', fields: [{ name: 'id', type: 'string' }] }, appId });
     expect(bo.status).toBe(200);
     expect((await post('/api/save-feature', { data: feature, appId })).status).toBe(201);
     expect((await post('/api/save-workflow', { workflow: { workflow: 'orders.checkout', steps: ['orders.order.create'] }, appId })).status).toBe(200);

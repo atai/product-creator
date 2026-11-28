@@ -2,7 +2,13 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "Business Object Schema",
-  "required": ["id", "name", "owner", "lifecycle", "fields"],
+  "required": [
+    "id",
+    "name",
+    "owner",
+    "lifecycle",
+    "fields"
+  ],
   "properties": {
     "id": {
       "type": "string",
@@ -25,8 +31,14 @@
     },
     "lifecycle": {
       "type": "string",
-      "enum": ["draft", "active", "deprecated", "removed"],
-      "description": "Lifecycle state"
+      "enum": [
+        "draft",
+        "approved",
+        "implemented",
+        "deprecated",
+        "removed"
+      ],
+      "description": "draft: being worked out; approved: spec agreed, ready to build; implemented: in the code; deprecated: still in the code, do not use in new work; removed: gone from the code, kept for history"
     },
     "active": {
       "type": "boolean",
@@ -37,7 +49,10 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["name", "type"],
+        "required": [
+          "name",
+          "type"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -62,7 +77,9 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -76,7 +93,10 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["name", "type"],
+              "required": [
+                "name",
+                "type"
+              ],
               "properties": {
                 "name": {
                   "type": "string",
@@ -102,7 +122,3 @@
   },
   "additionalProperties": false
 }
-
-
-
-

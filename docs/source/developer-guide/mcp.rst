@@ -62,7 +62,8 @@ sets ``skip`` for ``delete`` actions unless ``allow_delete``.
 Plan-check tools (``validate_catalog``, ``validate_plan``, ``impact_of_change``, ``find_duplicates``,
 ``get_object``) call ``/api/validation``, ``/api/validate-plan``, ``/api/impact``, ``/api/duplicates``.
 ``projectView`` maps component ids to slugs and files to project-relative paths. A rejected write
-returns the error text plus the ``issues`` of the 400 response.
+returns the error text plus the ``issues`` of the 400 response. ``get_schema`` returns the schemas from
+``@pc/core/validation/schemas`` directly (no HTTP call).
 
 To add a tool: call ``define`` (mark ``write: true`` if it changes anything), keep the output compact,
 add a case to ``packages/mcp/test/server.test.ts`` and a row to the User Docs table.

@@ -30,15 +30,13 @@ functions in code.
 
 .. code-block:: yaml
 
-.. code-block:: yaml
-
    id: crm.contacts.create
    name: Create contact
    bounded_context: crm
    entity: contacts
    action: create
    owner: sales-team
-   lifecycle: active            # draft | active | deprecated | removed
+   lifecycle: implemented       # draft | approved | implemented | deprecated | removed
    description: Creates a CRM contact
    tags: [crm]
    emits: [contact.created]     # events → dependency graph
@@ -55,6 +53,57 @@ functions in code.
 ``source_file`` and ``calls`` are the link to the implementation; :doc:`sync` fills them in.
 ``objects`` drives impact analysis: a change of a business object shows the features and workflows it
 affects.
+
+.. _feature-spec:
+
+Spec of a feature
+~~~~~~~~~~~~~~~~~
+
+The same file holds what the feature must do: the content of the specification (ТЗ) for people and
+agents. All spec fields are optional; fill them as the feature matures.
+
+.. code-block:: yaml
+
+   actors: [sales manager, CRM import job]   # who uses the feature
+   requirements:                # one testable statement per item
+     - id: R1
+       text: A manager creates a contact with name and e-mail
+       priority: must           # must | should | could (default must)
+     - id: R2
+       text: A duplicate e-mail is rejected with a message naming the existing contact
+   acceptance:                  # how to check that it is done
+     - id: A1
+       covers: [R1]             # requirement ids this criterion checks
+       given: a manager on the contacts page
+       when: they submit name and e-mail
+       then: the contact is listed and contact.created is emitted
+       verify: pnpm test -- contacts.create   # command or test that checks it (for agents)
+     - id: A2
+       covers: [R2]
+       text: Creating a contact with an existing e-mail returns 409 and the existing id
+   constraints:                 # non-functional, measurable where possible
+     - id: C1
+       kind: performance        # performance | security | reliability | compatibility | usability | compliance | other
+       text: Responds in under 300 ms for 100k contacts
+   decisions:                   # what was decided and why
+     - id: D1
+       decision: E-mail is unique per workspace, not globally
+       reason: Agencies manage several clients with the same contacts
+       date: 2026-11-28
+       status: accepted         # accepted | superseded
+   open_questions:              # not answered yet; an answered question becomes a decision
+     - id: Q1
+       question: Merge duplicates automatically on import?
+       owner: product
+
+Item ids are local to the feature and use a fixed prefix per list: ``R``, ``A``, ``C``, ``D``,
+``Q`` followed by a number. Elsewhere they are referenced as ``<feature id>#R1``. Do not reuse the id
+of a removed item. An acceptance criterion has ``then`` (with ``given`` / ``when``) or a one-sentence
+``text``.
+
+The feature form has a **Spec** section for these lists, and the feature page shows them. In the JSON
+Schema every field is marked ``x-audience: human | agent | both``: the generated document for people
+leaves out agent-only fields such as ``verify`` and ``source_file``.
 
 Old ``functions/`` folders
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -128,6 +177,12 @@ can plan something that cannot be built:
    * - ``compensation_not_in_steps``
      - warning
      - A workflow compensates a step it does not have
+   * - ``duplicate_item_id``
+     - error
+     - Two items of one spec list of a feature (requirements, acceptance …) have the same id
+   * - ``unknown_requirement``
+     - error
+     - An acceptance criterion ``covers`` a requirement id that the feature does not have
 
 Streams are not validated yet.
 

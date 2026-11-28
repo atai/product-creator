@@ -1,8 +1,6 @@
-import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
-import featureSchema from '../../schema/feature.schema.json';
-import workflowSchema from '../../schema/workflow.schema.json';
-import businessObjectSchema from '../../schema/business-object.schema.json';
-import type { BusinessObject, Feature, Workflow } from '../types';
+import type { ErrorObject } from 'ajv';
+import { validators } from './schemas';
+import { FEATURE_SPEC_LISTS, type BusinessObject, type Feature, type Workflow } from '../types';
 
 /**
  * Model validation (PRODUCTCREATOR-29): the catalog must not describe something that cannot be implemented.
@@ -10,7 +8,8 @@ import type { BusinessObject, Feature, Workflow } from '../types';
  *
  *   errors    schema, id pattern, id ≠ <bounded_context>.<entity>.<action>, duplicate ids,
  *             workflow steps / compensations and feature calls → unknown feature,
- *             feature objects → unknown business object, business-object field type → unknown type
+ *             feature objects → unknown business object, business-object field type → unknown type,
+ *             spec items (requirements, acceptance, …) with the same id, acceptance covering an unknown requirement
  *   warnings  duplicate names (features of one component, business objects of one component)
  *
  * Streams are not validated. References are resolved across all loaded projects.
@@ -43,7 +42,9 @@ export type IssueCode =
   | 'unknown_feature'
   | 'unknown_object'
   | 'unknown_type'
-  | 'compensation_not_in_steps';
+  | 'compensation_not_in_steps'
+  | 'duplicate_item_id'
+  | 'unknown_requirement';
 
 export interface ValidationIssue {
   severity: 'error' | 'warning';
@@ -57,13 +58,6 @@ export interface ValidationIssue {
   file?: string;
   component?: string;
 }
-
-const ajv = new Ajv({ allErrors: true });
-const validators: Record<EntityKind, ValidateFunction> = {
-  feature: ajv.compile(featureSchema),
-  workflow: ajv.compile(workflowSchema),
-  business_object: ajv.compile(businessObjectSchema),
-};
 
 const KINDS = new Set<EntityKind>(['feature', 'workflow', 'business_object']);
 
@@ -85,11 +79,24 @@ function plain(kind: EntityKind, data: unknown): unknown {
   return copy;
 }
 
+/** Human message for one schema error: anyOf of `required` → "needs one of …", pattern → the field's description */
+function schemaMessage(e: ErrorObject): string {
+  const parent = (e.parentSchema ?? {}) as { description?: string; anyOf?: { required?: string[] }[] };
+  if (e.keyword === 'anyOf' && parent.anyOf?.every((b) => b.required?.length)) {
+    return `needs one of: ${parent.anyOf.map((b) => (b.required ?? []).join(' + ')).join(', ')}`;
+  }
+  if (e.keyword === 'pattern' && parent.description) return `${e.message}. ${parent.description}`;
+  if (e.keyword === 'enum') return `must be one of: ${((e.params as { allowedValues?: unknown[] }).allowedValues ?? []).join(', ')}`;
+  return e.message ?? 'is invalid';
+}
+
 function schemaIssues(kind: EntityKind, entry: ModelEntry<unknown>): ValidationIssue[] {
   const validate = validators[kind];
   if (validate(plain(kind, entry.data))) return [];
   const id = idOf(kind, entry.data);
-  return (validate.errors ?? []).map((e: ErrorObject) => {
+  // errors inside anyOf branches are summarised by the anyOf error itself
+  const errors = (validate.errors ?? []).filter((e) => !e.schemaPath.includes('/anyOf/'));
+  return errors.map((e: ErrorObject) => {
     const field = e.instancePath.replace(/^\//, '').replace(/\//g, '.') || undefined;
     const isIdPattern = e.keyword === 'pattern' && (field === 'id' || field === 'workflow');
     const extra = e.keyword === 'additionalProperties' ? ` (${(e.params as { additionalProperty?: string }).additionalProperty})` : '';
@@ -103,7 +110,7 @@ function schemaIssues(kind: EntityKind, entry: ModelEntry<unknown>): ValidationI
         ? kind === 'workflow'
           ? `Workflow key "${id}" must match <context>.<name> (lowercase letters, digits, _)`
           : `Id "${id}" must match ${kind === 'feature' ? '<bounded_context>.<entity>.<action>' : 'the id pattern'} (${String((e.params as { pattern?: string }).pattern)})`
-        : `${field ?? kind}: ${e.message}${extra}`,
+        : `${field ?? kind}: ${schemaMessage(e)}${extra}`,
       file: entry.file,
       component: entry.component,
     };
@@ -202,6 +209,33 @@ function duplicateIds(model: CatalogModel): ValidationIssue[] {
   return issues;
 }
 
+/** Spec items of one feature (PRODUCTCREATOR-32): ids unique per list, acceptance `covers` → existing requirements */
+function specIssues(e: ModelEntry<Feature>): ValidationIssue[] {
+  const f = e.data;
+  const issues: ValidationIssue[] = [];
+  const at = { kind: 'feature' as const, id: f.id, file: e.file, component: e.component };
+  for (const list of FEATURE_SPEC_LISTS) {
+    const items: unknown = f[list];
+    if (!Array.isArray(items)) continue;
+    const seen = new Set<string>();
+    items.forEach((item: { id?: unknown } | null, i) => {
+      const itemId = item?.id;
+      if (typeof itemId !== 'string') return;
+      if (seen.has(itemId)) issues.push({ severity: 'error', code: 'duplicate_item_id', field: `${list}[${i}].id`, message: `${list}: id "${itemId}" is used more than once; give each item its own id`, ...at });
+      seen.add(itemId);
+    });
+  }
+  const requirementIds = new Set((Array.isArray(f.requirements) ? f.requirements : []).map((r) => r?.id));
+  (Array.isArray(f.acceptance) ? f.acceptance : []).forEach((a, i) => {
+    (Array.isArray(a?.covers) ? a.covers : []).forEach((req, j) => {
+      if (typeof req === 'string' && !requirementIds.has(req)) {
+        issues.push({ severity: 'error', code: 'unknown_requirement', field: `acceptance[${i}].covers[${j}]`, message: `Acceptance ${a.id} covers requirement "${req}", which is not in requirements`, ...at });
+      }
+    });
+  });
+  return issues;
+}
+
 export function validateModel(model: CatalogModel): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const featureIds = new Set(model.features.map((f) => f.data.id));
@@ -212,6 +246,7 @@ export function validateModel(model: CatalogModel): ValidationIssue[] {
   for (const e of model.features) {
     const f = e.data;
     issues.push(...schemaIssues('feature', e));
+    issues.push(...specIssues(e));
     if (f.id && f.bounded_context && f.entity && f.action && f.id !== `${f.bounded_context}.${f.entity}.${f.action}`) {
       issues.push({ severity: 'error', code: 'id_mismatch', kind: 'feature', id: f.id, field: 'id', message: `Id "${f.id}" must be ${f.bounded_context}.${f.entity}.${f.action} (<bounded_context>.<entity>.<action>)`, ...at(e) });
     }

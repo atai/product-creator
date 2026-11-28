@@ -7,21 +7,40 @@ import { Feature } from '@pc/core/types';
 import * as yaml from 'js-yaml';
 import FormHelpHint from './FormHelpHint';
 import ValidationIssues, { type Issue } from './ValidationIssues';
+import FeatureSpecFields, { specFromForm, specToForm, type FeatureFormData } from './FeatureSpecFields';
 
 interface FeatureFormProps {
   existingCard?: Feature | null;
   mode: 'new' | 'edit';
 }
 
-type FeatureFormData = Omit<Feature, 'tags' | 'emits' | 'consumes' | 'apis'> & {
-  tags: { value: string }[];
-  emits: { value: string }[];
-  consumes: { value: string }[];
-  apis: {
-    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-    path: string;
-  }[];
-};
+const toForm = (card: Feature | null | undefined): FeatureFormData =>
+  ({
+    ...card,
+    lifecycle: card?.lifecycle || 'draft',
+    tags: (card?.tags || []).map((t) => ({ value: t })),
+    emits: (card?.emits || []).map((e) => ({ value: e })),
+    consumes: (card?.consumes || []).map((c) => ({ value: c })),
+    apis: card?.apis || [],
+    ...specToForm(card),
+  }) as FeatureFormData;
+
+/** Form values → the card as it is checked, previewed and saved */
+function toPayload(data: FeatureFormData, id: string): Feature {
+  const { tags, emits, consumes, actors: _actors, requirements: _r, acceptance: _a, constraints: _c, decisions: _d, open_questions: _q, ...rest } = data;
+  const payload: Feature = {
+    ...rest,
+    id,
+    tags: (tags || []).map((t) => t.value).filter((t) => t && t.trim()),
+    emits: (emits || []).map((e) => e.value).filter((e) => e && e.trim()),
+    consumes: (consumes || []).map((c) => c.value).filter((c) => c && c.trim()),
+    apis: (data.apis || []).filter((a) => a.method && a.path && a.path.trim()),
+    objects: (data.objects || []).filter((o) => o.id && o.id.trim()).map((o) => ({ id: o.id.trim(), access: o.access || 'read' })),
+    ...specFromForm(data),
+  };
+  if (!payload.objects?.length) delete payload.objects;
+  return payload;
+}
 
 export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
   const router = useRouter();
@@ -42,14 +61,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
     control,
     formState: { errors },
   } = useForm<FeatureFormData>({
-    defaultValues: {
-      ...existingCard,
-      lifecycle: existingCard?.lifecycle || 'draft',
-      tags: (existingCard?.tags || []).map(t => ({ value: t })),
-      emits: (existingCard?.emits || []).map(e => ({ value: e })),
-      consumes: (existingCard?.consumes || []).map(c => ({ value: c })),
-      apis: existingCard?.apis || [],
-    } as FeatureFormData,
+    defaultValues: toForm(existingCard),
   });
 
   const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray<FeatureFormData, 'tags'>({
@@ -96,12 +108,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
 
   useEffect(() => {
     if (existingCard) {
-      reset({
-        ...existingCard,
-        tags: (existingCard.tags || []).map(t => ({ value: t })),
-        emits: (existingCard.emits || []).map(e => ({ value: e })),
-        consumes: (existingCard.consumes || []).map(c => ({ value: c })),
-      });
+      reset(toForm(existingCard));
     }
   }, [existingCard, reset]);
 
@@ -116,20 +123,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
         ? formData.id
         : `${formData.bounded_context || ''}.${formData.entity || ''}.${formData.action || ''}`;
 
-      const data: Partial<Feature> = {
-        id: generatedId,
-        name: formData.name || '',
-        bounded_context: formData.bounded_context || '',
-        entity: formData.entity || '',
-        action: formData.action || '',
-        owner: formData.owner || '',
-        lifecycle: formData.lifecycle || 'draft',
-        description: formData.description || '',
-        tags: (formData.tags || []).map(t => t.value).filter((t) => t && t.trim()),
-        emits: (formData.emits || []).map(e => e.value).filter((e) => e && e.trim()),
-        consumes: (formData.consumes || []).map(c => c.value).filter((c) => c && c.trim()),
-        apis: (formData.apis || []).filter((a) => a.method && a.path && a.path.trim()),
-      };
+      const data = toPayload(formData, generatedId);
 
       const yamlStr = yaml.dump(data, { lineWidth: -1 });
       setPreview(yamlStr);
@@ -142,16 +136,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
   const checkPlan = async () => {
     const data = watch();
     const id = isEditMode ? data.id : `${data.bounded_context}.${data.entity}.${data.action}`;
-    const objects = (data.objects || []).filter((o) => o.id && o.id.trim());
-    const proposed = {
-      ...data,
-      id,
-      tags: (data.tags || []).map((t) => t.value).filter((t) => t && t.trim()),
-      emits: (data.emits || []).map((e) => e.value).filter((e) => e && e.trim()),
-      consumes: (data.consumes || []).map((c) => c.value).filter((c) => c && c.trim()),
-      apis: (data.apis || []).filter((a) => a.method && a.path && a.path.trim()),
-      ...(objects.length ? { objects } : { objects: undefined }),
-    };
+    const proposed = toPayload(data, id);
     const response = await fetch('/api/validate-plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -180,16 +165,7 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
         ? data.id
         : `${data.bounded_context}.${data.entity}.${data.action}`;
 
-      const payload: Feature = {
-        ...data,
-        id: generatedId,
-        tags: (data.tags || []).map(t => t.value).filter((t) => t && t.trim()),
-        emits: (data.emits || []).map(e => e.value).filter((e) => e && e.trim()),
-        consumes: (data.consumes || []).map(c => c.value).filter((c) => c && c.trim()),
-        apis: (data.apis || []).filter((a) => a.method && a.path && a.path.trim()),
-        objects: (data.objects || []).filter((o) => o.id && o.id.trim()).map((o) => ({ id: o.id.trim(), access: o.access || 'read' })),
-      };
-      if (!payload.objects?.length) delete payload.objects;
+      const payload = toPayload(data, generatedId);
 
       const response = await fetch('/api/save-feature', {
         method: 'POST',
@@ -496,6 +472,8 @@ export default function FeatureForm({ existingCard, mode }: FeatureFormProps) {
                   </button>
                 </div>
               </div>
+
+              <FeatureSpecFields control={control} register={register} />
 
               <div className="flex gap-4">
                 <button

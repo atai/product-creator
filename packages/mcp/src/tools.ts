@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { ComponentModel, ProjectModel } from '@pc/core/project/model';
+import { catalogSchemas } from '@pc/core/validation/schemas';
 import type { ActionLog } from './audit.js';
 import { compactArgs } from './audit.js';
 import type { McpHost, Principal } from './host.js';
@@ -316,6 +317,17 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
   );
 
   define(
+    'get_schema',
+    {
+      title: 'Get the schema of a catalog entry',
+      description:
+        'JSON Schema of a feature, business object or workflow card: fields, required fields, id patterns, enums, and `x-audience` (human | agent | both: who a field is for). Read it before writing a card. A feature carries its spec: actors, requirements (R1…), acceptance (A1…, given/when/then or text, `covers` requirement ids, `verify` command), constraints (C1…), decisions (D1…), open_questions (Q1…).',
+      input: { kind: z.enum(['feature', 'business_object', 'workflow', 'function']).describe("'function' is the old name of 'feature'") },
+    },
+    async ({ kind }) => ({ kind: kind === 'function' ? 'feature' : kind, schema: catalogSchemas[kind === 'function' ? 'feature' : kind] })
+  );
+
+  define(
     'validate_catalog',
     {
       title: 'Validate the catalog',
@@ -476,7 +488,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Create a catalog entry',
       write: true,
-      description: 'Create a feature (id = <bounded_context>.<entity>.<action>), business object, workflow or stream in a component catalog. `data` is the full card. It is validated before writing (schema and model: references to features/objects, field types, duplicates); a change that adds errors is rejected with the issues. Use validate_plan / find_duplicates first.',
+      description: 'Create a feature (id = <bounded_context>.<entity>.<action>), business object, workflow or stream in a component catalog. `data` is the full card (see get_schema for its fields, including the spec of a feature). It is validated before writing (schema and model: references to features/objects, field types, duplicates); a change that adds errors is rejected with the issues. Use validate_plan / find_duplicates first.',
       input: { project: projectArg, component: componentArg, kind: kindSchema, data: z.record(z.string(), z.unknown()) },
     },
     async ({ project, component, kind: kindArg, data }) => {

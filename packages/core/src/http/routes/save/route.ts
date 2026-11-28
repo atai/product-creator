@@ -1,12 +1,10 @@
 import { getStorage } from '../../../storage';
-import Ajv from 'ajv';
-import featureSchema from '../../../../schema/feature.schema.json';
+import { validators } from '../../../validation/schemas';
 import logger from '../../../logger';
 import { Feature } from '../../../types';
 import { rejectInvalidSave } from '../../../validation/guard';
 
-const ajv = new Ajv();
-const validate = ajv.compile(featureSchema);
+const validate = validators.feature;
 
 export async function POST(request: Request) {
   try {

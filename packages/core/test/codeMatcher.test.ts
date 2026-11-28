@@ -6,7 +6,7 @@ import { idPart, matchCodeToFunctions, suggestFeatureId } from '../src/sync/code
 const fn = (name: string, relativePath: string): ExportedFunction => ({ name, relativePath, filePath: `/repo/${relativePath}`, lineNumber: 1, isDefault: false, isAsync: false, parameters: [] });
 const feature = (id: string, extra: Partial<Feature> = {}): Feature => {
   const [bounded_context, entity, action] = id.split('.');
-  return { id, name: id, bounded_context, entity, action, owner: 't', lifecycle: 'active', ...extra };
+  return { id, name: id, bounded_context, entity, action, owner: 't', lifecycle: 'implemented', ...extra };
 };
 
 describe('code sync matching (PRODUCTCREATOR-30)', () => {

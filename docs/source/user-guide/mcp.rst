@@ -95,6 +95,10 @@ name from ``list_projects``) as an argument.
    * - ``get_openapi_status``
      - read
      - Which components can generate a spec, spec files, state of the last generation
+   * - ``get_schema``
+     - read
+     - JSON Schema of a feature, business object or workflow card, with ``x-audience`` per field; read
+       it before writing a card (a feature's spec fields are described there)
    * - ``get_object``
      - read
      - A business object with its fields and types, and the features that read or write it

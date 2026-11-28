@@ -108,7 +108,7 @@ describe('tools (read-write token)', () => {
   it('lists the tools including write tools', async () => {
     const { client } = await connect(bearer());
     const names = (await client.listTools()).tools.map((t) => t.name);
-    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'get_object', 'find_duplicates', 'impact_of_change', 'validate_plan', 'validate_catalog', 'sync_code_preview', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
+    expect(names).toEqual(expect.arrayContaining(['list_projects', 'list_components', 'list_catalog', 'get_catalog_entry', 'get_schema', 'get_object', 'find_duplicates', 'impact_of_change', 'validate_plan', 'validate_catalog', 'sync_code_preview', 'create_catalog_entry', 'update_catalog_entry', 'sync_code_apply', 'generate_openapi']));
     await client.close();
   });
 
@@ -137,11 +137,11 @@ describe('tools (read-write token)', () => {
     expect(list.total).toBe(1);
     expect(list.items[0]).toMatchObject({ id: FN.id, component: 'svc', source_file: FN.source_file });
 
-    const updated = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id, patch: { lifecycle: 'active', description: 'Creates an invoice' } } });
+    const updated = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id, patch: { lifecycle: 'implemented', description: 'Creates an invoice' } } });
     expect(updated.isError).toBeFalsy();
     // 'function' is the old name of the kind, still accepted (PRODUCTCREATOR-28)
     const got = json(await client.callTool({ name: 'get_catalog_entry', arguments: { project: project.slug, kind: 'function', id: FN.id } }));
-    expect(got.entry).toMatchObject({ lifecycle: 'active', description: 'Creates an invoice', source_file: FN.source_file });
+    expect(got.entry).toMatchObject({ lifecycle: 'implemented', description: 'Creates an invoice', source_file: FN.source_file });
 
     const renamed = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id, patch: { id: 'x.y.z' } } });
     expect(renamed.isError).toBe(true);
@@ -171,6 +171,8 @@ describe('tools (read-write token)', () => {
     expect((await call('update_catalog_entry', { kind: 'feature', id: FN.id, patch: { objects: [{ id: 'invoice', access: 'write' }] } })).isError).toBeFalsy();
     expect((await call('create_catalog_entry', { component: 'svc', kind: 'workflow', data: { workflow: 'billing.close', steps: [FN.id] } })).isError).toBeFalsy();
 
+    const schema = json(await call('get_schema', { kind: 'feature' }));
+    expect(Object.keys(schema.schema.properties)).toEqual(expect.arrayContaining(['requirements', 'acceptance', 'decisions', 'open_questions']));
     const object = json(await call('get_object', { id: 'invoice' }));
     expect(object.object.fields.map((f: { name: string }) => f.name)).toEqual(['id', 'total']);
     expect(object.usedBy).toEqual([expect.objectContaining({ id: FN.id, via: 'objects: write', component: 'svc' })]);

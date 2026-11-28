@@ -5,9 +5,9 @@ import { findDuplicates, impactOf, planIssues } from '../src/validation/plan';
 
 const feature = (id: string, extra: Partial<Feature> = {}): Feature => {
   const [bounded_context, entity, action] = id.split('.');
-  return { id, name: `${entity} ${action}`, bounded_context, entity, action, owner: 'team', lifecycle: 'active', ...extra };
+  return { id, name: `${entity} ${action}`, bounded_context, entity, action, owner: 'team', lifecycle: 'implemented', ...extra };
 };
-const object = (id: string, fields: BusinessObject['fields'] = [{ name: 'id', type: 'string' }], name = id): BusinessObject => ({ id, name, owner: 'team', lifecycle: 'active', fields });
+const object = (id: string, fields: BusinessObject['fields'] = [{ name: 'id', type: 'string' }], name = id): BusinessObject => ({ id, name, owner: 'team', lifecycle: 'implemented', fields });
 const workflow = (key: string, steps: string[], compensations?: Record<string, string>): Workflow => ({ workflow: key, name: key, steps, ...(compensations ? { compensations } : {}) });
 
 function model(): CatalogModel {
@@ -25,6 +25,48 @@ function model(): CatalogModel {
     ],
   };
 }
+
+describe('feature spec fields (PRODUCTCREATOR-32)', () => {
+  const spec: Partial<Feature> = {
+    actors: ['project owner', 'AI agent'],
+    requirements: [
+      { id: 'R1', text: 'The agent can check a plan without writing', priority: 'must' },
+      { id: 'R2', text: 'Errors name the field and how to fix it' },
+    ],
+    acceptance: [
+      { id: 'A1', covers: ['R1'], given: 'a plan with an unknown object', when: 'validate_plan runs', then: 'ok is false and nothing is written', verify: 'pnpm --filter @pc/mcp test' },
+      { id: 'A2', covers: ['R2'], text: 'Every issue has field and message' },
+    ],
+    constraints: [{ id: 'C1', kind: 'performance', text: 'A plan of 50 changes is checked in < 1 s' }],
+    decisions: [{ id: 'D1', decision: 'Validation lives in core', reason: 'One check for UI, MCP and CLI', date: '2026-11-28' }],
+    open_questions: [{ id: 'Q1', question: 'Relax the id pattern?', owner: 'atai' }],
+  };
+
+  it('a complete spec is valid', () => {
+    const m = model();
+    m.features[0] = { ...m.features[0], data: { ...m.features[0].data, ...spec } };
+    expect(validateModel(m)).toEqual([]);
+  });
+
+  it('reports bad item ids, duplicates, unknown requirements and criteria without a result', () => {
+    const m = model();
+    const bad = {
+      ...spec,
+      requirements: [{ id: 'R1', text: 'a' }, { id: 'R1', text: 'b' }, { id: 'req-3', text: 'c' }],
+      acceptance: [{ id: 'A1', covers: ['R9'], given: 'g', when: 'w' }],
+    } as Partial<Feature>;
+    m.features[0] = { ...m.features[0], data: { ...m.features[0].data, ...bad } };
+    const codes = validateModel(m).map((i) => `${i.code}:${i.field ?? ''}`);
+    expect(codes).toEqual(
+      expect.arrayContaining([
+        'duplicate_item_id:requirements[1].id',
+        'schema:requirements.2.id',
+        'unknown_requirement:acceptance[0].covers[0]',
+        'schema:acceptance.0',
+      ])
+    );
+  });
+});
 
 describe('validateModel (PRODUCTCREATOR-29)', () => {
   it('a consistent catalog has no issues', () => {
