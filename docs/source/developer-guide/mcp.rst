@@ -63,7 +63,11 @@ Plan-check tools (``validate_catalog``, ``validate_plan``, ``impact_of_change``,
 ``get_object``) call ``/api/validation``, ``/api/validate-plan``, ``/api/impact``, ``/api/duplicates``.
 ``projectView`` maps component ids to slugs and files to project-relative paths. A rejected write
 returns the error text plus the ``issues`` of the 400 response. ``get_schema`` returns the schemas from
-``@pc/core/validation/schemas`` directly (no HTTP call).
+``@pc/core/validation/schemas`` directly (no HTTP call). ``apply_plan`` calls ``/api/apply-plan``; ``get_project`` reads the
+project model and ``update_project`` calls ``updateProject`` of ``@pc/core/project/model`` directly. The
+desktop host re-reads the YAML model on every ``projects()`` call, so an agent sees its own writes at
+once. ``WRITE_TOOLS`` lists the write tools; read-only sessions get them named in the server
+instructions.
 
 To add a tool: call ``define`` (mark ``write: true`` if it changes anything), keep the output compact,
 add a case to ``packages/mcp/test/server.test.ts`` and a row to the User Docs table.

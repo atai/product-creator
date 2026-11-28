@@ -49,8 +49,15 @@ functions in code.
    objects:                     # business objects it reads or writes
      - id: contact
        access: write            # read | write
+   code_refs:                   # other places of the implementation (UI, API, CLI), any component
+     - component: web           # component slug
+       file: pages/contacts/new.tsx
+       role: UI
+   tickets: [CRM-42]            # tracker issues; linked with tracker.issueUrl of product-creator.yml
 
 ``source_file`` and ``calls`` are the link to the implementation; :doc:`sync` fills them in.
+``source_file`` is the main file in the feature's own component; a feature that also lives elsewhere
+(a UI page in another component, a CLI command) lists those places in ``code_refs``.
 ``objects`` drives impact analysis: a change of a business object shows the features and workflows it
 affects.
 
@@ -158,7 +165,9 @@ Business objects, workflows, streams
 
 * **Business objects** — fields, owner, lifecycle and physical tables; usually produced by
   :doc:`sync` from the Prisma schema and then enriched manually.
-* **Workflows** — ordered ``steps`` (feature ids) with optional compensations.
+* **Workflows** — ordered ``steps`` (feature ids) with optional compensations, a ``lifecycle`` (the
+  same statuses as features: a planned workflow is ``draft``), a ``description`` and ``tickets``.
+  Business objects can carry ``tickets`` too.
 * **Streams** — business processes with stages, entry/exit events, KPIs and workflows per stage.
 
 Views

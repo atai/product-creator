@@ -98,6 +98,24 @@ File format
    description: ERP/CRM
    docs: docs                   # Sphinx docs folder of the project
    catalogRoot: docs/product    # folder with component catalogs
+   # product context of the spec (all optional; edited in Workspace → Edit project or via MCP update_project)
+   vision: One place where the product is planned and checked
+   goals:
+     - id: G1                   # G1, G2, …
+       text: Planning errors are visible before code is written
+   actors:                      # features refer to actors by id
+     - id: product_owner        # a-z, 0-9, _
+       name: Product owner
+       description: Plans features and approves specs
+   glossary:
+     - term: Feature
+       definition: A business capability of the product
+   tracker:
+     issueUrl: https://example.youtrack.cloud/issue/{id}   # tickets of entries link here
+
+The product context is the first part of a generated spec: why the product exists, what it aims at,
+who uses it and the words it uses. Goal ids, actor ids and glossary terms must be unique; the tracker
+URL must contain ``{id}``.
 
 ``docs/product/frontend/service.pc.yml``:
 

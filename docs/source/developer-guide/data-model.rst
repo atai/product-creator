@@ -42,8 +42,19 @@ or ``text``, ``verify``), ``constraints`` (``C<n>``, ``kind``, ``text``), ``deci
 ``types.ts``. Schema fields carry ``x-audience: human | agent | both``; the shared Ajv instance
 (``validation/schemas.ts``) registers it as an annotation keyword.
 
-The feature repository (``repository/configs.ts``) keeps fields without a row column in an ``extra``
-JSON column, so reading a card and saving it back never drops a field.
+The catalog repositories (``repository/configs.ts``, ``keepAllFields``) keep fields without a row
+column in an ``extra`` JSON column, so reading a card and saving it back never drops a field (features,
+workflows, streams, business objects). YAML is read with the core schema: ``2026-11-28`` stays a string.
+
+PRODUCTCREATOR-33 added ``code_refs`` and ``tickets`` to features, ``lifecycle`` (required),
+``description`` and ``tickets`` to workflows, ``tickets`` to business objects, and the product context
+in ``product-creator.yml`` (``ProductContext`` in ``project/model.ts``: ``vision``, ``goals``,
+``actors``, ``glossary``, ``tracker``; ``readProductContext`` / ``assertProductContext`` /
+``issueLink``).
+
+``POST /api/apply-plan`` (``http/routes/apply-plan``) takes the ``changes`` of ``/api/validate-plan``
+(parsed by ``parsePlanChanges``), checks the whole plan once with ``planIssues``, writes every change
+through ``storage.saveEntry`` / ``deleteEntry`` and rolls the written ones back if a write fails.
 
 Trace fields of a feature: ``source_file`` (implementation), ``calls`` (features it uses),
 ``apis`` (exposed endpoints), ``emits``/``consumes`` (events), ``objects`` (``[{id, access: read|write}]``,

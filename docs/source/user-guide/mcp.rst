@@ -119,6 +119,17 @@ name from ``list_projects``) as an argument.
    * - ``sync_code_preview`` / ``sync_schema_preview``
      - read
      - Match code (or the Prisma schema) with the catalog and show what a sync would do; writes nothing
+   * - ``get_project``
+     - read
+     - Product context of a project: vision, goals, actors, glossary, tracker, components
+   * - ``apply_plan``
+     - read-write
+     - Write several changes at once (same input as ``validate_plan``). The plan is checked as a whole,
+       so entries that reference each other are written together in any order; nothing is written if
+       it adds errors, and a failed write is rolled back. Use it instead of many single writes
+   * - ``update_project``
+     - read-write
+     - Change name, description, vision, goals, actors, glossary or tracker of a project
    * - ``create_catalog_entry``
      - read-write
      - Create a feature, business object, workflow or stream. Rejected with the list of problems if
@@ -135,7 +146,8 @@ name from ``list_projects``) as an argument.
      - read-write
      - Run the *generate command* saved in the component settings (one component or all)
 
-Write tools are not even listed for a read-only token.
+Write tools are not even listed for a read-only token. The server instructions an agent receives
+when it connects say so and name the setting to change (Settings → MCP → scope).
 
 .. note::
 
