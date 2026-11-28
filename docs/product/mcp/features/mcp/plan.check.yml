@@ -5,6 +5,10 @@ entity: plan
 action: check
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: validate_catalog, validate_plan, impact_of_change, find_duplicates for agents.
 source_file: tools.ts
 calls:
@@ -19,3 +23,11 @@ requirements:
     text: An agent checks a whole plan in one call before writing code
 tickets:
   - PRODUCTCREATOR-29
+acceptance:
+  - id: A1
+    covers:
+      - R1
+    given: a plan of several changes
+    when: validate_plan runs
+    then: it returns ok and the errors the whole plan would add; nothing is written
+    verify: pnpm --filter @pc/mcp test server

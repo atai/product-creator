@@ -16,7 +16,24 @@
     "requirements": [
       {
         "id": "R1",
-        "text": "Updates are installed only for signed builds"
+        "text": "Only a packaged build updates itself: not in dev, not in smoke runs, not with PC_DISABLE_AUTO_UPDATE, on Linux only the AppImage"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "canAutoUpdate is true only for a packaged build outside smoke runs and without PC_DISABLE_AUTO_UPDATE",
+        "verify": "pnpm --filter desktop test updater"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "macOS installs updates only into a signed app; Windows builds stay unsigned",
+        "reason": "No Windows code-signing certificate (PRODUCTCREATOR-21)"
       }
     ],
     "tickets": [
@@ -26,18 +43,5 @@
   "objects": [],
   "calledBy": [],
   "workflows": [],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "app.update.install",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
-      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/app/update.install.yml",
-      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
-    }
-  ]
+  "issues": []
 }

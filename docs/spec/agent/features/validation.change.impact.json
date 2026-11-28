@@ -42,7 +42,7 @@
           "R2"
         ],
         "text": "impactOf returns features, workflows and objects with the reason (via)",
-        "verify": "pnpm --filter @pc/core test -- validation"
+        "verify": "pnpm --filter @pc/core test validation"
       }
     ],
     "tickets": [

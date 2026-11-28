@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 interface RootInfo {
@@ -16,11 +16,7 @@ export function useRoots() {
   const [selectedRoot, setSelectedRoot] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadRoots();
-  }, []);
-
-  const loadRoots = async () => {
+  const loadRoots = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/roots');
@@ -39,7 +35,11 @@ export function useRoots() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams]);
+
+  useEffect(() => {
+    void loadRoots();
+  }, [loadRoots]);
 
   return {
     roots,

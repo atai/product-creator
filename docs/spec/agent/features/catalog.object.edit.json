@@ -32,7 +32,7 @@
           "R1"
         ],
         "text": "A field of unknown type is rejected with unknown_type",
-        "verify": "pnpm --filter @pc/core test -- validation"
+        "verify": "pnpm --filter @pc/core test validation"
       }
     ],
     "code_refs": [

@@ -5,6 +5,10 @@ entity: catalog
 action: read
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: list_projects, get_project, list_components, list_catalog, get_catalog_entry, get_schema, get_object, list_interfaces.
 source_file: tools.ts
 calls:
@@ -28,7 +32,12 @@ acceptance:
     covers:
       - R1
     text: get_schema(feature) lists the spec fields
-    verify: pnpm --filter @pc/mcp test -- server
+    verify: pnpm --filter @pc/mcp test server
+  - id: A2
+    covers:
+      - R2
+    text: list_catalog returns compact rows with total and offset, limited by limit
+    verify: pnpm --filter @pc/mcp test server
 tickets:
   - PRODUCTCREATOR-18
   - PRODUCTCREATOR-32

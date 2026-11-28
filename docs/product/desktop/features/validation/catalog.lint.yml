@@ -5,6 +5,10 @@ entity: catalog
 action: lint
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: '`product-creator lint` validates the catalogs of a project; exit code 1 on errors. CI runs it on this repo.'
 source_file: main/cli.ts
 calls:
@@ -25,6 +29,12 @@ acceptance:
       - R3
     text: pnpm catalog:lint is a CI step
     verify: pnpm catalog:lint
+  - id: A2
+    covers:
+      - R1
+      - R2
+    text: lint exits with 1 on errors and --json prints the counts and issues
+    verify: pnpm --filter desktop test cli
 tickets:
   - PRODUCTCREATOR-29
   - PRODUCTCREATOR-33

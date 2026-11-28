@@ -47,7 +47,15 @@
           "R1"
         ],
         "text": "get_schema(feature) lists the spec fields",
-        "verify": "pnpm --filter @pc/mcp test -- server"
+        "verify": "pnpm --filter @pc/mcp test server"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R2"
+        ],
+        "text": "list_catalog returns compact rows with total and offset, limited by limit",
+        "verify": "pnpm --filter @pc/mcp test server"
       }
     ],
     "tickets": [
@@ -212,18 +220,5 @@
   "workflows": [
     "agent.plan_change"
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.catalog.read",
-      "field": "requirements[1]",
-      "message": "Requirement R2 has no acceptance criterion. Add one with covers: [R2].",
-      "file": "/Users/ra/git/product-creator/docs/product/mcp/features/mcp/catalog.read.yml",
-      "component": "5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64"
-    }
-  ]
+  "issues": []
 }

@@ -41,7 +41,15 @@
           "R3"
         ],
         "text": "Wrong token → 401; write tool with read token → error",
-        "verify": "pnpm --filter @pc/mcp test -- server"
+        "verify": "pnpm --filter @pc/mcp test server"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R1"
+        ],
+        "text": "The server is not reachable on other network interfaces",
+        "verify": "pnpm --filter @pc/mcp test server"
       }
     ],
     "constraints": [
@@ -89,18 +97,5 @@
     "mcp.relay.connect"
   ],
   "workflows": [],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.server.serve",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
-      "file": "/Users/ra/git/product-creator/docs/product/mcp/features/mcp/server.serve.yml",
-      "component": "5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64"
-    }
-  ]
+  "issues": []
 }

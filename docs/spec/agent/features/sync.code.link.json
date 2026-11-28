@@ -47,14 +47,14 @@
           "R3"
         ],
         "text": "Matching yields linked, proposed, candidate and stale items",
-        "verify": "pnpm --filter @pc/core test -- codeMatcher"
+        "verify": "pnpm --filter @pc/core test codeMatcher"
       }
     ],
-    "open_questions": [
+    "decisions": [
       {
-        "id": "Q1",
-        "question": "Should sync refresh calls of linked features on every run, or only on link?",
-        "owner": "atai"
+        "id": "D1",
+        "decision": "calls are set when a code function is linked; later runs skip linked features and do not refresh calls",
+        "reason": "Current behaviour: hand-edited calls are never overwritten; to refresh, unlink and link again"
       }
     ],
     "tickets": [
@@ -167,18 +167,5 @@
   "workflows": [
     "project.onboard"
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "open_questions_left",
-      "kind": "feature",
-      "id": "sync.code.link",
-      "field": "open_questions",
-      "message": "1 open question(s) on an implemented feature (Q1). Answer them (turn them into decisions), or set the feature back to draft.",
-      "file": "/Users/ra/git/product-creator/docs/product/core/features/sync/code.link.yml",
-      "component": "65b1a710-428c-4e33-baf7-b6047999dfad"
-    }
-  ]
+  "issues": []
 }

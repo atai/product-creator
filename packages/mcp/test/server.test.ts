@@ -148,7 +148,42 @@ describe('tools (read-write token)', () => {
     expect(renamed.isError).toBe(true);
     const invalid = await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id, patch: { lifecycle: 'bogus' } } });
     expect(invalid.isError).toBe(true);
+
+    // the patch is merged at the top level; null removes a field
+    expect((await client.callTool({ name: 'update_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id, patch: { description: null } } })).isError).toBeFalsy();
+    const cleared = json(await client.callTool({ name: 'get_catalog_entry', arguments: { project: project.slug, kind: 'feature', id: FN.id } }));
+    expect(cleared.entry.description ?? '').toBe('');
+    expect(cleared.entry.lifecycle).toBe('implemented');
+
+    // lists are compact and paged
+    for (const n of [1, 2, 3]) {
+      const { source_file: _noCode, ...rest } = FN;
+      const extra = { ...rest, id: `billing.invoice.v${n}`, action: `v${n}`, name: `Invoice v${n}` };
+      expect((await client.callTool({ name: 'create_catalog_entry', arguments: { project: project.slug, component: 'svc', kind: 'feature', data: extra } })).isError).toBeFalsy();
+    }
+    const page = json(await client.callTool({ name: 'list_catalog', arguments: { project: project.slug, kind: 'feature', limit: 2, offset: 1 } }));
+    expect(page).toMatchObject({ total: 4, offset: 1 });
+    expect(page.items).toHaveLength(2);
+    expect(page.items[0].requirements).toBeUndefined();
     await client.close();
+  });
+
+  it('listens on 127.0.0.1 only', async () => {
+    expect(server.url.startsWith('http://127.0.0.1:')).toBe(true);
+    const external = Object.values(os.networkInterfaces()).flat().find((a) => a && a.family === 'IPv4' && !a.internal);
+    if (!external) return; // no other interface on this machine
+    const reached = await new Promise<boolean>((resolve) => {
+      const req = http.get({ host: external.address, port: server.port, path: '/mcp', timeout: 2000 }, (r) => {
+        r.resume();
+        resolve(true);
+      });
+      req.on('error', () => resolve(false));
+      req.on('timeout', () => {
+        req.destroy();
+        resolve(false);
+      });
+    });
+    expect(reached).toBe(false);
   });
 
   it('checks plans against the model and rejects writes that break it (PRODUCTCREATOR-29)', async () => {

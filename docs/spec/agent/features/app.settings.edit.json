@@ -37,7 +37,7 @@
           "R1"
         ],
         "text": "SettingsStore generates, keeps and regenerates the token",
-        "verify": "pnpm --filter desktop test -- settings"
+        "verify": "pnpm --filter desktop test settings"
       },
       {
         "id": "A2",
@@ -45,7 +45,7 @@
           "R2"
         ],
         "text": "A token change ends local sessions",
-        "verify": "pnpm --filter @pc/mcp test -- server"
+        "verify": "pnpm --filter @pc/mcp test server"
       }
     ],
     "code_refs": [

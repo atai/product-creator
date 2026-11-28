@@ -27,4 +27,5 @@ acceptance:
   - id: A1
     covers:
       - R1
-    text: Choosing a context shows its entity × action grid with the features in the cells
+    text: Choosing a context shows its entity × action grid with the features in the cells (screenshot catalog.matrix.show S1)
+    verify: pnpm catalog:spec

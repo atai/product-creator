@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Stream } from '@pc/core/types';
@@ -71,17 +71,7 @@ export default function StreamEditPage() {
     name: 'stages',
   });
 
-  useEffect(() => {
-    const appParam = searchParams.get('app');
-    if (appParam) {
-      setSelectedApp(appParam);
-    }
-    if (!isNew) {
-      loadStream();
-    }
-  }, [streamId, searchParams]);
-
-  const loadStream = async () => {
+  const loadStream = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/stream?id=${encodeURIComponent(streamId)}`);
@@ -113,7 +103,18 @@ export default function StreamEditPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [streamId, reset]);
+
+  useEffect(() => {
+    const appParam = searchParams.get('app');
+    if (appParam) {
+      setSelectedApp(appParam);
+    }
+    if (!isNew) {
+      void loadStream();
+    }
+  }, [isNew, loadStream, searchParams]);
+
 
   const onSubmit = async (data: StreamFormData) => {
     try {

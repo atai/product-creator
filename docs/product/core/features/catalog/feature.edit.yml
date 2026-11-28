@@ -31,14 +31,19 @@ acceptance:
     covers:
       - R2
     text: Reading a card and saving it back keeps every field
-    verify: pnpm --filter @pc/core test -- features
+    verify: pnpm --filter @pc/core test features
   - id: A2
     covers:
       - R3
     given: a feature whose calls name a missing feature
     when: it is saved
     then: the response is 400 with unknown_feature
-    verify: pnpm --filter @pc/core test -- features
+    verify: pnpm --filter @pc/core test features
+  - id: A3
+    covers:
+      - R1
+    text: A saved card is written to features/<context>/<entity>.<action>.yml, also when it was read from functions/
+    verify: pnpm --filter @pc/core test features
 tickets:
   - PRODUCTCREATOR-7
   - PRODUCTCREATOR-32

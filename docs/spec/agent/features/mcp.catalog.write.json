@@ -45,7 +45,7 @@
           "R1"
         ],
         "text": "Creating a feature with an unknown object returns unknown_object",
-        "verify": "pnpm --filter @pc/mcp test -- server"
+        "verify": "pnpm --filter @pc/mcp test server"
       },
       {
         "id": "A2",
@@ -53,7 +53,7 @@
           "R3"
         ],
         "text": "A plan with cross-references is applied in one call; a broken plan writes nothing",
-        "verify": "pnpm --filter @pc/mcp test -- server"
+        "verify": "pnpm --filter @pc/mcp test server"
       },
       {
         "id": "A3",
@@ -61,7 +61,15 @@
           "R4"
         ],
         "text": "Read-only server instructions name Settings → MCP → scope",
-        "verify": "pnpm --filter @pc/mcp test -- server"
+        "verify": "pnpm --filter @pc/mcp test server"
+      },
+      {
+        "id": "A4",
+        "covers": [
+          "R2"
+        ],
+        "text": "update_catalog_entry merges the patch; null removes the field",
+        "verify": "pnpm --filter @pc/mcp test server"
       }
     ],
     "code_refs": [
@@ -81,18 +89,5 @@
   "workflows": [
     "agent.plan_change"
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.catalog.write",
-      "field": "requirements[1]",
-      "message": "Requirement R2 has no acceptance criterion. Add one with covers: [R2].",
-      "file": "/Users/ra/git/product-creator/docs/product/mcp/features/mcp/catalog.write.yml",
-      "component": "5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64"
-    }
-  ]
+  "issues": []
 }

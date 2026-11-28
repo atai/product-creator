@@ -5,6 +5,10 @@ entity: change
 action: impact
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: 'For a business object or feature: the features that use or call it, their callers, workflows and objects with fields of its type.'
 source_file: validation/plan.ts
 objects:
@@ -25,6 +29,6 @@ acceptance:
       - R1
       - R2
     text: impactOf returns features, workflows and objects with the reason (via)
-    verify: pnpm --filter @pc/core test -- validation
+    verify: pnpm --filter @pc/core test validation
 tickets:
   - PRODUCTCREATOR-29

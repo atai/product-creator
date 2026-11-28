@@ -5,15 +5,19 @@ entity: settings
 action: edit
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: 'Settings: run the MCP server, its scope, port and token; remote access through the relay.'
 source_file: renderer/src/pages/settings.tsx
+objects:
+  - id: mcp_settings
+    access: write
 code_refs:
   - component: desktop
     file: main/settings.ts
     role: storage
-objects:
-  - id: mcp_settings
-    access: write
 actors:
   - product_owner
   - developer
@@ -30,9 +34,9 @@ acceptance:
     covers:
       - R1
     text: SettingsStore generates, keeps and regenerates the token
-    verify: pnpm --filter desktop test -- settings
+    verify: pnpm --filter desktop test settings
   - id: A2
     covers:
       - R2
     text: A token change ends local sessions
-    verify: pnpm --filter @pc/mcp test -- server
+    verify: pnpm --filter @pc/mcp test server

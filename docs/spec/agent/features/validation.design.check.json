@@ -55,7 +55,7 @@
           "R1"
         ],
         "text": "Architecture checks find calls outside dependsOn and cycles",
-        "verify": "pnpm --filter @pc/core test -- design"
+        "verify": "pnpm --filter @pc/core test design"
       },
       {
         "id": "A2",
@@ -64,7 +64,7 @@
           "R4"
         ],
         "text": "Completeness and code-link checks report agreed / implemented gaps",
-        "verify": "pnpm --filter @pc/core test -- design"
+        "verify": "pnpm --filter @pc/core test design"
       },
       {
         "id": "A3",
@@ -73,7 +73,7 @@
           "R5"
         ],
         "text": "Lifecycle checks report drafts, deprecated and removed references",
-        "verify": "pnpm --filter @pc/core test -- design"
+        "verify": "pnpm --filter @pc/core test design"
       },
       {
         "id": "A4",
@@ -84,7 +84,7 @@
         "given": "the same model",
         "when": "checks run in advisory, strict, with an override and off",
         "then": "severities follow the mode, an advisory plan is not rejected, a strict one is",
-        "verify": "pnpm --filter @pc/core test -- design"
+        "verify": "pnpm --filter @pc/core test design"
       }
     ],
     "decisions": [

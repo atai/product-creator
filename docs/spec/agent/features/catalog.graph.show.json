@@ -34,11 +34,19 @@
       {
         "id": "A1",
         "covers": [
-          "R1",
+          "R1"
+        ],
+        "text": "/api/graph returns calls, workflow and event edges between the shown features",
+        "verify": "pnpm --filter @pc/core test features"
+      },
+      {
+        "id": "A2",
+        "covers": [
           "R2",
           "R3"
         ],
-        "text": "On this repository the graph shows every name in full, arrows with their heads and labels between them"
+        "text": "Every name is shown in full and labelled arrows show their start and head (screenshot catalog.graph.show S1)",
+        "verify": "pnpm catalog:spec"
       }
     ],
     "tickets": [
@@ -142,18 +150,5 @@
       "exists": true
     }
   ],
-  "issues": [
-    {
-      "severity": "info",
-      "intended": "warning",
-      "check": "design",
-      "code": "acceptance_without_verify",
-      "kind": "feature",
-      "id": "catalog.graph.show",
-      "field": "acceptance[0]",
-      "message": "Acceptance A1 has no verify: add the command or test that checks it.",
-      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/catalog/graph.show.yml",
-      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
-    }
-  ]
+  "issues": []
 }

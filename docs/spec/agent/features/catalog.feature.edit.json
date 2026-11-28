@@ -44,7 +44,7 @@
           "R2"
         ],
         "text": "Reading a card and saving it back keeps every field",
-        "verify": "pnpm --filter @pc/core test -- features"
+        "verify": "pnpm --filter @pc/core test features"
       },
       {
         "id": "A2",
@@ -54,7 +54,15 @@
         "given": "a feature whose calls name a missing feature",
         "when": "it is saved",
         "then": "the response is 400 with unknown_feature",
-        "verify": "pnpm --filter @pc/core test -- features"
+        "verify": "pnpm --filter @pc/core test features"
+      },
+      {
+        "id": "A3",
+        "covers": [
+          "R1"
+        ],
+        "text": "A saved card is written to features/<context>/<entity>.<action>.yml, also when it was read from functions/",
+        "verify": "pnpm --filter @pc/core test features"
       }
     ],
     "code_refs": [
@@ -180,18 +188,5 @@
       "exists": true
     }
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "catalog.feature.edit",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
-      "file": "/Users/ra/git/product-creator/docs/product/core/features/catalog/feature.edit.yml",
-      "component": "65b1a710-428c-4e33-baf7-b6047999dfad"
-    }
-  ]
+  "issues": []
 }

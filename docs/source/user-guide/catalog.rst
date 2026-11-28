@@ -119,7 +119,7 @@ agents. All spec fields are optional; fill them as the feature matures.
        given: a manager on the contacts page
        when: they submit name and e-mail
        then: the contact is listed and contact.created is emitted
-       verify: pnpm test -- contacts.create   # command or test that checks it (for agents)
+       verify: pnpm test contacts.create     # command or test that checks it (for agents)
      - id: A2
        covers: [R2]
        text: Creating a contact with an existing e-mail returns 409 and the existing id

@@ -20,10 +20,24 @@ actors:
   - product_owner
 requirements:
   - id: R1
-    text: Errors and warnings are grouped by entry and link to it
+    text: Every issue shows its level, the entry (link) and the field; a design check shows its level in strict mode
+  - id: R2
+    text: Issues can be filtered by level (errors, warnings, info) and to design checks only
 tickets:
   - PRODUCTCREATOR-29
+  - PRODUCTCREATOR-34
 screens:
   - id: S1
     title: Problems of the catalog
     path: /problems
+acceptance:
+  - id: A1
+    covers:
+      - R1
+    text: /api/validation returns each issue with entry, field, level, check and intended level, and the counts
+    verify: pnpm --filter @pc/core test features
+  - id: A2
+    covers:
+      - R2
+    text: The Problems page has a level filter and a design-checks-only switch (screenshot catalog.problems.show S1)
+    verify: pnpm catalog:spec

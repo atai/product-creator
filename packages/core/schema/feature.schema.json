@@ -256,7 +256,7 @@
             "type": "string",
             "minLength": 1,
             "x-audience": "agent",
-            "description": "How to verify automatically: a command or test reference, e.g. \"pnpm --filter @pc/core test -- validation\""
+            "description": "How to verify automatically: a command or test reference, e.g. \"pnpm --filter @pc/core test validation\""
           }
         },
         "anyOf": [

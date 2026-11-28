@@ -50,6 +50,10 @@ describe('product-creator migrate', () => {
 
     const bare = io();
     expect(await runCli(['lint', '--catalog', path.join(root, project.components[0].catalog), '--json'], bare.io)).toBe(1);
+    // --json: the issues for tools
+    const report = JSON.parse(bare.out.join('\n')) as { errors: number; issues: { code: string }[] };
+    expect(report.errors).toBeGreaterThan(0);
+    expect(report.issues.map((i) => i.code)).toContain('unknown_feature');
     expect(JSON.parse(bare.out.join('\n')).errors).toBe(1);
 
     fs.unlinkSync(wf);

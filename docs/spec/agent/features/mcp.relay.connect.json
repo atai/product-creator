@@ -40,7 +40,7 @@
           "R2"
         ],
         "text": "Handshake, scope and relayed requests behave as specified",
-        "verify": "pnpm --filter @pc/mcp test -- relay"
+        "verify": "pnpm --filter @pc/mcp test relay"
       }
     ],
     "tickets": [

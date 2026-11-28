@@ -5,6 +5,10 @@ entity: relay
 action: connect
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Remote agents reach the local MCP server through the Emperor relay; scope is the stricter of the bot token and the local setting.
 source_file: relay/client.ts
 calls:
@@ -25,7 +29,7 @@ acceptance:
       - R1
       - R2
     text: Handshake, scope and relayed requests behave as specified
-    verify: pnpm --filter @pc/mcp test -- relay
+    verify: pnpm --filter @pc/mcp test relay
 tickets:
   - PRODUCTCREATOR-20
   - PRODUCTCREATOR-25

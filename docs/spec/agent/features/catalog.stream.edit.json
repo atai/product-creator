@@ -28,7 +28,7 @@
           "R2"
         ],
         "text": "Stream schema, unknown workflows and unknown stage events are reported",
-        "verify": "pnpm --filter @pc/core test -- design"
+        "verify": "pnpm --filter @pc/core test design"
       }
     ],
     "decisions": [

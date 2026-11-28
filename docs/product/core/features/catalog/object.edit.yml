@@ -5,6 +5,10 @@ entity: object
 action: edit
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Creates or changes a business object with its fields; field types are scalars or other business objects.
 source_file: http/routes/save-business-object/route.ts
 calls:
@@ -20,7 +24,7 @@ acceptance:
     covers:
       - R1
     text: A field of unknown type is rejected with unknown_type
-    verify: pnpm --filter @pc/core test -- validation
+    verify: pnpm --filter @pc/core test validation
 tickets:
   - PRODUCTCREATOR-7
 code_refs:

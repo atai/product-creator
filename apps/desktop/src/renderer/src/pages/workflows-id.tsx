@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { LIFECYCLES, type Lifecycle, type Workflow } from '@pc/core/types';
@@ -78,17 +78,7 @@ export default function WorkflowEditPage() {
     name: 'compensations',
   });
 
-  useEffect(() => {
-    const appParam = searchParams.get('app');
-    if (appParam) {
-      setSelectedApp(appParam);
-    }
-    if (!isNew) {
-      loadWorkflow();
-    }
-  }, [workflowId, searchParams]);
-
-  const loadWorkflow = async () => {
+  const loadWorkflow = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/workflow?id=${encodeURIComponent(workflowId)}`);
@@ -119,7 +109,18 @@ export default function WorkflowEditPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [workflowId, reset]);
+
+  useEffect(() => {
+    const appParam = searchParams.get('app');
+    if (appParam) {
+      setSelectedApp(appParam);
+    }
+    if (!isNew) {
+      void loadWorkflow();
+    }
+  }, [isNew, loadWorkflow, searchParams]);
+
 
   const onSubmit = async (data: WorkflowFormData) => {
     try {

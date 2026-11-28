@@ -5,6 +5,10 @@ entity: catalog
 action: migrate
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Moves the old functions/ catalog folders to features/ without overwriting anything (app banner and `product-creator migrate`).
 source_file: catalog/migrate.ts
 objects:
@@ -21,7 +25,7 @@ acceptance:
       - R1
       - R2
     text: migrate moves files, removes identical copies and reports conflicts
-    verify: pnpm --filter desktop test -- cli
+    verify: pnpm --filter desktop test cli
 tickets:
   - PRODUCTCREATOR-28
 code_refs:

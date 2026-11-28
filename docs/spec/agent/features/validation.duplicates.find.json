@@ -19,6 +19,16 @@
         "text": "Similar names and ids are found across components"
       }
     ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "find_duplicates finds the same entity.action and similar names, also in other components",
+        "verify": "pnpm --filter @pc/core test validation"
+      }
+    ],
     "tickets": [
       "PRODUCTCREATOR-29"
     ]
@@ -30,18 +40,5 @@
   "workflows": [
     "agent.plan_change"
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "validation.duplicates.find",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
-      "file": "/Users/ra/git/product-creator/docs/product/core/features/validation/duplicates.find.yml",
-      "component": "65b1a710-428c-4e33-baf7-b6047999dfad"
-    }
-  ]
+  "issues": []
 }

@@ -47,7 +47,7 @@
         "given": "a monorepo opened for the first time",
         "when": "the import runs",
         "then": "product-creator.yml and one *.pc.yml per component exist with UUIDs",
-        "verify": "pnpm --filter @pc/core test -- model"
+        "verify": "pnpm --filter @pc/core test model"
       },
       {
         "id": "A2",
@@ -55,7 +55,7 @@
           "R3"
         ],
         "text": "Reopening the folder changes no file",
-        "verify": "pnpm --filter @pc/core test -- model"
+        "verify": "pnpm --filter @pc/core test model"
       }
     ],
     "tickets": [

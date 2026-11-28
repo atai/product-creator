@@ -269,7 +269,7 @@ const ACCEPTANCE_HINTS = {
   when: 'action',
   then: 'expected result',
   text: 'or the whole criterion as one sentence',
-  verify: 'pnpm --filter @pc/core test -- validation',
+  verify: 'pnpm --filter @pc/core test validation',
 } as const;
 
 const CONSTRAINT_KINDS: NonNullable<FeatureConstraint['kind']>[] = ['performance', 'security', 'reliability', 'compatibility', 'usability', 'compliance', 'other'];

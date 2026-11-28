@@ -22,6 +22,16 @@
         "text": "Every tool call, local or relayed, is recorded"
       }
     ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "text": "Local and relayed tool calls, and denied ones, appear in the action log",
+        "verify": "pnpm --filter @pc/mcp test server"
+      }
+    ],
     "tickets": [
       "PRODUCTCREATOR-18"
     ]
@@ -58,18 +68,5 @@
   ],
   "calledBy": [],
   "workflows": [],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.actions.log",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
-      "file": "/Users/ra/git/product-creator/docs/product/mcp/features/mcp/actions.log.yml",
-      "component": "5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64"
-    }
-  ]
+  "issues": []
 }

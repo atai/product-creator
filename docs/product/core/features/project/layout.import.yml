@@ -5,6 +5,10 @@ entity: layout
 action: import
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: When a repository is opened for the first time, services and libraries are found from its layout and written to product-creator.yml and *.pc.yml.
 source_file: project/model.ts
 objects:
@@ -29,12 +33,12 @@ acceptance:
     given: a monorepo opened for the first time
     when: the import runs
     then: product-creator.yml and one *.pc.yml per component exist with UUIDs
-    verify: pnpm --filter @pc/core test -- model
+    verify: pnpm --filter @pc/core test model
   - id: A2
     covers:
       - R3
     text: Reopening the folder changes no file
-    verify: pnpm --filter @pc/core test -- model
+    verify: pnpm --filter @pc/core test model
 tickets:
   - PRODUCTCREATOR-8
   - PRODUCTCREATOR-12

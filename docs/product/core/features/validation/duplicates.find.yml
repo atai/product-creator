@@ -5,6 +5,10 @@ entity: duplicates
 action: find
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Finds entries with the same or a similar name or id.
 source_file: validation/plan.ts
 actors:
@@ -14,3 +18,9 @@ requirements:
     text: Similar names and ids are found across components
 tickets:
   - PRODUCTCREATOR-29
+acceptance:
+  - id: A1
+    covers:
+      - R1
+    text: find_duplicates finds the same entity.action and similar names, also in other components
+    verify: pnpm --filter @pc/core test validation

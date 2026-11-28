@@ -52,7 +52,15 @@
           "R2"
         ],
         "text": "A catalog with unknown references, types and duplicates reports each with code and field",
-        "verify": "pnpm --filter @pc/core test -- validation"
+        "verify": "pnpm --filter @pc/core test validation"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R3"
+        ],
+        "text": "A stream is checked against its schema and its stage workflows must exist",
+        "verify": "pnpm --filter @pc/core test validation"
       }
     ],
     "constraints": [
@@ -238,18 +246,5 @@
   "workflows": [
     "project.onboard"
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "validation.model.validate",
-      "field": "requirements[2]",
-      "message": "Requirement R3 has no acceptance criterion. Add one with covers: [R3].",
-      "file": "/Users/ra/git/product-creator/docs/product/core/features/validation/model.validate.yml",
-      "component": "65b1a710-428c-4e33-baf7-b6047999dfad"
-    }
-  ]
+  "issues": []
 }

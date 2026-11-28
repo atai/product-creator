@@ -116,8 +116,8 @@
   "ready": true,
   "counts": {
     "errors": 0,
-    "warnings": 18,
-    "infos": 3,
+    "warnings": 0,
+    "infos": 0,
     "features": 33,
     "objects": 22,
     "workflows": 3
@@ -132,7 +132,7 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/app.settings.edit.json",
-      "bytes": 2113,
+      "bytes": 2107,
       "issues": 0
     },
     {
@@ -142,8 +142,8 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/app.update.install.json",
-      "bytes": 1150,
-      "issues": 1
+      "bytes": 1277,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -152,8 +152,8 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/catalog.feature.edit.json",
-      "bytes": 4932,
-      "issues": 1
+      "bytes": 4712,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -162,8 +162,8 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/catalog.graph.show.json",
-      "bytes": 3954,
-      "issues": 1
+      "bytes": 3744,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -172,8 +172,8 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/catalog.matrix.show.json",
-      "bytes": 3504,
-      "issues": 1
+      "bytes": 3101,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -182,7 +182,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/catalog.object.edit.json",
-      "bytes": 2292,
+      "bytes": 2289,
       "issues": 0
     },
     {
@@ -192,8 +192,8 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/catalog.problems.show.json",
-      "bytes": 2609,
-      "issues": 1
+      "bytes": 2874,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -202,7 +202,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/catalog.stream.edit.json",
-      "bytes": 1518,
+      "bytes": 1515,
       "issues": 0
     },
     {
@@ -222,8 +222,8 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/interfaces.openapi.generate.json",
-      "bytes": 2654,
-      "issues": 1
+      "bytes": 2392,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -232,7 +232,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/interfaces.operation.list.json",
-      "bytes": 1564,
+      "bytes": 1561,
       "issues": 0
     },
     {
@@ -242,8 +242,8 @@
       "lifecycle": "implemented",
       "component": "mcp",
       "file": "features/mcp.actions.log.json",
-      "bytes": 1741,
-      "issues": 1
+      "bytes": 1526,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -252,8 +252,8 @@
       "lifecycle": "implemented",
       "component": "mcp",
       "file": "features/mcp.catalog.read.json",
-      "bytes": 5337,
-      "issues": 1
+      "bytes": 5093,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -262,8 +262,8 @@
       "lifecycle": "implemented",
       "component": "mcp",
       "file": "features/mcp.catalog.write.json",
-      "bytes": 2710,
-      "issues": 1
+      "bytes": 2446,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -272,8 +272,8 @@
       "lifecycle": "implemented",
       "component": "mcp",
       "file": "features/mcp.plan.check.json",
-      "bytes": 1326,
-      "issues": 1
+      "bytes": 1199,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -282,7 +282,7 @@
       "lifecycle": "implemented",
       "component": "mcp",
       "file": "features/mcp.relay.connect.json",
-      "bytes": 1888,
+      "bytes": 1885,
       "issues": 0
     },
     {
@@ -292,8 +292,8 @@
       "lifecycle": "implemented",
       "component": "mcp",
       "file": "features/mcp.server.serve.json",
-      "bytes": 2435,
-      "issues": 1
+      "bytes": 2173,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -302,7 +302,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/project.catalog.migrate.json",
-      "bytes": 3123,
+      "bytes": 3120,
       "issues": 0
     },
     {
@@ -312,8 +312,8 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/project.component.edit.json",
-      "bytes": 4548,
-      "issues": 1
+      "bytes": 4317,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -322,8 +322,8 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/project.context.edit.json",
-      "bytes": 4209,
-      "issues": 1
+      "bytes": 3950,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -332,7 +332,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/project.layout.import.json",
-      "bytes": 4154,
+      "bytes": 4148,
       "issues": 0
     },
     {
@@ -342,8 +342,8 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/project.workspace.open.json",
-      "bytes": 4220,
-      "issues": 3
+      "bytes": 3181,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -372,8 +372,8 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/sync.code.link.json",
-      "bytes": 4501,
-      "issues": 1
+      "bytes": 4093,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -382,7 +382,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/sync.schema.import.json",
-      "bytes": 2564,
+      "bytes": 2558,
       "issues": 0
     },
     {
@@ -392,8 +392,8 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/validation.catalog.lint.json",
-      "bytes": 2180,
-      "issues": 2
+      "bytes": 1441,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -402,7 +402,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/validation.change.impact.json",
-      "bytes": 4839,
+      "bytes": 4836,
       "issues": 0
     },
     {
@@ -412,7 +412,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/validation.design.check.json",
-      "bytes": 3455,
+      "bytes": 3443,
       "issues": 0
     },
     {
@@ -422,8 +422,8 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/validation.duplicates.find.json",
-      "bytes": 1224,
-      "issues": 1
+      "bytes": 1008,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -432,8 +432,8 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/validation.model.validate.json",
-      "bytes": 6107,
-      "issues": 1
+      "bytes": 5849,
+      "issues": 0
     },
     {
       "kind": "feature",
@@ -452,7 +452,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/validation.save.guard.json",
-      "bytes": 1218,
+      "bytes": 1215,
       "issues": 0
     },
     {
@@ -706,174 +706,5 @@
       "issues": 0
     }
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "catalog.feature.edit",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "interfaces.openapi.generate",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "project.context.edit",
-      "field": "requirements[3]",
-      "message": "Requirement R4 has no acceptance criterion. Add one with covers: [R4]."
-    },
-    {
-      "severity": "warning",
-      "code": "open_questions_left",
-      "kind": "feature",
-      "id": "sync.code.link",
-      "field": "open_questions",
-      "message": "1 open question(s) on an implemented feature (Q1). Answer them (turn them into decisions), or set the feature back to draft."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "validation.duplicates.find",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "validation.model.validate",
-      "field": "requirements[2]",
-      "message": "Requirement R3 has no acceptance criterion. Add one with covers: [R3]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "app.update.install",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    },
-    {
-      "severity": "info",
-      "code": "acceptance_without_verify",
-      "kind": "feature",
-      "id": "catalog.graph.show",
-      "field": "acceptance[0]",
-      "message": "Acceptance A1 has no verify: add the command or test that checks it."
-    },
-    {
-      "severity": "info",
-      "code": "acceptance_without_verify",
-      "kind": "feature",
-      "id": "catalog.matrix.show",
-      "field": "acceptance[0]",
-      "message": "Acceptance A1 has no verify: add the command or test that checks it."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "catalog.problems.show",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "project.component.edit",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "project.workspace.open",
-      "field": "requirements[1]",
-      "message": "Requirement R2 has no acceptance criterion. Add one with covers: [R2]."
-    },
-    {
-      "severity": "warning",
-      "code": "open_questions_left",
-      "kind": "feature",
-      "id": "project.workspace.open",
-      "field": "open_questions",
-      "message": "1 open question(s) on an implemented feature (Q1). Answer them (turn them into decisions), or set the feature back to draft."
-    },
-    {
-      "severity": "info",
-      "code": "acceptance_without_verify",
-      "kind": "feature",
-      "id": "project.workspace.open",
-      "field": "acceptance[0]",
-      "message": "Acceptance A1 has no verify: add the command or test that checks it."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "validation.catalog.lint",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "validation.catalog.lint",
-      "field": "requirements[1]",
-      "message": "Requirement R2 has no acceptance criterion. Add one with covers: [R2]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.actions.log",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.catalog.read",
-      "field": "requirements[1]",
-      "message": "Requirement R2 has no acceptance criterion. Add one with covers: [R2]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.catalog.write",
-      "field": "requirements[1]",
-      "message": "Requirement R2 has no acceptance criterion. Add one with covers: [R2]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.plan.check",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    },
-    {
-      "severity": "warning",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.server.serve",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1]."
-    }
-  ]
+  "issues": []
 }

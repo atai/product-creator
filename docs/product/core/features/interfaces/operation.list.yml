@@ -5,6 +5,10 @@ entity: operation
 action: list
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Loads committed or generated OpenAPI specs and lists their operations (Interfaces page, MCP).
 source_file: interfaces/openapi.ts
 objects:
@@ -18,6 +22,6 @@ acceptance:
     covers:
       - R1
     text: YAML and JSON specs load into operations
-    verify: pnpm --filter @pc/core test -- openapi
+    verify: pnpm --filter @pc/core test openapi
 tickets:
   - PRODUCTCREATOR-9

@@ -46,7 +46,7 @@
           "R2"
         ],
         "text": "updateProject saves, keeps and clears the context and rejects bad ids",
-        "verify": "pnpm --filter @pc/core test -- model"
+        "verify": "pnpm --filter @pc/core test model"
       },
       {
         "id": "A2",
@@ -54,7 +54,15 @@
           "R3"
         ],
         "text": "get_project returns what update_project wrote; a bad goal id is rejected",
-        "verify": "pnpm --filter @pc/mcp test -- server"
+        "verify": "pnpm --filter @pc/mcp test server"
+      },
+      {
+        "id": "A3",
+        "covers": [
+          "R4"
+        ],
+        "text": "Ticket keys become tracker links (issueUrl with {id}) in the spec",
+        "verify": "pnpm --filter @pc/core test spec model"
       }
     ],
     "code_refs": [
@@ -150,18 +158,5 @@
       "exists": true
     }
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "project.context.edit",
-      "field": "requirements[3]",
-      "message": "Requirement R4 has no acceptance criterion. Add one with covers: [R4].",
-      "file": "/Users/ra/git/product-creator/docs/product/core/features/project/context.edit.yml",
-      "component": "65b1a710-428c-4e33-baf7-b6047999dfad"
-    }
-  ]
+  "issues": []
 }

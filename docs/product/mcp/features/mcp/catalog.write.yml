@@ -5,6 +5,10 @@ entity: catalog
 action: write
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: apply_plan, create_catalog_entry, update_catalog_entry, update_project; writes are validated and rejected with issues.
 source_file: tools.ts
 calls:
@@ -29,17 +33,22 @@ acceptance:
     covers:
       - R1
     text: Creating a feature with an unknown object returns unknown_object
-    verify: pnpm --filter @pc/mcp test -- server
+    verify: pnpm --filter @pc/mcp test server
   - id: A2
     covers:
       - R3
     text: A plan with cross-references is applied in one call; a broken plan writes nothing
-    verify: pnpm --filter @pc/mcp test -- server
+    verify: pnpm --filter @pc/mcp test server
   - id: A3
     covers:
       - R4
     text: Read-only server instructions name Settings → MCP → scope
-    verify: pnpm --filter @pc/mcp test -- server
+    verify: pnpm --filter @pc/mcp test server
+  - id: A4
+    covers:
+      - R2
+    text: update_catalog_entry merges the patch; null removes the field
+    verify: pnpm --filter @pc/mcp test server
 tickets:
   - PRODUCTCREATOR-18
   - PRODUCTCREATOR-33

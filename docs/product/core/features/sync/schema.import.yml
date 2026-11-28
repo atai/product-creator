@@ -24,12 +24,12 @@ acceptance:
     covers:
       - R1
     text: A Prisma schema is parsed into models and fields
-    verify: pnpm --filter @pc/core test -- prisma
+    verify: pnpm --filter @pc/core test prisma
   - id: A2
     covers:
       - R2
     text: Enum fields are parsed as enum<…> types
-    verify: pnpm --filter @pc/core test -- prisma
+    verify: pnpm --filter @pc/core test prisma
 tickets:
   - PRODUCTCREATOR-3
   - PRODUCTCREATOR-34

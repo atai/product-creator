@@ -5,6 +5,10 @@ entity: server
 action: serve
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Streamable HTTP MCP server on 127.0.0.1 with a bearer token and read or write scope; off by default.
 source_file: server.ts
 objects:
@@ -25,7 +29,12 @@ acceptance:
       - R2
       - R3
     text: Wrong token → 401; write tool with read token → error
-    verify: pnpm --filter @pc/mcp test -- server
+    verify: pnpm --filter @pc/mcp test server
+  - id: A2
+    covers:
+      - R1
+    text: The server is not reachable on other network interfaces
+    verify: pnpm --filter @pc/mcp test server
 constraints:
   - id: C1
     kind: security

@@ -34,7 +34,7 @@
           "R2"
         ],
         "text": "migrate moves files, removes identical copies and reports conflicts",
-        "verify": "pnpm --filter desktop test -- cli"
+        "verify": "pnpm --filter desktop test cli"
       }
     ],
     "code_refs": [

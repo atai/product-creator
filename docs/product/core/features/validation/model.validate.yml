@@ -36,7 +36,12 @@ acceptance:
       - R1
       - R2
     text: A catalog with unknown references, types and duplicates reports each with code and field
-    verify: pnpm --filter @pc/core test -- validation
+    verify: pnpm --filter @pc/core test validation
+  - id: A2
+    covers:
+      - R3
+    text: A stream is checked against its schema and its stage workflows must exist
+    verify: pnpm --filter @pc/core test validation
 constraints:
   - id: C1
     kind: performance

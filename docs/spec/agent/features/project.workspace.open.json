@@ -39,14 +39,23 @@
         "covers": [
           "R1"
         ],
-        "text": "`product-creator ~/a ~/b` shows both projects in the workspace"
+        "text": "Folders from the command line open together, relative to where it was started",
+        "verify": "pnpm --filter desktop test args"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R2"
+        ],
+        "text": "Projects are added and removed, and the next launch opens what was open",
+        "verify": "pnpm --filter desktop test workspace"
       }
     ],
-    "open_questions": [
+    "decisions": [
       {
-        "id": "Q1",
-        "question": "Should the workspace remember projects between launches per machine or per user?",
-        "owner": "atai"
+        "id": "D1",
+        "decision": "The workspace is remembered per OS user on each machine (workspace.json in the app data folder); dev and installed builds keep separate lists",
+        "reason": "Current behaviour; projects are local folders, so a shared list would point to paths that do not exist elsewhere"
       }
     ],
     "tickets": [
@@ -116,42 +125,5 @@
   "workflows": [
     "project.onboard"
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "project.workspace.open",
-      "field": "requirements[1]",
-      "message": "Requirement R2 has no acceptance criterion. Add one with covers: [R2].",
-      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/project/workspace.open.yml",
-      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
-    },
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "open_questions_left",
-      "kind": "feature",
-      "id": "project.workspace.open",
-      "field": "open_questions",
-      "message": "1 open question(s) on an implemented feature (Q1). Answer them (turn them into decisions), or set the feature back to draft.",
-      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/project/workspace.open.yml",
-      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
-    },
-    {
-      "severity": "info",
-      "intended": "warning",
-      "check": "design",
-      "code": "acceptance_without_verify",
-      "kind": "feature",
-      "id": "project.workspace.open",
-      "field": "acceptance[0]",
-      "message": "Acceptance A1 has no verify: add the command or test that checks it.",
-      "file": "/Users/ra/git/product-creator/docs/product/desktop/features/project/workspace.open.yml",
-      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
-    }
-  ]
+  "issues": []
 }

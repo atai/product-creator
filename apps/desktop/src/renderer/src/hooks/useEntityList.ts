@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 /**
  * Generic hook for entity list pages with search and filtering
@@ -14,7 +14,6 @@ export function useEntityList<T>(
   options: UseEntityListOptions = {}
 ) {
   const [items, setItems] = useState<T[]>([]);
-  const [filteredItems, setFilteredItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { app } = options;
@@ -27,7 +26,6 @@ export function useEntityList<T>(
       if (!response.ok) throw new Error('Failed to fetch items');
       const data = await response.json();
       setItems(data);
-      setFilteredItems(data);
     } catch (error) {
       console.error('Error loading items:', error);
     } finally {
@@ -39,21 +37,12 @@ export function useEntityList<T>(
     loadItems();
   }, [loadItems]);
 
-  useEffect(() => {
-    // Filter items by search query
-    if (!searchQuery.trim()) {
-      setFilteredItems(items);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = items.filter((item) => {
-      const fields = searchFields(item);
-      return fields.some(field => field.toLowerCase().includes(query));
-    });
-
-    setFilteredItems(filtered);
-  }, [searchQuery, items]);
+  // derived on every change of items, query or the field extractor (no state to keep in sync)
+  const filteredItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter((item) => searchFields(item).some((field) => field.toLowerCase().includes(query)));
+  }, [items, searchQuery, searchFields]);
 
   return {
     items,

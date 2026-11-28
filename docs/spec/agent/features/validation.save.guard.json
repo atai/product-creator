@@ -31,7 +31,7 @@
           "R2"
         ],
         "text": "Writes that add errors are rejected, consistent ones accepted, existing problems stay editable",
-        "verify": "pnpm --filter @pc/core test -- features"
+        "verify": "pnpm --filter @pc/core test features"
       }
     ],
     "tickets": [

@@ -24,6 +24,11 @@ acceptance:
     covers:
       - R2
     text: The manager runs, deduplicates and cancels generations
-    verify: pnpm --filter @pc/core test -- generator
+    verify: pnpm --filter @pc/core test generator
+  - id: A2
+    covers:
+      - R1
+    text: Commands run in their folder with node_modules/.bin and the login shell PATH
+    verify: pnpm --filter @pc/core test process
 tickets:
   - PRODUCTCREATOR-23

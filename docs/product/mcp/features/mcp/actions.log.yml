@@ -5,6 +5,10 @@ entity: actions
 action: log
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Every tool call is recorded with compacted arguments and shown in the app.
 source_file: audit.ts
 objects:
@@ -15,3 +19,9 @@ requirements:
     text: Every tool call, local or relayed, is recorded
 tickets:
   - PRODUCTCREATOR-18
+acceptance:
+  - id: A1
+    covers:
+      - R1
+    text: Local and relayed tool calls, and denied ones, appear in the action log
+    verify: pnpm --filter @pc/mcp test server

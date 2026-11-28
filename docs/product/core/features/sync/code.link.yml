@@ -5,6 +5,10 @@ entity: code
 action: link
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: 'Code sync matches exported code functions to existing features: linked / proposed / candidate / stale. Creates a feature only on request.'
 source_file: sync/codeSyncService.ts
 objects:
@@ -29,11 +33,11 @@ acceptance:
       - R2
       - R3
     text: Matching yields linked, proposed, candidate and stale items
-    verify: pnpm --filter @pc/core test -- codeMatcher
-open_questions:
-  - id: Q1
-    question: Should sync refresh calls of linked features on every run, or only on link?
-    owner: atai
+    verify: pnpm --filter @pc/core test codeMatcher
 tickets:
   - PRODUCTCREATOR-4
   - PRODUCTCREATOR-30
+decisions:
+  - id: D1
+    decision: calls are set when a code function is linked; later runs skip linked features and do not refresh calls
+    reason: 'Current behaviour: hand-edited calls are never overwritten; to refresh, unlink and link again'

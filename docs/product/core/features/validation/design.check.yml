@@ -10,6 +10,7 @@ emits: []
 consumes: []
 apis: []
 description: 'Design-level checks: architecture (calls vs dependsOn, cycles), events, object usage and kinds, lifecycle consistency, completeness of agreed features, code links, OpenAPI, actors, streams. Advisory by default.'
+source_file: validation/design.ts
 calls:
   - validation.model.validate
 actors:
@@ -36,19 +37,19 @@ acceptance:
     covers:
       - R1
     text: Architecture checks find calls outside dependsOn and cycles
-    verify: pnpm --filter @pc/core test -- design
+    verify: pnpm --filter @pc/core test design
   - id: A2
     covers:
       - R2
       - R4
     text: Completeness and code-link checks report agreed / implemented gaps
-    verify: pnpm --filter @pc/core test -- design
+    verify: pnpm --filter @pc/core test design
   - id: A3
     covers:
       - R3
       - R5
     text: Lifecycle checks report drafts, deprecated and removed references
-    verify: pnpm --filter @pc/core test -- design
+    verify: pnpm --filter @pc/core test design
   - id: A4
     covers:
       - R6
@@ -56,7 +57,7 @@ acceptance:
     given: the same model
     when: checks run in advisory, strict, with an override and off
     then: severities follow the mode, an advisory plan is not rejected, a strict one is
-    verify: pnpm --filter @pc/core test -- design
+    verify: pnpm --filter @pc/core test design
 decisions:
   - id: D1
     decision: Strictness depends on lifecycle
@@ -68,4 +69,3 @@ decisions:
     date: '2026-11-28'
 tickets:
   - PRODUCTCREATOR-34
-source_file: validation/design.ts

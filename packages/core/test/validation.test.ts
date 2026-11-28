@@ -70,6 +70,20 @@ describe('feature spec fields (PRODUCTCREATOR-32)', () => {
   });
 });
 
+describe('streams (PRODUCTCREATOR-34)', () => {
+  it('a stream is checked against its schema and its stage workflows must exist', () => {
+    const m = model();
+    m.streams = [
+      { data: { stream: 'sales', goal: 'Sell', stages: [{ name: 'checkout', entry_events: ['cart.ready'], exit_events: ['order.paid'], workflows: ['orders.checkout', 'orders.refund'] }] }, component: 'svc' },
+      { data: Object.assign({ stream: 'Bad Id', goal: 'x' }, { stages: [] }), component: 'svc' },
+    ];
+    const codes = validateModel(m).map((i) => `${i.code}:${i.kind}:${i.id}:${i.field ?? ''}`);
+    expect(codes).toContain('unknown_workflow:stream:sales:stages[0].workflows[1]');
+    expect(codes).not.toContain('unknown_workflow:stream:sales:stages[0].workflows[0]');
+    expect(codes.filter((c) => c.startsWith('schema:stream:Bad Id'))).toHaveLength(2);
+  });
+});
+
 describe('business object kinds (PRODUCTCREATOR-39)', () => {
   const withKinds = (): CatalogModel => {
     const m = model();
@@ -207,5 +221,9 @@ describe('plan checks', () => {
     const r = findDuplicates(model(), { kind: 'feature', name: 'Order Create', id: 'sales.order.create' });
     expect(r.matches.map((m) => `${m.id}:${m.via}`)).toEqual(['orders.order.create:same entity.action, same name']);
     expect(findDuplicates(model(), { kind: 'business_object', name: 'customer' }).matches.map((m) => m.id)).toEqual(['customer']);
+    // across components
+    const two = model();
+    two.features.push({ data: feature('web.order.create'), component: 'web' });
+    expect(findDuplicates(two, { kind: 'feature', name: 'order create' }).matches.map((m) => `${m.id}@${m.component}`)).toEqual(expect.arrayContaining(['orders.order.create@svc', 'web.order.create@web']));
   });
 });

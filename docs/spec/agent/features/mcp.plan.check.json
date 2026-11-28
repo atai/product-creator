@@ -25,6 +25,18 @@
         "text": "An agent checks a whole plan in one call before writing code"
       }
     ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1"
+        ],
+        "given": "a plan of several changes",
+        "when": "validate_plan runs",
+        "then": "it returns ok and the errors the whole plan would add; nothing is written",
+        "verify": "pnpm --filter @pc/mcp test server"
+      }
+    ],
     "tickets": [
       "PRODUCTCREATOR-29"
     ]
@@ -34,18 +46,5 @@
   "workflows": [
     "agent.plan_change"
   ],
-  "issues": [
-    {
-      "severity": "warning",
-      "intended": "error",
-      "check": "design",
-      "code": "requirement_not_covered",
-      "kind": "feature",
-      "id": "mcp.plan.check",
-      "field": "requirements[0]",
-      "message": "Requirement R1 has no acceptance criterion. Add one with covers: [R1].",
-      "file": "/Users/ra/git/product-creator/docs/product/mcp/features/mcp/plan.check.yml",
-      "component": "5b6d1c0e-8d0f-4a52-9e0b-7d3c1b8f2a64"
-    }
-  ]
+  "issues": []
 }

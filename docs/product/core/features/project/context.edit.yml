@@ -32,12 +32,17 @@ acceptance:
       - R1
       - R2
     text: updateProject saves, keeps and clears the context and rejects bad ids
-    verify: pnpm --filter @pc/core test -- model
+    verify: pnpm --filter @pc/core test model
   - id: A2
     covers:
       - R3
     text: get_project returns what update_project wrote; a bad goal id is rejected
-    verify: pnpm --filter @pc/mcp test -- server
+    verify: pnpm --filter @pc/mcp test server
+  - id: A3
+    covers:
+      - R4
+    text: Ticket keys become tracker links (issueUrl with {id}) in the spec
+    verify: pnpm --filter @pc/core test spec model
 screens:
   - id: S1
     title: Workspace with the project and its components

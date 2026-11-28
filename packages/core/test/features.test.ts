@@ -131,6 +131,28 @@ describe('feature spec fields in storage (PRODUCTCREATOR-32)', () => {
   });
 });
 
+describe('validation and graph API (PRODUCTCREATOR-34, -35)', () => {
+  const get = async (url: string) => (await dispatch(new Request(`http://pc.local${url}`))).json();
+  it('/api/validation lists every issue with its entry, field and level, design checks marked', async () => {
+    write(path.join(project.components[0].catalog, 'features/orders/order.create.yml'), card('orders.order.create') + 'calls:\n  - orders.order.cancel\n');
+    write(path.join(project.components[0].catalog, 'features/orders/order.cancel.yml'), card('orders.order.cancel'));
+    write(path.join(project.components[0].catalog, 'workflows/orders.checkout.yml'), 'workflow: orders.checkout\nlifecycle: implemented\nsteps:\n  - orders.order.create\n  - orders.order.cancel\n');
+    await load();
+    const body = (await get('/api/validation')) as { errors: number; warnings: number; infos: number; issues: { id: string; field?: string; code: string; check?: string; severity: string; intended?: string }[] };
+    expect(body).toMatchObject({ errors: 0 });
+    expect(body.warnings + body.infos).toBe(body.issues.length);
+    expect(body.issues).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'orders.order.create', field: 'source_file', code: 'missing_source_file', check: 'design', severity: 'warning', intended: 'error' })]));
+
+    const graph = (await get('/api/graph')) as { edges: { source: string; target: string; kind: string; label: string }[] };
+    expect(graph.edges).toEqual(
+      expect.arrayContaining([
+        { source: 'orders.order.create', target: 'orders.order.cancel', kind: 'calls', label: '' },
+        { source: 'orders.order.create', target: 'orders.order.cancel', kind: 'workflow', label: 'orders.checkout' },
+      ])
+    );
+  });
+});
+
 describe('apply plan (PRODUCTCREATOR-33)', () => {
   const post = (url: string, body: unknown) =>
     dispatch(new Request(`http://pc.local${url}`, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }));

@@ -26,7 +26,12 @@ acceptance:
     covers:
       - R2
     text: Renaming a component keeps its id
-    verify: pnpm --filter @pc/core test -- model
+    verify: pnpm --filter @pc/core test model
+  - id: A2
+    covers:
+      - R1
+    text: Name, slug, kind, dependencies and the OpenAPI command are saved in the component's *.pc.yml
+    verify: pnpm --filter @pc/core test model generator
 tickets:
   - PRODUCTCREATOR-12
   - PRODUCTCREATOR-14
