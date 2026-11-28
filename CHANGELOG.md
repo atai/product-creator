@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-28
+
+### Added
+- Add emits property to ComponentModel and validate runtime events for libraries ([097f732](https://github.com/atai/product-creator/commit/097f732a40ffeca34e05694bdff25ca8dd600ba0))
+
+### Changed
+- PRODUCTCREATOR-43 Streams as first-class entries: external systems, lifecycle, plans, checks, spec; error stream of 26 ([ed0fef7](https://github.com/atai/product-creator/commit/ed0fef738bd4116a32788056d930a187b5f8faf5))
+- PRODUCTCREATOR-37 i18n: interface in en/ru/de, project languages, translations in forms (i18n blocks with staleness checks), spec per language ([7f14a87](https://github.com/atai/product-creator/commit/7f14a87749ec2db4ba4ff6bfd1b26ab48755295b))
+
 ## [0.2.1] - 2026-11-28
 
 ### Changed
