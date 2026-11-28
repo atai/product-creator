@@ -51,6 +51,42 @@
         "description": "Reads the human spec"
       }
     ],
+    "systems": [
+      {
+        "id": "glitchtip",
+        "name": "GlitchTip",
+        "description": "Self-hosted error tracker (Sentry protocol) of ecooz, error.y.ecooz.net",
+        "emits": [
+          "glitchtip.issue.created"
+        ],
+        "consumes": [
+          "app.error.reported",
+          "app.sourcemaps.uploaded"
+        ]
+      },
+      {
+        "id": "youtrack",
+        "name": "YouTrack",
+        "description": "Issue tracker of the project (ecooz.youtrack.cloud)",
+        "emits": [
+          "youtrack.issue.created"
+        ],
+        "consumes": [
+          "glitchtip.issue.created"
+        ]
+      },
+      {
+        "id": "github",
+        "name": "GitHub",
+        "description": "Source code, CI and the releases the app updates from",
+        "emits": [
+          "github.release.published"
+        ],
+        "consumes": [
+          "youtrack.issue.created"
+        ]
+      }
+    ],
     "glossary": [
       {
         "term": "Feature",
@@ -117,14 +153,25 @@
   "counts": {
     "errors": 0,
     "warnings": 0,
-    "infos": 0,
-    "features": 34,
+    "infos": 1,
+    "features": 39,
     "objects": 22,
-    "workflows": 3
+    "workflows": 3,
+    "streams": 1
   },
   "chunkBudgetBytes": 16000,
   "screenshotsBase": "..",
   "entries": [
+    {
+      "kind": "feature",
+      "id": "app.error.report",
+      "name": "Report app errors to GlitchTip",
+      "lifecycle": "draft",
+      "component": "desktop",
+      "file": "features/app.error.report.json",
+      "bytes": 8768,
+      "issues": 0
+    },
     {
       "kind": "feature",
       "id": "app.settings.edit",
@@ -137,12 +184,22 @@
     },
     {
       "kind": "feature",
+      "id": "app.sourcemaps.upload",
+      "name": "Upload the source maps of a release",
+      "lifecycle": "draft",
+      "component": "desktop",
+      "file": "features/app.sourcemaps.upload.json",
+      "bytes": 3414,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
       "id": "app.update.install",
       "name": "Update the app",
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/app.update.install.json",
-      "bytes": 1277,
+      "bytes": 1386,
       "issues": 0
     },
     {
@@ -152,7 +209,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/catalog.feature.edit.json",
-      "bytes": 7453,
+      "bytes": 7411,
       "issues": 0
     },
     {
@@ -162,7 +219,7 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/catalog.graph.show.json",
-      "bytes": 5845,
+      "bytes": 5825,
       "issues": 0
     },
     {
@@ -172,7 +229,7 @@
       "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/catalog.matrix.show.json",
-      "bytes": 4390,
+      "bytes": 4378,
       "issues": 0
     },
     {
@@ -207,12 +264,22 @@
     },
     {
       "kind": "feature",
+      "id": "catalog.stream.plan",
+      "name": "Plan and check a stream",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/catalog.stream.plan.json",
+      "bytes": 7001,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
       "id": "catalog.translation.edit",
       "name": "Translate the catalog content",
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/catalog.translation.edit.json",
-      "bytes": 4594,
+      "bytes": 4586,
       "issues": 0
     },
     {
@@ -222,7 +289,7 @@
       "lifecycle": "implemented",
       "component": "core",
       "file": "features/catalog.workflow.edit.json",
-      "bytes": 3657,
+      "bytes": 3639,
       "issues": 0
     },
     {
@@ -347,6 +414,16 @@
     },
     {
       "kind": "feature",
+      "id": "project.system.edit",
+      "name": "Describe external systems",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/project.system.edit.json",
+      "bytes": 6620,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
       "id": "project.workspace.open",
       "name": "Open projects",
       "lifecycle": "implemented",
@@ -359,20 +436,30 @@
       "kind": "feature",
       "id": "spec.bundle.generate",
       "name": "Generate the agent spec bundle",
-      "lifecycle": "draft",
+      "lifecycle": "implemented",
       "component": "core",
       "file": "features/spec.bundle.generate.json",
-      "bytes": 1215,
+      "bytes": 2106,
       "issues": 0
     },
     {
       "kind": "feature",
       "id": "spec.document.render",
       "name": "Render the spec for people",
-      "lifecycle": "draft",
+      "lifecycle": "implemented",
       "component": "desktop",
       "file": "features/spec.document.render.json",
-      "bytes": 4254,
+      "bytes": 5647,
+      "issues": 0
+    },
+    {
+      "kind": "feature",
+      "id": "spec.stream.render",
+      "name": "Streams in the spec",
+      "lifecycle": "implemented",
+      "component": "core",
+      "file": "features/spec.stream.render.json",
+      "bytes": 3850,
       "issues": 0
     },
     {
@@ -709,12 +796,31 @@
       "kind": "workflow",
       "id": "spec.release",
       "name": "Release a spec",
-      "lifecycle": "draft",
+      "lifecycle": "implemented",
       "component": "core",
       "file": "workflows/spec.release.json",
-      "bytes": 486,
+      "bytes": 492,
       "issues": 0
+    },
+    {
+      "kind": "stream",
+      "id": "app.error_lifecycle",
+      "name": "From an error to the fixed release",
+      "lifecycle": "draft",
+      "component": "desktop",
+      "file": "streams/app.error_lifecycle.json",
+      "bytes": 7414,
+      "issues": 1
     }
   ],
-  "issues": []
+  "issues": [
+    {
+      "severity": "info",
+      "code": "stream_event_unknown",
+      "kind": "stream",
+      "id": "app.error_lifecycle",
+      "field": "stages[0].entry_events",
+      "message": "Stage \"Caught and scrubbed\" waits for \"app.error.raised\", which no feature, workflow or system emits. Add the emitter (a feature, or a system in product-creator.yml), or fix the event name."
+    }
+  ]
 }

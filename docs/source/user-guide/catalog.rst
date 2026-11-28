@@ -189,7 +189,32 @@ Business objects, workflows, streams
 * **Workflows** — ordered ``steps`` (feature ids) with optional compensations, a ``lifecycle`` (the
   same statuses as features: a planned workflow is ``draft``), a ``description`` and ``tickets``.
   Business objects can carry ``tickets`` too.
-* **Streams** — business processes with stages, entry/exit events, KPIs and workflows per stage.
+* **Streams** — business processes across stages (PRODUCTCREATOR-43). A stream has a goal, a
+  ``lifecycle`` like features, ``tickets``, KPIs (``K1``…) and stages (``ST1``…). Each stage starts and
+  ends with events and names what does its work: features, workflows, and actors or external systems
+  of the project (``performed_by``). Streams are planned (``validate_plan`` / ``apply_plan``), checked,
+  translated and shown in the spec like workflows.
+
+  .. code-block:: yaml
+
+     stream: app.error_lifecycle          # <context>.<name>, like workflows
+     name: From an error to the fixed release
+     goal: Errors of users are found and fixed without their help
+     lifecycle: draft
+     tickets: [PRODUCTCREATOR-26]
+     kpis:
+       - { id: K1, name: Releases with readable stacks, target: 100% }
+     stages:
+       - id: ST1
+         name: Caught and scrubbed
+         entry_events: [app.error.raised]
+         exit_events: [app.error.reported]
+         features: [app.error.report]
+       - id: ST2
+         name: Grouped
+         entry_events: [app.error.reported]
+         exit_events: [glitchtip.issue.created]
+         performed_by: [glitchtip]        # a system of product-creator.yml
 
 Views
 -----
@@ -251,7 +276,8 @@ can plan something that cannot be built:
      - error
      - An acceptance criterion ``covers`` a requirement id that the feature does not have
 
-Streams are validated too: their schema, and every stage workflow must exist (``unknown_workflow``).
+Streams are validated too: their schema; stage features and workflows must exist (``unknown_feature``,
+``unknown_workflow``); stage and KPI ids are unique in the stream; stream ids are unique.
 
 .. _design-checks:
 
@@ -319,7 +345,17 @@ warning from them.
      - A feature names an actor the project does not define (when it defines actors)
    * - ``stream_event_unknown``
      - warning
-     - A stream stage waits for an event nothing emits
+     - A stream stage waits for an event no feature, workflow or external system emits
+   * - ``stream_stage_not_implemented``
+     - error
+     - An implemented stream has a stage whose features or workflows are not implemented (draft, removed
+       and deprecated ones are reported by ``uses_draft`` / ``uses_removed`` / ``uses_deprecated``)
+   * - ``unknown_performer``
+     - error
+     - A stage is performed by an id that is neither an actor nor a system of the project
+   * - ``stage_without_work``
+     - warning
+     - A stage names no feature, workflow or performer
 
 **Advisory by default.** While the checks are new they are *advisory*: every design check is reported one
 level below its intended severity — an intended error is a warning, an intended warning is ``info``. So

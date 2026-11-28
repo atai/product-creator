@@ -102,9 +102,9 @@ const summarize = (kind: Kind, e: Rec): Rec => {
     case 'business_object':
       return { id: e.id, name: e.name, lifecycle: e.lifecycle, owner: e.owner, fields: Array.isArray(e.fields) ? e.fields.length : 0 };
     case 'workflow':
-      return { workflow: e.workflow, name: e.name, steps: Array.isArray(e.steps) ? e.steps.length : 0 };
+      return { workflow: e.workflow, name: e.name, lifecycle: e.lifecycle, steps: Array.isArray(e.steps) ? e.steps.length : 0 };
     case 'stream':
-      return { stream: e.stream, name: e.name, goal: e.goal, stages: Array.isArray(e.stages) ? e.stages.length : 0 };
+      return { stream: e.stream, name: e.name, lifecycle: e.lifecycle, goal: e.goal, stages: Array.isArray(e.stages) ? e.stages.length : 0 };
   }
 };
 
@@ -211,7 +211,7 @@ function projectView<T extends { component?: string; file?: string }>(project: P
 }
 
 const planChangeSchema = z.object({
-  kind: z.enum(['feature', 'business_object', 'workflow', 'function']).describe("Entry type ('function' = old name of 'feature')"),
+  kind: z.enum(['feature', 'business_object', 'workflow', 'stream', 'function']).describe("Entry type ('function' = old name of 'feature')"),
   op: z.enum(['upsert', 'delete']).optional().describe('upsert (default): create or replace the entry with data; delete: remove entry `id`'),
   data: z.record(z.string(), z.unknown()).optional().describe('Full proposed entry (for upsert)'),
   id: z.string().optional().describe('Entry id (for delete)'),
@@ -306,7 +306,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Get the product context of a project',
       description:
-        'Product-level context for specs: vision, goals (G1…), actors (ids that features use in `actors`), glossary, tracker (issueUrl with {id}, for ticket links), plus name, description and components.',
+        'Product-level context for specs: vision, goals (G1…), actors (ids that features use in `actors`), external systems (with the events they emit and consume; stream stages name actors or systems in `performed_by`), glossary, tracker (issueUrl with {id}, for ticket links), plus name, description and components.',
       input: { project: projectArg },
     },
     async ({ project }) => {
@@ -314,7 +314,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       return {
         id: p.id, slug: p.slug, name: p.name, description: p.description,
         languages: p.languages ?? [p.spec?.language ?? 'en'], i18n: p.i18n,
-        vision: p.vision, goals: p.goals ?? [], actors: p.actors ?? [], glossary: p.glossary ?? [], tracker: p.tracker,
+        vision: p.vision, goals: p.goals ?? [], actors: p.actors ?? [], systems: p.systems ?? [], glossary: p.glossary ?? [], tracker: p.tracker,
         components: p.components.map((c) => ({ slug: c.slug, kind: c.kind, name: c.name })),
       };
     }
@@ -359,8 +359,8 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Get the schema of a catalog entry',
       description:
-        'JSON Schema of a feature, business object or workflow card: fields, required fields, id patterns, enums, and `x-audience` (human | agent | both: who a field is for). Read it before writing a card. A feature carries its spec: actors, requirements (R1…), acceptance (A1…, given/when/then or text, `covers` requirement ids, `verify` command), constraints (C1…), decisions (D1…), open_questions (Q1…).',
-      input: { kind: z.enum(['feature', 'business_object', 'workflow', 'function']).describe("'function' is the old name of 'feature'") },
+        'JSON Schema of a feature, business object, workflow or stream card: fields, required fields, id patterns, enums, and `x-audience` (human | agent | both: who a field is for). Read it before writing a card. A feature carries its spec: actors, requirements (R1…), acceptance (A1…, given/when/then or text, `covers` requirement ids, `verify` command), constraints (C1…), decisions (D1…), open_questions (Q1…). A stream has KPIs (K1…) and stages (ST1…) with entry/exit events and the features, workflows and performers (actor or system ids of the project) that do the work.',
+      input: { kind: z.enum(['feature', 'business_object', 'workflow', 'stream', 'function']).describe("'function' is the old name of 'feature'") },
     },
     async ({ kind }) => ({ kind: kind === 'function' ? 'feature' : kind, schema: catalogSchemas[kind === 'function' ? 'feature' : kind] })
   );
@@ -394,7 +394,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     {
       title: 'Check a plan before writing',
       description:
-        'Check proposed catalog changes (new or changed features, workflows, business objects; deletions) against the model without writing anything. Returns ok=false and the errors the plan would add (unknown features/objects/types, duplicates, schema), plus problems the touched entries already have. Write tools run the same check and reject changes that add errors.',
+        'Check proposed catalog changes (new or changed features, workflows, business objects, streams; deletions) against the model without writing anything. Returns ok=false and the errors the plan would add (unknown features/objects/types, duplicates, schema), plus problems the touched entries already have. Write tools run the same check and reject changes that add errors.',
       input: { project: projectArg, changes: z.array(planChangeSchema).min(1).max(200) },
     },
     async ({ project, changes }) => {
@@ -431,7 +431,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       title: 'Find duplicates',
       description:
         'Before creating an entry: pass the proposed name and/or id to get existing entries with the same name (ignoring case, spaces, punctuation), the same id, or (features) the same <entity>.<action> in another bounded context. Without name/id: duplicate ids and names already in the catalog.',
-      input: { project: projectArg, kind: z.enum(['feature', 'business_object', 'workflow', 'function']).optional(), name: z.string().optional(), id: z.string().optional() },
+      input: { project: projectArg, kind: z.enum(['feature', 'business_object', 'workflow', 'stream', 'function']).optional(), name: z.string().optional(), id: z.string().optional() },
     },
     async ({ project, kind, name, id }) => {
       const p = resolveProject(host, project);
@@ -530,7 +530,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       title: 'Apply a plan',
       write: true,
       description:
-        'Write several catalog changes at once (same `changes` as validate_plan: upserts and deletes of features, business objects, workflows). The plan is checked as a whole, so entries that reference each other can be written together in any order. Nothing is written if the plan adds errors (the issues are returned); a failed write rolls back the changes already made. `component` is required for new entries.',
+        'Write several catalog changes at once (same `changes` as validate_plan: upserts and deletes of features, business objects, workflows, streams). The plan is checked as a whole, so entries that reference each other can be written together in any order. Nothing is written if the plan adds errors (the issues are returned); a failed write rolls back the changes already made. `component` is required for new entries.',
       input: { project: projectArg, changes: z.array(planChangeSchema).min(1).max(200) },
     },
     async ({ project, changes }) => {
@@ -548,7 +548,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       title: 'Update the product context',
       write: true,
       description:
-        'Change name, description, vision, goals, actors, glossary, tracker or spec settings (language, output) of a project (product-creator.yml). A list replaces the whole list ([] clears it); tracker: null removes it. Goal ids are G1, G2, …; actor ids use a-z, 0-9 and _.',
+        'Change name, description, vision, goals, actors, systems, glossary, tracker, languages, translations, screenshots or spec settings of a project (product-creator.yml). A list replaces the whole list ([] clears it); tracker: null removes it. Goal ids are G1, G2, …; actor and system ids use a-z, 0-9 and _ and must differ; system events are dotted (glitchtip.issue.created).',
       input: {
         project: projectArg,
         name: z.string().optional(),
@@ -556,10 +556,14 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
         vision: z.string().optional(),
         goals: z.array(z.object({ id: z.string(), text: z.string() })).optional(),
         actors: z.array(z.object({ id: z.string(), name: z.string(), description: z.string().optional() })).optional(),
+        systems: z
+          .array(z.object({ id: z.string(), name: z.string(), description: z.string().optional(), emits: z.array(z.string()).optional(), consumes: z.array(z.string()).optional() }))
+          .optional()
+          .describe('External systems the product works with (error tracker, issue tracker, release host): the events they emit count as emitted, those they consume as consumed'),
         glossary: z.array(z.object({ term: z.string(), definition: z.string() })).optional(),
         tracker: z.object({ issueUrl: z.string() }).nullable().optional(),
         languages: z.array(z.string()).nullable().optional().describe('Languages of the content, first = primary, e.g. ["ru", "en"]'),
-        i18n: z.record(z.string(), z.record(z.string(), z.unknown())).nullable().optional().describe('Translations of the product context: { <lang>: { description, vision, goals: { G1: { text } }, actors: { <id>: { name, description } }, glossary: { <term>: { definition } } } }'),
+        i18n: z.record(z.string(), z.record(z.string(), z.unknown())).nullable().optional().describe('Translations of the product context: { <lang>: { description, vision, goals: { G1: { text } }, actors: { <id>: { name, description } }, systems: { <id>: { name, description } }, glossary: { <term>: { definition } } } }'),
         screenshots: z
           .object({
             baseUrl: z.string().optional(),
@@ -568,6 +572,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
             start: z.array(z.object({ command: z.string(), cwd: z.string().optional(), timeoutSec: z.number().optional(), readyUrl: z.string().optional(), readyTimeoutSec: z.number().optional() })).optional(),
             capture: z.object({ command: z.string(), cwd: z.string().optional(), timeoutSec: z.number().optional() }),
             teardown: z.array(z.object({ command: z.string(), cwd: z.string().optional(), timeoutSec: z.number().optional() })).optional(),
+            perLanguage: z.boolean().optional().describe('Capture once per project language (PC_SCREENS_LANGUAGE), images in screens/<lang>/'),
           })
           .nullable()
           .optional()

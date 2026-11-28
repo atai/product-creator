@@ -1,0 +1,195 @@
+{
+  "kind": "feature",
+  "component": "core",
+  "feature": {
+    "id": "catalog.stream.plan",
+    "name": "Plan and check a stream",
+    "bounded_context": "catalog",
+    "entity": "stream",
+    "action": "plan",
+    "lifecycle": "implemented",
+    "description": "A stream is a full catalog entry: lifecycle, tickets, translations, stages with ids that name their features, workflows and performers; it is planned and checked like features and workflows.",
+    "source_file": "validation/design.ts",
+    "actors": [
+      "product_owner",
+      "ai_agent"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "A stream has id like a workflow, name, goal, description, lifecycle, owner, tickets, KPIs (K1…) and stages (ST1…) with entry and exit events, features, workflows and performers (actor or system)"
+      },
+      {
+        "id": "R2",
+        "text": "validate_plan and apply_plan take streams; a save that adds an error is rejected"
+      },
+      {
+        "id": "R3",
+        "text": "Unknown stage features, workflows and performers, duplicate stream ids, repeated KPI or stage ids are reported"
+      },
+      {
+        "id": "R4",
+        "text": "A stage using removed, draft or deprecated features or workflows is reported like a workflow step"
+      },
+      {
+        "id": "R5",
+        "text": "Texts of a stream are translatable and checked for staleness"
+      },
+      {
+        "id": "R6",
+        "text": "The stream form edits every field, keeps unknown ones, and has language tabs"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R3",
+          "R4",
+          "R5"
+        ],
+        "text": "Schema, references, lifecycle and translation checks of streams",
+        "verify": "pnpm --filter @pc/core test streams"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R2"
+        ],
+        "text": "An agent applies a plan with a stream; a stream with an unknown feature is rejected",
+        "verify": "pnpm --filter @pc/mcp test server"
+      },
+      {
+        "id": "A3",
+        "covers": [
+          "R6"
+        ],
+        "text": "The stream form has no hard-coded texts and its catalogs are complete",
+        "verify": "pnpm --filter desktop test i18n"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "The stream schema is rewritten without migration; rules.unique_function_per_stage is removed",
+        "reason": "No project has streams; the rule was never checked",
+        "date": "2026-11-28",
+        "status": "accepted"
+      }
+    ],
+    "code_refs": [
+      {
+        "component": "core",
+        "file": "validation/model.ts",
+        "role": "references"
+      },
+      {
+        "component": "core",
+        "file": "validation/plan.ts",
+        "role": "plans"
+      },
+      {
+        "component": "core",
+        "file": "http/routes/save-stream/route.ts",
+        "role": "API"
+      },
+      {
+        "component": "desktop",
+        "file": "renderer/src/pages/streams-id.tsx",
+        "role": "UI"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-43"
+    ],
+    "i18n": {
+      "ru": {
+        "name": "Планирование и проверка потока",
+        "description": "Поток — полноценная запись каталога: статус, задачи, переводы, этапы с id, в которых указаны фичи, процессы и исполнители; поток планируется и проверяется как фичи и процессы.",
+        "requirements": {
+          "R1": {
+            "text": "У потока есть id как у процесса, название, цель, описание, статус, владелец, задачи, KPI (K1…) и этапы (ST1…) с событиями входа и выхода, фичами, процессами и исполнителями (участник или система)"
+          },
+          "R2": {
+            "text": "validate_plan и apply_plan принимают потоки; сохранение, которое добавляет ошибку, отклоняется"
+          },
+          "R3": {
+            "text": "Неизвестные фичи, процессы и исполнители этапов, повторные id потоков, повторные id KPI и этапов обнаруживаются"
+          },
+          "R4": {
+            "text": "Этап, использующий удалённые, черновые или устаревшие фичи и процессы, обнаруживается так же, как шаг процесса"
+          },
+          "R5": {
+            "text": "Тексты потока переводятся и проверяются на устаревание"
+          },
+          "R6": {
+            "text": "Форма потока редактирует все поля, сохраняет неизвестные и имеет вкладки языков"
+          }
+        },
+        "acceptance": {
+          "A1": {
+            "text": "Проверки схемы, ссылок, статусов и переводов потоков"
+          },
+          "A2": {
+            "text": "Агент применяет план с потоком; поток с неизвестной фичей отклоняется"
+          },
+          "A3": {
+            "text": "В форме потока нет текстов, вписанных в код, а каталоги полны"
+          }
+        },
+        "decisions": {
+          "D1": {
+            "decision": "Схема потока переписана без миграции; rules.unique_function_per_stage убран",
+            "reason": "Ни в одном проекте нет потоков; правило никогда не проверялось"
+          }
+        },
+        "_source": {
+          "name": "6f61ece8",
+          "description": "9b577cd7",
+          "requirements": {
+            "R1": {
+              "text": "aaddb554"
+            },
+            "R2": {
+              "text": "10a99507"
+            },
+            "R3": {
+              "text": "62ff011c"
+            },
+            "R4": {
+              "text": "d92aa45a"
+            },
+            "R5": {
+              "text": "19b5f9c7"
+            },
+            "R6": {
+              "text": "ca0b4e96"
+            }
+          },
+          "acceptance": {
+            "A1": {
+              "text": "52c1a87f"
+            },
+            "A2": {
+              "text": "3e4bbac5"
+            },
+            "A3": {
+              "text": "7e372038"
+            }
+          },
+          "decisions": {
+            "D1": {
+              "decision": "1f9ceaec",
+              "reason": "9202ba62"
+            }
+          }
+        }
+      }
+    }
+  },
+  "objects": [],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

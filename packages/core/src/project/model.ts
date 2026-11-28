@@ -81,6 +81,21 @@ export interface ProductActor {
   description?: string;
 }
 
+/** An external system the product works with (PRODUCTCREATOR-43): emits and consumes events, may perform a stream stage */
+export interface ProductSystem {
+  /** a-z, 0-9, _ (e.g. glitchtip); not an actor id */
+  id: string;
+  name: string;
+  description?: string;
+  /** Events it emits (they count as emitted in the event checks) */
+  emits?: string[];
+  /** Events it consumes */
+  consumes?: string[];
+}
+
+/** Event names of systems: dotted, a-z, 0-9, _ (e.g. glitchtip.issue.created) */
+export const EVENT_NAME = /^[a-z0-9_]+(\.[a-z0-9_]+)+$/;
+
 export interface GlossaryTerm {
   term: string;
   definition: string;
@@ -168,6 +183,8 @@ export interface ProductContext {
   vision?: string;
   goals?: ProductGoal[];
   actors?: ProductActor[];
+  /** External systems (PRODUCTCREATOR-43) */
+  systems?: ProductSystem[];
   glossary?: GlossaryTerm[];
   tracker?: TrackerConfig;
   spec?: SpecSettings;
@@ -179,7 +196,7 @@ export interface ProductContext {
   i18n?: Record<string, unknown>;
 }
 
-export const PRODUCT_KEYS = ['vision', 'goals', 'actors', 'glossary', 'tracker'] as const;
+export const PRODUCT_KEYS = ['vision', 'goals', 'actors', 'systems', 'glossary', 'tracker'] as const;
 
 export interface ProjectModel extends ProductContext {
   id: string;
@@ -224,6 +241,7 @@ interface RawProjectFile {
   vision?: unknown;
   goals?: unknown;
   actors?: unknown;
+  systems?: unknown;
   glossary?: unknown;
   tracker?: unknown;
   spec?: unknown;
@@ -330,7 +348,7 @@ const records = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? v
 const nonEmpty = <T,>(list: T[]): T[] | undefined => (list.length ? list : undefined);
 
 /** Product context from product-creator.yml; malformed items are dropped (the file stays editable by hand) */
-export function readProductContext(raw: { vision?: unknown; goals?: unknown; actors?: unknown; glossary?: unknown; tracker?: unknown; spec?: unknown }): ProductContext {
+export function readProductContext(raw: { vision?: unknown; goals?: unknown; actors?: unknown; systems?: unknown; glossary?: unknown; tracker?: unknown; spec?: unknown }): ProductContext {
   const tracker = typeof raw.tracker === 'object' && raw.tracker !== null ? str((raw.tracker as Record<string, unknown>).issueUrl) : undefined;
   const specRaw = typeof raw.spec === 'object' && raw.spec !== null ? (raw.spec as Record<string, unknown>) : {};
   const spec: SpecSettings = { ...(str(specRaw.language) ? { language: str(specRaw.language) } : {}), ...(str(specRaw.output) ? { output: str(specRaw.output) } : {}) };
@@ -342,6 +360,17 @@ export function readProductContext(raw: { vision?: unknown; goals?: unknown; act
       records(raw.actors).flatMap((a) =>
         str(a.id) && str(a.name) ? [{ id: str(a.id) as string, name: str(a.name) as string, ...(str(a.description) ? { description: str(a.description) } : {}) }] : []
       )
+    ),
+    systems: nonEmpty(
+      records(raw.systems).flatMap((x) => {
+        const id = str(x.id);
+        const name = str(x.name);
+        if (!id || !name) return [];
+        const events = (v: unknown) => nonEmpty((Array.isArray(v) ? v : []).flatMap((e) => (str(e) ? [str(e) as string] : [])));
+        const emits = events(x.emits);
+        const consumes = events(x.consumes);
+        return [{ id, name, ...(str(x.description) ? { description: str(x.description) } : {}), ...(emits ? { emits } : {}), ...(consumes ? { consumes } : {}) }];
+      })
     ),
     glossary: nonEmpty(records(raw.glossary).flatMap((t) => (str(t.term) && str(t.definition) ? [{ term: str(t.term) as string, definition: str(t.definition) as string }] : []))),
     tracker: tracker ? { issueUrl: tracker } : undefined,
@@ -402,6 +431,12 @@ export function assertProductContext(c: ProductContext) {
   for (const a of c.actors ?? []) if (!/^[a-z0-9_]+$/.test(a.id)) throw new Error(`Actor id "${a.id}" must use a-z, 0-9 and _ (e.g. product_owner)`);
   unique((c.goals ?? []).map((g) => g.id), 'Goal id');
   unique((c.actors ?? []).map((a) => a.id), 'Actor id');
+  for (const x of c.systems ?? []) {
+    if (!/^[a-z0-9_]+$/.test(x.id)) throw new Error(`System id "${x.id}" must use a-z, 0-9 and _ (e.g. glitchtip)`);
+    if ((c.actors ?? []).some((a) => a.id === x.id)) throw new Error(`System id "${x.id}" is an actor id: a system and an actor cannot share an id`);
+    for (const e of [...(x.emits ?? []), ...(x.consumes ?? [])]) if (!EVENT_NAME.test(e)) throw new Error(`Event "${e}" of system ${x.id} must be dotted a-z, 0-9, _ (e.g. glitchtip.issue.created)`);
+  }
+  unique((c.systems ?? []).map((x) => x.id), 'System id');
   unique((c.glossary ?? []).map((t) => t.term), 'Glossary term');
   if (c.languages) {
     for (const l of c.languages) if (!LANGUAGE_TAG.test(l)) throw new Error(`Language "${l}" must be a tag like en, ru or pt-BR`);
@@ -491,6 +526,7 @@ export function projectFileContent(project: ProjectModel): string {
       vision: project.vision,
       goals: project.goals,
       actors: project.actors,
+      systems: project.systems,
       glossary: project.glossary,
       tracker: project.tracker,
       spec: project.spec,
@@ -679,7 +715,7 @@ export function openProject(rootDir: string): OpenResult {
 // ---------------------------------------------------------------------------------------------
 
 /** Strings: '' clears; product lists: [] clears; tracker: null clears */
-export type ProjectPatch = Partial<Pick<ProjectModel, 'slug' | 'name' | 'description' | 'docs' | 'catalogRoot' | 'vision' | 'goals' | 'actors' | 'glossary'>> & {
+export type ProjectPatch = Partial<Pick<ProjectModel, 'slug' | 'name' | 'description' | 'docs' | 'catalogRoot' | 'vision' | 'goals' | 'actors' | 'systems' | 'glossary'>> & {
   tracker?: TrackerConfig | null;
   spec?: SpecSettings | null;
   screenshots?: ScreenshotSettings | null;
@@ -707,18 +743,19 @@ export function updateProject(rootDir: string, patch: ProjectPatch): ProjectMode
     if (patch[key] !== undefined) (next as unknown as Record<string, unknown>)[key] = patch[key]?.trim() || undefined;
   }
   // product context (PRODUCTCREATOR-33): normalised like on read, then checked
-  const product = readProductContext({ goals: patch.goals, actors: patch.actors, glossary: patch.glossary, tracker: patch.tracker, spec: patch.spec });
+  const product = readProductContext({ goals: patch.goals, actors: patch.actors, systems: patch.systems, glossary: patch.glossary, tracker: patch.tracker, spec: patch.spec });
   if (patch.spec !== undefined) next.spec = product.spec;
   if (patch.languages !== undefined) next.languages = patch.languages?.length ? patch.languages.map((l) => l.trim()).filter(Boolean) : undefined;
   if (patch.i18n !== undefined) next.i18n = patch.i18n ?? undefined;
-  // translations of the product context get fingerprints of their primary texts (PRODUCTCREATOR-37)
-  if (next.i18n) next.i18n = (stampTranslations(project, { ...next }, productSchema) as ProjectModel).i18n;
   if (patch.checks !== undefined) next.checks = patch.checks ? readChecksSettings(patch.checks) : undefined;
   if (patch.screenshots !== undefined) next.screenshots = patch.screenshots ? readScreenshotSettings(patch.screenshots) : undefined;
   if (patch.goals !== undefined) next.goals = product.goals;
   if (patch.actors !== undefined) next.actors = product.actors;
+  if (patch.systems !== undefined) next.systems = product.systems;
   if (patch.glossary !== undefined) next.glossary = product.glossary;
   if (patch.tracker !== undefined) next.tracker = product.tracker;
+  // translations of the product context get fingerprints of their primary texts, after every text of the patch is in (PRODUCTCREATOR-37)
+  if (next.i18n) next.i18n = (stampTranslations(project, { ...next }, productSchema) as ProjectModel).i18n;
   assertProductContext(next);
   next.slug = next.slug || slugify(next.name || path.basename(project.root));
   next.name = next.name || next.slug;

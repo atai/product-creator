@@ -4,7 +4,7 @@ import { projectLanguages, type ComponentModel, type ProjectModel } from '../pro
 import { translationProblems } from '../i18n';
 import { catalogSchemas } from './schemas';
 import productSchema from '../../schema/product.schema.json';
-import { kindOf, type BusinessObject, type Feature, type Lifecycle, type Workflow } from '../types';
+import { kindOf, type BusinessObject, type Feature, type Lifecycle, type Stream, type Workflow } from '../types';
 import { referencedType, typeKey, type CatalogModel, type DesignContext, type IssueKind, type ModelEntry, type Severity, type ValidationIssue } from './model';
 
 /**
@@ -46,6 +46,9 @@ export const DESIGN_CHECKS = {
   api_not_in_openapi: { intended: 'warning', title: 'An API of a feature is not an operation of the component OpenAPI spec' },
   unknown_actor: { intended: 'error', title: 'A feature names an actor the project does not define' },
   stream_event_unknown: { intended: 'warning', title: 'A stream stage waits for an event nothing emits' },
+  stream_stage_not_implemented: { intended: 'error', title: 'An implemented stream has a stage whose features or workflows are not implemented' },
+  unknown_performer: { intended: 'error', title: 'A stream stage is performed by someone the project does not define' },
+  stage_without_work: { intended: 'warning', title: 'A stream stage names no feature, workflow or performer' },
   translation_stale: { intended: 'warning', title: 'The primary text changed after it was translated' },
   translation_orphan: { intended: 'warning', title: 'A translation of an item that no longer exists' },
   translation_unknown_language: { intended: 'warning', title: 'A translation into a language the project does not have' },
@@ -101,6 +104,8 @@ export function designIssues(model: CatalogModel, context: DesignContext): Valid
   const fEntry = (e: ModelEntry<Feature>) => ({ kind: 'feature' as const, id: e.data.id, component: e.component, file: e.file, lifecycle: e.data.lifecycle });
   const oEntry = (e: ModelEntry<BusinessObject>) => ({ kind: 'business_object' as const, id: e.data.id, component: e.component, file: e.file, lifecycle: e.data.lifecycle });
   const wEntry = (e: ModelEntry<Workflow>) => ({ kind: 'workflow' as const, id: e.data.workflow, component: e.component, file: e.file, lifecycle: e.data.lifecycle });
+  const sEntry = (e: ModelEntry<Stream>) => ({ kind: 'stream' as const, id: e.data.stream, component: e.component, file: e.file, lifecycle: e.data.lifecycle });
+  const streams = (model.streams ?? []).filter((e) => e.data.lifecycle !== 'removed');
   const live = <T extends { lifecycle?: Lifecycle }>(e: ModelEntry<T>) => e.data.lifecycle !== 'removed';
 
   // ------------------------------------------------------------------ architecture
@@ -151,13 +156,20 @@ export function designIssues(model: CatalogModel, context: DesignContext): Valid
     (e.data.consumes ?? []).forEach((ev) => consumed.add(ev));
   }
   for (const w of model.workflows.filter(live)) (w.data.emits ?? []).forEach((ev) => emitted.add(ev));
-  for (const st of model.streams ?? []) for (const stage of st.data.stages ?? []) [...(stage.entry_events ?? []), ...(stage.exit_events ?? [])].forEach((ev) => consumed.add(ev));
+  for (const st of streams) for (const stage of st.data.stages ?? []) [...(stage.entry_events ?? []), ...(stage.exit_events ?? [])].forEach((ev) => consumed.add(ev));
+  // external systems of the product context emit and consume events too (PRODUCTCREATOR-43)
+  for (const project of context.projects) {
+    for (const system of project.systems ?? []) {
+      (system.emits ?? []).forEach((ev) => emitted.add(ev));
+      (system.consumes ?? []).forEach((ev) => consumed.add(ev));
+    }
+  }
   for (const e of model.features.filter(live)) {
     (e.data.emits ?? []).forEach((ev, i) => {
       if (!consumed.has(ev)) add('event_not_consumed', fEntry(e), `emits[${i}]`, `Emits "${ev}", but no feature consumes it and no stream stage waits for it. Add the consumer, or drop the event.`);
     });
     (e.data.consumes ?? []).forEach((ev, i) => {
-      if (!emitted.has(ev)) add('event_not_emitted', fEntry(e), `consumes[${i}]`, `Consumes "${ev}", but no feature or workflow emits it. Add the emitter, or fix the event name.`);
+      if (!emitted.has(ev)) add('event_not_emitted', fEntry(e), `consumes[${i}]`, `Consumes "${ev}", but no feature, workflow or system emits it. Add the emitter, or fix the event name.`);
     });
   }
   for (const w of model.workflows.filter(live)) {
@@ -165,10 +177,10 @@ export function designIssues(model: CatalogModel, context: DesignContext): Valid
       if (!consumed.has(ev)) add('event_not_consumed', wEntry(w), `emits[${i}]`, `Emits "${ev}", but no feature consumes it and no stream stage waits for it. Add the consumer, or drop the event.`);
     });
   }
-  for (const st of model.streams ?? []) {
+  for (const st of streams) {
     (st.data.stages ?? []).forEach((stage, i) => {
       [...(stage.entry_events ?? []).map((ev) => ['entry_events', ev] as const), ...(stage.exit_events ?? []).map((ev) => ['exit_events', ev] as const)].forEach(([list, ev]) => {
-        if (!emitted.has(ev)) add('stream_event_unknown', { kind: 'stream', id: st.data.stream, component: st.component, file: st.file }, `stages[${i}].${list}`, `Stage "${stage.name}" waits for "${ev}", which no feature or workflow emits. Add the emitter, or fix the event name.`);
+        if (!emitted.has(ev)) add('stream_event_unknown', sEntry(st), `stages[${i}].${list}`, `Stage "${stage.name}" waits for "${ev}", which no feature, workflow or system emits. Add the emitter (a feature, or a system in product-creator.yml), or fix the event name.`);
       });
     });
   }
@@ -238,6 +250,37 @@ export function designIssues(model: CatalogModel, context: DesignContext): Valid
       else if (life === 'implemented' && target !== 'implemented' && target !== 'deprecated') add('workflow_step_not_implemented', wEntry(w), `steps[${i}]`, `This workflow is implemented, but step ${step} is ${target}. Implement the step, or set the workflow back to approved.`);
       else if (life !== 'deprecated' && target === 'deprecated') add('uses_deprecated', wEntry(w), `steps[${i}]`, `Step ${step} is deprecated. Use its replacement.`);
     });
+  }
+  // streams (PRODUCTCREATOR-43): the features and workflows of a stage, like the steps of a workflow
+  const workflowLife = new Map(model.workflows.map((w) => [w.data.workflow, w.data.lifecycle]));
+  for (const st of streams) {
+    const life = st.data.lifecycle;
+    (st.data.stages ?? []).forEach((stage, i) => {
+      const refs = [
+        ...(stage.features ?? []).map((id, j) => ({ id, field: `stages[${i}].features[${j}]`, what: 'feature', target: featureLife(id) })),
+        ...(stage.workflows ?? []).map((id, j) => ({ id, field: `stages[${i}].workflows[${j}]`, what: 'workflow', target: workflowLife.get(id) })),
+      ];
+      for (const r of refs) {
+        if (!r.target) continue;
+        if (r.target === 'removed') add('uses_removed', sEntry(st), r.field, `Stage "${stage.name}" uses the ${r.what} ${r.id}, which is removed. Remove it, or use its replacement.`);
+        else if (AGREED.has(life) && r.target === 'draft') add('uses_draft', sEntry(st), r.field, `This ${life} stream uses the draft ${r.what} ${r.id} in stage "${stage.name}". Agree it first, or make the stream a draft.`);
+        else if (life === 'implemented' && r.target !== 'implemented' && r.target !== 'deprecated') add('stream_stage_not_implemented', sEntry(st), r.field, `This stream is implemented, but the ${r.what} ${r.id} of stage "${stage.name}" is ${r.target}. Implement it, or set the stream back to approved.`);
+        else if (life !== 'deprecated' && r.target === 'deprecated') add('uses_deprecated', sEntry(st), r.field, `Stage "${stage.name}" uses the deprecated ${r.what} ${r.id}. Use its replacement.`);
+      }
+      if (!stage.features?.length && !stage.workflows?.length && !stage.performed_by?.length) {
+        add('stage_without_work', sEntry(st), `stages[${i}]`, `Stage "${stage.name}" names no feature, workflow or performer: say who or what does its work.`);
+      }
+    });
+    // performers: actors or systems of the project of the stream
+    const project = st.component ? owners.get(st.component)?.project : context.projects.length === 1 ? context.projects[0] : undefined;
+    if (project) {
+      const known = new Set([...(project.actors ?? []).map((a) => a.id), ...(project.systems ?? []).map((x) => x.id)]);
+      (st.data.stages ?? []).forEach((stage, i) => {
+        (stage.performed_by ?? []).forEach((who, j) => {
+          if (!known.has(who)) add('unknown_performer', sEntry(st), `stages[${i}].performed_by[${j}]`, `"${who}" is neither an actor nor a system of the project (${[...known].join(', ') || 'none defined'}). Use one of them, or add it to actors or systems in product-creator.yml.`);
+        });
+      });
+    }
   }
   for (const o of model.objects.filter(live)) {
     (o.data.fields ?? []).forEach((f) => {
@@ -312,6 +355,7 @@ export function designIssues(model: CatalogModel, context: DesignContext): Valid
   for (const e of model.features.filter(live)) translations(fEntry(e), e.data, catalogSchemas.feature, projectOf(e.component));
   for (const o of model.objects.filter(live)) translations(oEntry(o), o.data, catalogSchemas.business_object, projectOf(o.component));
   for (const w of model.workflows.filter(live)) translations(wEntry(w), w.data, catalogSchemas.workflow, projectOf(w.component));
+  for (const st of streams) translations(sEntry(st), st.data, catalogSchemas.stream, projectOf(st.component));
   for (const project of context.projects) translations({ kind: 'project', id: project.slug, component: project.components[0]?.id }, project, productSchema, project);
   return issues;
 }

@@ -46,6 +46,25 @@
         }
       }
     },
+    "systems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "x-translatable": true
+          },
+          "description": {
+            "type": "string",
+            "x-translatable": true
+          }
+        }
+      }
+    },
     "glossary": {
       "type": "array",
       "x-i18n-key": "term",

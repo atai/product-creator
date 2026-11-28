@@ -1,4 +1,6 @@
 import type { BusinessObject, Feature, Workflow } from '../types';
+import { stampTranslations } from '../i18n';
+import { catalogSchemas } from './schemas';
 import { idOf, normalizeKind, referencedType, typeKey, validateModel, type CatalogModel, type EntityKind, type ModelEntry, type ValidationIssue } from './model';
 
 /**
@@ -33,7 +35,7 @@ export function parsePlanChanges(body: unknown): { changes: PlanChange[] } | { e
   for (const [i, item] of raw.changes.entries()) {
     const c = (item ?? {}) as Record<string, unknown>;
     const kind = normalizeKind(c.kind);
-    if (!kind) return { error: `changes[${i}].kind must be feature, workflow or business_object` };
+    if (!kind) return { error: `changes[${i}].kind must be feature, workflow, business_object or stream` };
     const op = c.op === 'delete' ? 'delete' : 'upsert';
     if (op === 'delete' ? typeof c.id !== 'string' : typeof c.data !== 'object' || c.data === null) {
       return { error: `changes[${i}]: ${op === 'delete' ? 'id' : 'data'} is required` };
@@ -44,16 +46,17 @@ export function parsePlanChanges(body: unknown): { changes: PlanChange[] } | { e
 }
 
 const lists = (model: CatalogModel, kind: EntityKind): ModelEntry<unknown>[] =>
-  (kind === 'feature' ? model.features : kind === 'workflow' ? model.workflows : model.objects) as ModelEntry<unknown>[];
+  (kind === 'feature' ? model.features : kind === 'workflow' ? model.workflows : kind === 'stream' ? (model.streams ?? []) : model.objects) as ModelEntry<unknown>[];
 
 /** The model after the changes (a copy) */
 export function applyPlan(model: CatalogModel, changes: PlanChange[]): CatalogModel {
   const next: CatalogModel = {
-    // context (design checks) and streams stay as they are
+    // context (design checks) stays as it is
     ...model,
     features: [...model.features],
     workflows: [...model.workflows],
     objects: [...model.objects],
+    streams: [...(model.streams ?? [])],
     duplicates: [...(model.duplicates ?? [])],
   };
   for (const change of changes) {
@@ -66,8 +69,10 @@ export function applyPlan(model: CatalogModel, changes: PlanChange[]): CatalogMo
     }
     // ids are unique per kind: an upsert replaces the entry wherever it is; another component = a move (PRODUCTCREATOR-34)
     const index = list.findIndex((e) => idOf(change.kind, e.data) === id);
-    if (index >= 0) list[index] = { ...list[index], data: change.data, component: change.component ?? list[index].component };
-    else list.push({ data: change.data, component: change.component });
+    // translations are stamped as the save does, so a plan is checked as it will be written (PRODUCTCREATOR-37)
+    const data = stampTranslations(index >= 0 ? list[index].data : null, change.data, catalogSchemas[change.kind]);
+    if (index >= 0) list[index] = { ...list[index], data, component: change.component ?? list[index].component };
+    else list.push({ data, component: change.component });
   }
   return next;
 }
@@ -186,7 +191,7 @@ export interface DuplicateMatch extends ImpactRef {
 
 /** Without a query: the duplicate ids and names already in the catalog. With name/id: entries a new one would duplicate. */
 export function findDuplicates(model: CatalogModel, query: DuplicateQuery = {}): { issues: ValidationIssue[]; matches: DuplicateMatch[] } {
-  const kinds: EntityKind[] = query.kind ? [query.kind] : ['feature', 'workflow', 'business_object'];
+  const kinds: EntityKind[] = query.kind ? [query.kind] : ['feature', 'workflow', 'business_object', 'stream'];
   if (!query.name && !query.id) {
     const issues = validateModel(model).filter((i) => (i.code === 'duplicate_id' || i.code === 'duplicate_name') && (kinds as string[]).includes(i.kind));
     return { issues, matches: [] };

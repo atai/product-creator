@@ -1,0 +1,262 @@
+{
+  "kind": "stream",
+  "component": "desktop",
+  "stream": {
+    "stream": "app.error_lifecycle",
+    "name": "From an error to the fixed release",
+    "goal": "Errors of users are found and fixed without their help",
+    "description": "From an unhandled error on a user machine to the release with the fix installed on that machine.",
+    "lifecycle": "draft",
+    "kpis": [
+      {
+        "id": "K1",
+        "name": "Releases whose stacks are symbolicated",
+        "target": "100%"
+      },
+      {
+        "id": "K2",
+        "name": "Time from the first event to the installed fix",
+        "target": "< 1 week"
+      }
+    ],
+    "stages": [
+      {
+        "id": "ST1",
+        "name": "Caught and scrubbed",
+        "entry_events": [
+          "app.error.raised"
+        ],
+        "exit_events": [
+          "app.error.reported"
+        ],
+        "features": [
+          {
+            "id": "app.error.report",
+            "name": "Report app errors to GlitchTip",
+            "lifecycle": "draft",
+            "component": "desktop",
+            "emits": [
+              "app.error.reported"
+            ],
+            "consumes": []
+          }
+        ],
+        "workflows": [],
+        "performed_by": []
+      },
+      {
+        "id": "ST2",
+        "name": "Grouped with a readable stack",
+        "entry_events": [
+          "app.error.reported"
+        ],
+        "exit_events": [
+          "glitchtip.issue.created"
+        ],
+        "features": [
+          {
+            "id": "app.sourcemaps.upload",
+            "name": "Upload the source maps of a release",
+            "lifecycle": "draft",
+            "component": "desktop",
+            "emits": [
+              "app.sourcemaps.uploaded"
+            ],
+            "consumes": []
+          }
+        ],
+        "performed_by": [
+          {
+            "kind": "system",
+            "id": "glitchtip",
+            "name": "GlitchTip",
+            "description": "Self-hosted error tracker (Sentry protocol) of ecooz, error.y.ecooz.net",
+            "emits": [
+              "glitchtip.issue.created"
+            ],
+            "consumes": [
+              "app.error.reported",
+              "app.sourcemaps.uploaded"
+            ]
+          }
+        ],
+        "workflows": []
+      },
+      {
+        "id": "ST3",
+        "name": "Triaged into a ticket",
+        "entry_events": [
+          "glitchtip.issue.created"
+        ],
+        "exit_events": [
+          "youtrack.issue.created"
+        ],
+        "performed_by": [
+          {
+            "kind": "actor",
+            "id": "developer",
+            "name": "Developer",
+            "description": "Builds features, links code, runs sync"
+          },
+          {
+            "kind": "system",
+            "id": "youtrack",
+            "name": "YouTrack",
+            "description": "Issue tracker of the project (ecooz.youtrack.cloud)",
+            "emits": [
+              "youtrack.issue.created"
+            ],
+            "consumes": [
+              "glitchtip.issue.created"
+            ]
+          }
+        ],
+        "features": [],
+        "workflows": []
+      },
+      {
+        "id": "ST4",
+        "name": "Fixed and released",
+        "entry_events": [
+          "youtrack.issue.created"
+        ],
+        "exit_events": [
+          "github.release.published"
+        ],
+        "performed_by": [
+          {
+            "kind": "actor",
+            "id": "developer",
+            "name": "Developer",
+            "description": "Builds features, links code, runs sync"
+          },
+          {
+            "kind": "actor",
+            "id": "ci",
+            "name": "CI",
+            "description": "Checks the catalog on every push"
+          },
+          {
+            "kind": "system",
+            "id": "github",
+            "name": "GitHub",
+            "description": "Source code, CI and the releases the app updates from",
+            "emits": [
+              "github.release.published"
+            ],
+            "consumes": [
+              "youtrack.issue.created"
+            ]
+          }
+        ],
+        "features": [],
+        "workflows": []
+      },
+      {
+        "id": "ST5",
+        "name": "Delivered to the user",
+        "entry_events": [
+          "github.release.published"
+        ],
+        "exit_events": [
+          "app.update.installed"
+        ],
+        "features": [
+          {
+            "id": "app.update.install",
+            "name": "Update the app",
+            "lifecycle": "implemented",
+            "component": "desktop",
+            "emits": [
+              "app.update.installed"
+            ],
+            "consumes": [
+              "github.release.published"
+            ]
+          }
+        ],
+        "workflows": [],
+        "performed_by": []
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-26"
+    ],
+    "i18n": {
+      "ru": {
+        "name": "От ошибки до исправленного релиза",
+        "goal": "Ошибки пользователей находятся и исправляются без их участия",
+        "description": "От необработанной ошибки на машине пользователя до установленного на этой машине релиза с исправлением.",
+        "kpis": {
+          "K1": {
+            "name": "Релизы с символизированными стеками"
+          },
+          "K2": {
+            "name": "Время от первого события до установленного исправления"
+          }
+        },
+        "stages": {
+          "ST1": {
+            "name": "Поймана и очищена"
+          },
+          "ST2": {
+            "name": "Сгруппирована, стек читаем"
+          },
+          "ST3": {
+            "name": "Разобрана в задачу"
+          },
+          "ST4": {
+            "name": "Исправлена и выпущена"
+          },
+          "ST5": {
+            "name": "Доставлена пользователю"
+          }
+        },
+        "_source": {
+          "name": "4792ec10",
+          "goal": "28393d74",
+          "description": "71a7c316",
+          "kpis": {
+            "K1": {
+              "name": "f4b27f01"
+            },
+            "K2": {
+              "name": "190033c9"
+            }
+          },
+          "stages": {
+            "ST1": {
+              "name": "9b15c082"
+            },
+            "ST2": {
+              "name": "def8118d"
+            },
+            "ST3": {
+              "name": "dce64ed1"
+            },
+            "ST4": {
+              "name": "ab7fe6c5"
+            },
+            "ST5": {
+              "name": "20ad409b"
+            }
+          }
+        }
+      }
+    }
+  },
+  "issues": [
+    {
+      "severity": "info",
+      "intended": "warning",
+      "check": "design",
+      "code": "stream_event_unknown",
+      "kind": "stream",
+      "id": "app.error_lifecycle",
+      "field": "stages[0].entry_events",
+      "message": "Stage \"Caught and scrubbed\" waits for \"app.error.raised\", which no feature, workflow or system emits. Add the emitter (a feature, or a system in product-creator.yml), or fix the event name.",
+      "file": "/Users/ra/git/product-creator/docs/product/desktop/streams/app.error_lifecycle.yml",
+      "component": "ec457b8f-8d3a-4187-a38d-0e91adba0168"
+    }
+  ]
+}

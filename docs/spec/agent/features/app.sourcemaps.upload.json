@@ -1,0 +1,112 @@
+{
+  "kind": "feature",
+  "component": "desktop",
+  "feature": {
+    "id": "app.sourcemaps.upload",
+    "name": "Upload the source maps of a release",
+    "bounded_context": "app",
+    "entity": "sourcemaps",
+    "action": "upload",
+    "lifecycle": "draft",
+    "emits": [
+      "app.sourcemaps.uploaded"
+    ],
+    "description": "The release workflow uploads the source maps of the main, preload and renderer bundles to GlitchTip for the release, then removes them from the packaged app.",
+    "calls": [
+      "app.error.report"
+    ],
+    "actors": [
+      "ci"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Source maps of main, preload and renderer are uploaded for release product-creator@<version> before packaging",
+        "priority": "must"
+      },
+      {
+        "id": "R2",
+        "text": "The packaged app contains no .map files",
+        "priority": "must"
+      },
+      {
+        "id": "R3",
+        "text": "Without the upload token the release still builds and says that maps were not uploaded",
+        "priority": "should"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R2"
+        ],
+        "text": "After the strip step out/ has no .map files",
+        "verify": "pnpm --filter desktop test sourcemaps"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R1"
+        ],
+        "text": "The release in GlitchTip has the uploaded maps; a test error is symbolicated",
+        "verify": "pnpm sentry:check-release"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-26"
+    ],
+    "i18n": {
+      "ru": {
+        "name": "Загрузка source maps релиза",
+        "description": "Релизный workflow загружает source maps бандлов main, preload и renderer в GlitchTip для релиза, затем удаляет их из собранного приложения.",
+        "requirements": {
+          "R1": {
+            "text": "Source maps main, preload и renderer загружаются для релиза product-creator@<версия> до упаковки"
+          },
+          "R2": {
+            "text": "В собранном приложении нет файлов .map"
+          },
+          "R3": {
+            "text": "Без токена загрузки релиз всё равно собирается и сообщает, что карты не загружены"
+          }
+        },
+        "acceptance": {
+          "A1": {
+            "text": "После шага очистки в out/ нет файлов .map"
+          },
+          "A2": {
+            "text": "У релиза в GlitchTip есть загруженные карты; тестовая ошибка символизирована"
+          }
+        },
+        "_source": {
+          "name": "9ba41e00",
+          "description": "3d572531",
+          "requirements": {
+            "R1": {
+              "text": "d62a8bb3"
+            },
+            "R2": {
+              "text": "99df0940"
+            },
+            "R3": {
+              "text": "07e04703"
+            }
+          },
+          "acceptance": {
+            "A1": {
+              "text": "fc9c91ac"
+            },
+            "A2": {
+              "text": "145e5638"
+            }
+          }
+        }
+      }
+    }
+  },
+  "objects": [],
+  "calledBy": [],
+  "workflows": [],
+  "issues": []
+}

@@ -9,18 +9,22 @@ What is in it
 
 **For people** — ``<language>/spec.md``, one per project language (see :ref:`spec-languages`):
 
-#. *Product*: description, vision, goals, actors and glossary (``product-creator.yml``, see
+#. *Product*: description, vision, goals, actors, external systems and glossary (``product-creator.yml``, see
    :doc:`projects-and-services`).
 #. *Features* in ``approved``, ``implemented`` and ``deprecated``, grouped by bounded context, with
    requirements, acceptance criteria, constraints, decisions, open questions, business objects and
    tickets (linked to the tracker).
 #. *Data*: business objects with their fields and the features that use them.
 #. *Workflows* with their steps.
+#. *Streams*: goal, KPIs and a table of stages — the events that start and end each, the features and
+   workflows doing its work and who performs it (actors, external systems). Drafts are marked by their
+   status; removed streams are left out.
 #. *Drafts*: features in ``draft``, apart from the agreed ones.
 #. *Problems*: every validation problem of the catalog.
 
 **For agents** — ``agent/``: ``manifest.json`` (product context, counts, ``ready``, the list of entries,
-all problems) and one small JSON file per feature, business object and workflow. A feature file holds
+all problems) and one small JSON file per feature, business object, workflow and stream (``streams/<id>.json``: stages
+with the features, workflows, actors and systems they name, resolved). A feature file holds
 the feature with its acceptance ``verify`` commands and code places, the business objects it uses with
 their fields, the features that call it and its workflows. An agent reads the manifest and loads only
 the entries a task needs.

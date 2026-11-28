@@ -1,8 +1,9 @@
 import featureSchema from '../../schema/feature.schema.json';
 import workflowSchema from '../../schema/workflow.schema.json';
+import streamSchema from '../../schema/stream.schema.json';
 import businessObjectSchema from '../../schema/business-object.schema.json';
 import { issueLink } from '../project/model';
-import { kindOf, type BusinessObject, type Feature, type Workflow } from '../types';
+import { kindOf, type BusinessObject, type Feature, type Stream, type Workflow } from '../types';
 import { referencedType, typeKey } from '../validation/model';
 import type { ValidationIssue } from '../validation/model';
 import { forAudience } from './audience';
@@ -106,7 +107,7 @@ export function renderHuman(spec: SpecModel, m: Messages): string {
   const agreed = spec.features.filter((f) => f.data.lifecycle !== 'draft');
   const drafts = spec.features.filter((f) => f.data.lifecycle === 'draft');
   const featureName = new Map(spec.features.map((f) => [f.data.id, f.data.name]));
-  const sections = [m.product, m.features, m.data, m.workflows, ...(drafts.length ? [m.drafts] : []), m.problems];
+  const sections = [m.product, m.features, m.data, m.workflows, m.streams, ...(drafts.length ? [m.drafts] : []), m.problems];
   const status = spec.counts.errors ? m.statusErrors(spec.counts.errors, spec.counts.warnings) : spec.counts.warnings ? m.statusWarnings(spec.counts.warnings) : spec.counts.infos ? m.statusHints(spec.counts.infos) : m.statusClean;
 
   // errors and warnings are a highlighted block; a clean model (hints at most) is a plain line
@@ -127,6 +128,11 @@ export function renderHuman(spec: SpecModel, m: Messages): string {
   if (p.actors?.length) {
     out.push('', `### ${m.actors}`, '', `| ${m.actor} | ${m.description} |`, '| --- | --- |');
     for (const a of p.actors) out.push(`| ${cell(a.name)} | ${cell(a.description)} |`);
+  }
+  if (p.systems?.length) {
+    const events = (list: string[] | undefined) => (list ?? []).map((e) => `\`${e}\``).join(', ');
+    out.push('', `### ${m.systems}`, '', `| ${m.system} | ${m.description} | ${m.emits} | ${m.consumes} |`, '| --- | --- | --- | --- |');
+    for (const x of p.systems) out.push(`| ${cell(x.name)} | ${cell(x.description)} | ${events(x.emits)} | ${events(x.consumes)} |`);
   }
   if (p.glossary?.length) {
     out.push('', `### ${m.glossary}`, '', `| ${m.term} | ${m.definition} |`, '| --- | --- |');
@@ -175,6 +181,34 @@ export function renderHuman(spec: SpecModel, m: Messages): string {
     out.push(...issueLines(m, entry.issues));
   }
   if (!spec.workflows.length) out.push('', m.none);
+
+  // streams (PRODUCTCREATOR-43): goal, KPIs and the stages with who or what does their work
+  h2(m.streams);
+  const workflowName = new Map(spec.workflows.map((w) => [w.data.workflow, w.data.name ?? w.data.workflow]));
+  const performer = new Map([...(p.actors ?? []).map((a) => [a.id, a.name] as const), ...(p.systems ?? []).map((x) => [x.id, x.name] as const)]);
+  for (const entry of spec.streams) {
+    const st = forAudience(entry.data, streamSchema, 'human') as Partial<Stream>;
+    const meta = [`*${m.lifecycle[entry.data.lifecycle] ?? entry.data.lifecycle ?? '?'}*`, `${m.component}: ${entry.component.name}`];
+    if (st.tickets?.length) meta.push(`${m.tickets}: ${tickets(spec, st.tickets)}`);
+    out.push('', `### ${cell(st.name ?? entry.data.stream)} (\`${entry.data.stream}\`)`, '', meta.join(' · '));
+    if (st.goal) out.push('', `**${m.goal}:** ${cell(st.goal)}`);
+    if (st.description) out.push('', st.description);
+    if (st.kpis?.length) {
+      out.push('', `**${m.kpis}**`, '');
+      for (const k of st.kpis) out.push(`- **${k.id}** ${cell(k.name)}${k.target ? ` (${m.target}: ${cell(k.target)})` : ''}`);
+    }
+    if (st.stages?.length) {
+      const events = (list: string[] | undefined) => (list ?? []).map((e) => `\`${e}\``).join(', ');
+      out.push('', `| ${m.stage} | ${m.entryEvents} | ${m.exitEvents} | ${m.work} | ${m.performedBy} |`, '| --- | --- | --- | --- | --- |');
+      for (const stage of st.stages) {
+        const work = [...(stage.features ?? []).map((id) => `${cell(featureName.get(id) ?? id)} (\`${id}\`)`), ...(stage.workflows ?? []).map((id) => `${cell(workflowName.get(id) ?? id)} (\`${id}\`)`)].join(', ');
+        const who = (stage.performed_by ?? []).map((id) => cell(performer.get(id) ?? id)).join(', ');
+        out.push(`| **${stage.id}** ${cell(stage.name)} | ${events(stage.entry_events)} | ${events(stage.exit_events)} | ${work} | ${who} |`);
+      }
+    }
+    out.push(...issueLines(m, entry.issues));
+  }
+  if (!spec.streams.length) out.push('', m.none);
 
   if (drafts.length) {
     h2(m.drafts);

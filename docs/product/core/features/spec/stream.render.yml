@@ -1,0 +1,77 @@
+id: spec.stream.render
+name: Streams in the spec
+bounded_context: spec
+entity: stream
+action: render
+owner: atai
+lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
+description: 'Both specs show the streams: people read a section per stream with goal, KPIs and stages; agents get one chunk per stream with its stages resolved.'
+source_file: spec/human.ts
+calls:
+  - spec.bundle.generate
+actors:
+  - client
+  - ai_agent
+requirements:
+  - id: R1
+    text: 'The human spec has a Streams section: goal, KPIs and a stage table with events in and out, features, workflows and performers, and the problems of the stream'
+  - id: R2
+    text: The agent bundle has streams/<id>.json with the stages and the features, workflows and systems they name
+  - id: R3
+    text: Removed streams are left out; draft ones are marked
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R3
+    text: The human spec renders a stream with its stages in en and ru
+    verify: pnpm --filter @pc/core test spec
+  - id: A2
+    covers:
+      - R2
+    text: The manifest lists stream chunks; get_spec returns one
+    verify: pnpm --filter @pc/mcp test server
+tickets:
+  - PRODUCTCREATOR-43
+i18n:
+  ru:
+    name: Потоки в ТЗ
+    description: 'Оба ТЗ показывают потоки: людям — раздел на каждый поток с целью, KPI и этапами; агентам — по фрагменту на поток с раскрытыми этапами.'
+    requirements:
+      R1:
+        text: 'В ТЗ для людей есть раздел «Потоки»: цель, KPI и таблица этапов с событиями входа и выхода, фичами, процессами и исполнителями, а также проблемы потока'
+      R2:
+        text: В пакете для агентов есть streams/<id>.json с этапами и фичами, процессами и системами, которые они называют
+      R3:
+        text: Удалённые потоки не выводятся; черновые помечены
+    acceptance:
+      A1:
+        text: ТЗ для людей показывает поток с этапами на en и ru
+      A2:
+        text: Манифест перечисляет фрагменты потоков; get_spec возвращает один из них
+    _source:
+      name: 1b0c16b8
+      description: 334fea74
+      requirements:
+        R1:
+          text: c4bfd460
+        R2:
+          text: 2c06e67d
+        R3:
+          text: 7dbf8a89
+      acceptance:
+        A1:
+          text: 98c4d095
+        A2:
+          text: d7e04c2f
+code_refs:
+  - component: core
+    file: spec/agent.ts
+    role: agent bundle
+  - component: core
+    file: spec/build.ts
+    role: model

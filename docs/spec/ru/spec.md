@@ -1,44 +1,53 @@
 # Product Creator: Техническое задание
 
-В модели нет проблем валидации.
+Ошибок и предупреждений нет; 1 подсказ(ок) по проектированию в разделе «Проблемы».
 
 *Сгенерировано из каталога Product Creator. Не редактируйте этот файл: измените каталог и сгенерируйте заново.*
 
-*264 текст(ов) ещё не переведены и показаны на основном языке (en), с пометкой EN.*
+*268 текст(ов) ещё не переведены и показаны на основном языке (en), с пометкой EN.*
 
 ## Содержание
 
 1. Продукт
-2. Функции
+2. Фичи
 3. Данные
 4. Процессы
-5. Черновики
-6. Проблемы
+5. Потоки
+6. Черновики
+7. Проблемы
 
 ## 1. Продукт
 
-Каталог функций и прослеживаемая документация продукта (ТЗ), связанная с кодом
+Каталог фич и прослеживаемая документация продукта (ТЗ), связанная с кодом
 
 ### Видение
 
-Product Creator хранит логику продукта (функции, данные, процессы) в YAML рядом с кодом, чтобы люди и ИИ-агенты планировали её вместе, видели ошибки планирования до написания кода и получали ТЗ из той же модели.
+Product Creator хранит логику продукта (фичи, данные, процессы) в YAML рядом с кодом, чтобы люди и ИИ-агенты планировали её вместе, видели ошибки планирования до написания кода и получали ТЗ из той же модели.
 
 ### Цели
 
 - **G1** Ошибки планирования и проектирования видны людям и агентам сразу, как только они записаны: в редакторе, через MCP и в CI
 - **G2** ТЗ для людей и для агентов строятся из одной модели и никогда не пишутся дважды
-- **G3** Каждая функция прослеживается до кода, задач и тестов
+- **G3** Каждая фича прослеживается до кода, задач и тестов
 - **G4** Агенты безопасно планируют и меняют каталог через MCP
 
 ### Участники
 
 | Участник | Описание |
 | --- | --- |
-| Владелец продукта | Планирует функции, утверждает ТЗ |
-| Разработчик | Делает функции, связывает код, запускает синхронизацию |
+| Владелец продукта | Планирует фичи, утверждает ТЗ |
+| Разработчик | Делает фичи, связывает код, запускает синхронизацию |
 | ИИ-агент | Читает и меняет каталог через MCP, локально или через релей |
 | CI | Проверяет каталог при каждом push |
 | Заказчик | Читает ТЗ для людей |
+
+### Внешние системы
+
+| Система | Описание | Публикует события | Обрабатывает события |
+| --- | --- | --- | --- |
+| GlitchTip | Self-hosted трекер ошибок ecooz (протокол Sentry), error.y.ecooz.net | `glitchtip.issue.created` | `app.error.reported`, `app.sourcemaps.uploaded` |
+| YouTrack | Трекер задач проекта (ecooz.youtrack.cloud) | `youtrack.issue.created` | `glitchtip.issue.created` |
+| GitHub | Исходный код, CI и релизы, из которых обновляется приложение | `github.release.published` | `youtrack.issue.created` |
 
 ### Глоссарий
 
@@ -46,14 +55,14 @@ Product Creator хранит логику продукта (функции, да
 | --- | --- |
 | Feature | Бизнес-возможность продукта (раньше — function); один YAML-файл с её ТЗ и связями с кодом |
 | Business object | Сущность данных продукта с типизированными полями |
-| Workflow | Упорядоченная последовательность функций с компенсациями |
+| Workflow | Упорядоченная последовательность фич с компенсациями |
 | Component | Сервис или библиотека проекта; у каждого своя папка каталога |
-| Catalog | YAML-файлы функций, бизнес-объектов и процессов компонента |
+| Catalog | YAML-файлы фич, бизнес-объектов и процессов компонента |
 | Lifecycle | draft → approved → implemented → deprecated → removed; у каждого статуса свои правила |
 | Plan | Набор предлагаемых изменений каталога, который проверяется целиком до записи |
 | Spec (ТЗ) | Документ, построенный по модели: вид для людей и пакет для агентов |
 
-## 2. Функции
+## 2. Фичи
 
 ### app
 
@@ -97,37 +106,41 @@ Signed releases update automatically; a check can be started from the menu. [EN]
 
 - **D1** macOS installs updates only into a signed app; Windows builds stay unsigned [EN] — No Windows code-signing certificate (PRODUCTCREATOR-21) [EN]
 
+**Публикует события:** `app.update.installed`
+
+**Обрабатывает события:** `github.release.published`
+
 ### catalog
 
-#### Создание и изменение функции (`catalog.feature.edit`)
+#### Создание и изменение фичи (`catalog.feature.edit`)
 
 *реализовано* · Компонент: Core package · Задачи: [PRODUCTCREATOR-7](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-7), [PRODUCTCREATOR-32](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-32)
 
-Создаёт или меняет карточку функции с её ТЗ; сохранение проверяется до записи.
+Создаёт или меняет карточку фичи с её ТЗ; сохранение проверяется до записи.
 
 **Участники:** ИИ-агент, Владелец продукта
 
 **Требования**
 
-- **R1** Функция сохраняется в features/<context>/<entity>.<action>.yml своего компонента
+- **R1** Фича сохраняется в features/<context>/<entity>.<action>.yml своего компонента
 - **R2** Поля ТЗ (участники, требования, приёмка, ограничения, решения, открытые вопросы) сохраняются вместе с карточкой
 - **R3** Сохранение, которое добавляет ошибку модели, отклоняется со списком проблем
 
 **Критерии приёмки**
 
 - **A1** (покрывает R2): Карточка, прочитанная и сохранённая обратно, сохраняет все поля
-- **A2** (покрывает R3): **Дано** функция, в calls которой указана несуществующая функция; **Когда** её сохраняют; **Тогда** ответ — 400 с unknown_feature
+- **A2** (покрывает R3): **Дано** фича, в calls которой указана несуществующая фича; **Когда** её сохраняют; **Тогда** ответ — 400 с unknown_feature
 - **A3** (покрывает R1): Сохранённая карточка пишется в features/<context>/<entity>.<action>.yml, даже если была прочитана из functions/
 
 **Экраны**
 
-![S1 — Форма новой функции: связи и ТЗ](../screens/catalog.feature.edit/S1.png)
+![S1 — Форма новой фичи: связи и ТЗ](../screens/ru/catalog.feature.edit/S1.png)
 
-*S1 — Форма новой функции: связи и ТЗ*
+*S1 — Форма новой фичи: связи и ТЗ*
 
-![S2 — Страница функции с ТЗ, задачами и влиянием изменений](../screens/catalog.feature.edit/S2.png)
+![S2 — Страница фичи с ТЗ, задачами и влиянием изменений](../screens/ru/catalog.feature.edit/S2.png)
 
-*S2 — Страница функции с ТЗ, задачами и влиянием изменений*
+*S2 — Страница фичи с ТЗ, задачами и влиянием изменений*
 
 **Бизнес-объекты:** `feature` (запись)
 
@@ -135,7 +148,7 @@ Signed releases update automatically; a check can be started from the menu. [EN]
 
 *реализовано* · Компонент: Desktop app (Electron) · Задачи: [PRODUCTCREATOR-7](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-7), [PRODUCTCREATOR-35](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35)
 
-Функции и связи между ними: вызовы, соседние шаги процессов и события, цвет — по статусу.
+Фичи и связи между ними: вызовы, соседние шаги процессов и события, цвет — по статусу.
 
 **Требования**
 
@@ -145,14 +158,14 @@ Signed releases update automatically; a check can be started from the menu. [EN]
 
 **Критерии приёмки**
 
-- **A1** (покрывает R1): /api/graph возвращает связи вызовов, процессов и событий между показанными функциями
+- **A1** (покрывает R1): /api/graph возвращает связи вызовов, процессов и событий между показанными фичами
 - **A2** (покрывает R2, R3): Каждое название видно целиком, у подписанных стрелок видны начало и наконечник (скриншот catalog.graph.show S1)
 
 **Экраны**
 
-![S1 — Граф функций: вызовы, шаги процессов и события](../screens/catalog.graph.show/S1.png)
+![S1 — Граф фич: вызовы, шаги процессов и события](../screens/ru/catalog.graph.show/S1.png)
 
-*S1 — Граф функций: вызовы, шаги процессов и события*
+*S1 — Граф фич: вызовы, шаги процессов и события*
 
 **Бизнес-объекты:** `feature` (чтение)
 
@@ -164,15 +177,15 @@ Signed releases update automatically; a check can be started from the menu. [EN]
 
 **Требования**
 
-- **R1** Для контекста видно, какие функции есть для каждой пары «сущность × действие»
+- **R1** Для контекста видно, какие фичи есть для каждой пары «сущность × действие»
 
 **Критерии приёмки**
 
-- **A1** (покрывает R1): Выбор контекста показывает сетку «сущность × действие» с функциями в ячейках (скриншот catalog.matrix.show S1)
+- **A1** (покрывает R1): Выбор контекста показывает сетку «сущность × действие» с фичами в ячейках (скриншот catalog.matrix.show S1)
 
 **Экраны**
 
-![S1 — Матрица «сущность × действие»](../screens/catalog.matrix.show/S1.png)
+![S1 — Матрица «сущность × действие»](../screens/ru/catalog.matrix.show/S1.png)
 
 *S1 — Матрица «сущность × действие»*
 
@@ -214,7 +227,7 @@ Creates or changes a business object with its fields; field types are scalars or
 
 **Экраны**
 
-![S1 — Проблемы каталога](../screens/catalog.problems.show/S1.png)
+![S1 — Проблемы каталога](../screens/ru/catalog.problems.show/S1.png)
 
 *S1 — Проблемы каталога*
 
@@ -239,11 +252,38 @@ Creates or changes a stream: a business process with stages, KPIs and workflows 
 
 - **D1** Streams stay and are validated: schema, stage workflows, stage events [EN] — They describe the business process the workflows serve [EN] (2026-11-28)
 
+#### Планирование и проверка потока (`catalog.stream.plan`)
+
+*реализовано* · Компонент: Core package · Задачи: [PRODUCTCREATOR-43](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-43)
+
+Поток — полноценная запись каталога: статус, задачи, переводы, этапы с id, в которых указаны фичи, процессы и исполнители; поток планируется и проверяется как фичи и процессы.
+
+**Участники:** Владелец продукта, ИИ-агент
+
+**Требования**
+
+- **R1** У потока есть id как у процесса, название, цель, описание, статус, владелец, задачи, KPI (K1…) и этапы (ST1…) с событиями входа и выхода, фичами, процессами и исполнителями (участник или система)
+- **R2** validate_plan и apply_plan принимают потоки; сохранение, которое добавляет ошибку, отклоняется
+- **R3** Неизвестные фичи, процессы и исполнители этапов, повторные id потоков, повторные id KPI и этапов обнаруживаются
+- **R4** Этап, использующий удалённые, черновые или устаревшие фичи и процессы, обнаруживается так же, как шаг процесса
+- **R5** Тексты потока переводятся и проверяются на устаревание
+- **R6** Форма потока редактирует все поля, сохраняет неизвестные и имеет вкладки языков
+
+**Критерии приёмки**
+
+- **A1** (покрывает R1, R3, R4, R5): Проверки схемы, ссылок, статусов и переводов потоков
+- **A2** (покрывает R2): Агент применяет план с потоком; поток с неизвестной фичей отклоняется
+- **A3** (покрывает R6): В форме потока нет текстов, вписанных в код, а каталоги полны
+
+**Решения**
+
+- **D1** Схема потока переписана без миграции; rules.unique_function_per_stage убран — Ни в одном проекте нет потоков; правило никогда не проверялось (2026-11-28)
+
 #### Перевод содержимого каталога (`catalog.translation.edit`)
 
 *реализовано* · Компонент: Core package · Задачи: [PRODUCTCREATOR-37](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-37)
 
-Тексты функций, бизнес-объектов, процессов и контекста продукта на других языках проекта, в i18n.<язык> того же файла.
+Тексты фич, бизнес-объектов, процессов и контекста продукта на других языках проекта, в i18n.<язык> того же файла.
 
 **Участники:** Владелец продукта, ИИ-агент
 
@@ -264,19 +304,19 @@ Creates or changes a stream: a business process with stages, KPIs and workflows 
 
 *реализовано* · Компонент: Core package · Задачи: [PRODUCTCREATOR-7](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-7), [PRODUCTCREATOR-33](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-33)
 
-Создаёт или меняет процесс: упорядоченные шаги (функции) с компенсациями.
+Создаёт или меняет процесс: упорядоченные шаги (фичи) с компенсациями.
 
 **Требования**
 
-- **R1** Каждый шаг и каждая компенсация — существующая функция
+- **R1** Каждый шаг и каждая компенсация — существующая фича
 
 **Критерии приёмки**
 
-- **A1** (покрывает R1): Шаг, который не является функцией, отклоняется с unknown_feature
+- **A1** (покрывает R1): Шаг, который не является фичей, отклоняется с unknown_feature
 
 **Экраны**
 
-![S1 — Форма процесса со статусом и шагами](../screens/catalog.workflow.edit/S1.png)
+![S1 — Форма процесса со статусом и шагами](../screens/ru/catalog.workflow.edit/S1.png)
 
 *S1 — Форма процесса со статусом и шагами*
 
@@ -475,7 +515,7 @@ Moves the old functions/ catalog folders to features/ without overwriting anythi
 
 **Экраны**
 
-![S1 — Проекты, сервисы и библиотеки в рабочей области](../screens/project.component.edit/S1.png)
+![S1 — Проекты, сервисы и библиотеки в рабочей области](../screens/ru/project.component.edit/S1.png)
 
 *S1 — Проекты, сервисы и библиотеки в рабочей области*
 
@@ -504,7 +544,7 @@ Moves the old functions/ catalog folders to features/ without overwriting anythi
 
 **Экраны**
 
-![S1 — Рабочая область с проектом и его компонентами](../screens/project.context.edit/S1.png)
+![S1 — Рабочая область с проектом и его компонентами](../screens/ru/project.context.edit/S1.png)
 
 *S1 — Рабочая область с проектом и его компонентами*
 
@@ -531,6 +571,33 @@ When a repository is opened for the first time, services and libraries are found
 
 **Бизнес-объекты:** `project` (запись), `component` (запись)
 
+#### Описание внешних систем (`project.system.edit`)
+
+*реализовано* · Компонент: Core package · Задачи: [PRODUCTCREATOR-43](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-43)
+
+Внешние системы, с которыми работает продукт (трекер ошибок, трекер задач, хостинг релизов), в контексте продукта — с событиями, которые они публикуют и принимают, чтобы потоки могли проходить через них.
+
+**Участники:** Владелец продукта, ИИ-агент
+
+**Требования**
+
+- **R1** systems в product-creator.yml: id, name, description, emits, consumes; id уникальны и не совпадают с id участников
+- **R2** События, которые публикует система, считаются опубликованными, а которые она принимает — принятыми, в проверках событий
+- **R3** Названия и описания систем переводятся, как у участников
+- **R4** Системы редактируются в форме проекта в Workspace и через MCP get_project / update_project
+- **R5** ТЗ перечисляет внешние системы в разделе о продукте
+
+**Критерии приёмки**
+
+- **A1** (покрывает R1): updateProject сохраняет системы и отклоняет повторные id, id участников и неверные имена событий
+- **A2** (покрывает R2): Этап потока, который ждёт событие системы, не считается ошибкой
+- **A3** (покрывает R4): Агент добавляет систему через update_project и читает её через get_project
+- **A4** (покрывает R3, R5): ТЗ для людей перечисляет системы, на ru — в переводе
+
+**Решения**
+
+- **D1** Внешние источники событий — системы в контексте продукта, отдельно от участников — Участники — люди и роли; у системы есть события. Найдено при планировании PRODUCTCREATOR-26 (2026-11-28)
+
 #### Open projects [EN] (`project.workspace.open`)
 
 *реализовано* · Компонент: Desktop app (Electron) · Задачи: [PRODUCTCREATOR-6](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-6), [PRODUCTCREATOR-9](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-9)
@@ -554,6 +621,80 @@ Opens one or several project folders: from the command line, from the current fo
 - **D1** The workspace is remembered per OS user on each machine (workspace.json in the app data folder); dev and installed builds keep separate lists [EN] — Current behaviour; projects are local folders, so a shared list would point to paths that do not exist elsewhere [EN]
 
 **Бизнес-объекты:** `project` (чтение)
+
+### spec
+
+#### Generate the agent spec bundle [EN] (`spec.bundle.generate`)
+
+*реализовано* · Компонент: Core package · Задачи: [PRODUCTCREATOR-35](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35)
+
+Manifest and small chunks per feature, component and interface group, with ids, contracts, objects, acceptance with verify and code anchors. [EN]
+
+**Участники:** ИИ-агент
+
+**Требования**
+
+- **R1** Unresolved validation issues are part of the bundle next to the affected feature [EN]
+- **R2** Fields marked x-audience: human are left out [EN]
+
+**Критерии приёмки**
+
+- **A1** (покрывает R1, R2): The manifest lists entries with their issues; chunks carry agent fields only, with resolved objects [EN]
+- **A2** (покрывает R1): An agent reads the manifest and one chunk through MCP get_spec [EN]
+
+**Решения**
+
+- **D1** One bundle per project: every live feature, object and workflow [EN] — Answers Q1. Scoped bundles (component, release by tickets) are PRODUCTCREATOR-38 [EN] (2026-11-28)
+- **D2** Chunk budget 16 KB; a larger chunk is flagged overBudget in the manifest [EN] — Answers Q2. An agent loads one chunk per task; the flag shows entries to split [EN] (2026-11-28)
+
+#### ТЗ для людей (`spec.document.render`)
+
+*реализовано* · Компонент: Desktop app (Electron) · Задачи: [PRODUCTCREATOR-19](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-19), [PRODUCTCREATOR-35](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35), [PRODUCTCREATOR-37](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-37)
+
+Страница Doc показывает ТЗ для людей, построенное по модели, на каждом языке проекта и записывает его в Markdown. Экспорт в HTML/PDF — в PRODUCTCREATOR-19.
+
+**Участники:** Заказчик, Владелец продукта
+
+**Требования**
+
+- **R1** ТЗ с ошибками сообщает об этом в начале
+- **R2** Проблемы показаны рядом с фичей, к которой относятся
+- **R3** Поля с x-audience: agent не выводятся
+- **R4** ТЗ показывается на каждом языке проекта; непереведённый текст помечен основным языком
+
+**Критерии приёмки**
+
+- **A1** (покрывает R1, R2, R3): ТЗ для людей сообщает «Не готово» в начале, если в модели есть ошибки, показывает проблемы рядом с записью и не выводит поля для агентов
+- **A2** (покрывает R4): ТЗ пишется на каждом языке проекта, непереведённый текст помечен
+
+**Решения**
+
+- **D1** Отдельное ТЗ для людей на каждом языке проекта; один пакет для агентов на основном языке — Люди читают на своём языке, агентам нужен один стабильный источник; переводы необязательны, поэтому вместо отсутствующих показывается основной текст (PRODUCTCREATOR-37) (2026-11-28)
+
+**Экраны**
+
+![S1 — Сгенерированное ТЗ на странице Doc](../screens/ru/spec.document.render/S1.png)
+
+*S1 — Сгенерированное ТЗ на странице Doc*
+
+#### Потоки в ТЗ (`spec.stream.render`)
+
+*реализовано* · Компонент: Core package · Задачи: [PRODUCTCREATOR-43](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-43)
+
+Оба ТЗ показывают потоки: людям — раздел на каждый поток с целью, KPI и этапами; агентам — по фрагменту на поток с раскрытыми этапами.
+
+**Участники:** Заказчик, ИИ-агент
+
+**Требования**
+
+- **R1** В ТЗ для людей есть раздел «Потоки»: цель, KPI и таблица этапов с событиями входа и выхода, фичами, процессами и исполнителями, а также проблемы потока
+- **R2** В пакете для агентов есть streams/<id>.json с этапами и фичами, процессами и системами, которые они называют
+- **R3** Удалённые потоки не выводятся; черновые помечены
+
+**Критерии приёмки**
+
+- **A1** (покрывает R1, R3): ТЗ для людей показывает поток с этапами на en и ru
+- **A2** (покрывает R2): Манифест перечисляет фрагменты потоков; get_spec возвращает один из них
 
 ### sync
 
@@ -856,7 +997,7 @@ A business capability: features/<context>/<entity>.<action>.yml [EN]
 | tickets | `string[]` |  |
 | screens | `feature.screen[]` — Screen [EN] | screenshots for the spec [EN] |
 
-**Используется в:** Создание и изменение функции (запись), Граф событий (чтение), Матрица «сущность × действие» (чтение), Read the catalog through MCP [EN] (чтение), Move functions/ folders to features/ [EN] (запись), Link code to features [EN] (запись), Show what a change affects [EN] (чтение), Validate the catalog [EN] (чтение)
+**Используется в:** Создание и изменение фичи (запись), Граф событий (чтение), Матрица «сущность × действие» (чтение), Read the catalog through MCP [EN] (чтение), Move functions/ folders to features/ [EN] (запись), Link code to features [EN] (запись), Show what a change affects [EN] (чтение), Validate the catalog [EN] (чтение)
 
 ### Acceptance criterion [EN] (`feature.acceptance`)
 
@@ -1127,7 +1268,7 @@ A repository is opened, its components imported, code and Prisma linked, and the
 
 ### Release a spec [EN] (`spec.release`)
 
-*черновик*
+*реализовано*
 
 Задачи: [PRODUCTCREATOR-34](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-34), [PRODUCTCREATOR-35](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35)
 
@@ -1139,55 +1280,93 @@ Design checks pass, then the agent bundle and the human spec are generated. [EN]
 2. Generate the agent spec bundle [EN] (`spec.bundle.generate`)
 3. ТЗ для людей (`spec.document.render`)
 
-## 5. Черновики
+## 5. Потоки
 
-*Ещё не согласовано: эти функции могут измениться.*
+### От ошибки до исправленного релиза (`app.error_lifecycle`)
 
-### spec
+*черновик* · Компонент: Desktop app (Electron) · Задачи: [PRODUCTCREATOR-26](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-26)
 
-#### Generate the agent spec bundle [EN] (`spec.bundle.generate`)
+**Цель:** Ошибки пользователей находятся и исправляются без их участия
 
-*черновик* · Компонент: Core package · Задачи: [PRODUCTCREATOR-35](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35)
+От необработанной ошибки на машине пользователя до установленного на этой машине релиза с исправлением.
 
-Manifest and small chunks per feature, component and interface group, with ids, contracts, objects, acceptance with verify and code anchors. [EN]
+**KPI**
 
-**Участники:** ИИ-агент
+- **K1** Релизы с символизированными стеками (цель: 100%)
+- **K2** Время от первого события до установленного исправления (цель: < 1 week)
+
+| Этап | Начинается по | Завершается по | Фичи и процессы | Исполнители |
+| --- | --- | --- | --- | --- |
+| **ST1** Поймана и очищена | `app.error.raised` | `app.error.reported` | Отправка ошибок приложения в GlitchTip (`app.error.report`) |  |
+| **ST2** Сгруппирована, стек читаем | `app.error.reported` | `glitchtip.issue.created` | Загрузка source maps релиза (`app.sourcemaps.upload`) | GlitchTip |
+| **ST3** Разобрана в задачу | `glitchtip.issue.created` | `youtrack.issue.created` |  | Разработчик, YouTrack |
+| **ST4** Исправлена и выпущена | `youtrack.issue.created` | `github.release.published` |  | Разработчик, CI, GitHub |
+| **ST5** Доставлена пользователю | `github.release.published` | `app.update.installed` | Update the app [EN] (`app.update.install`) |  |
+
+## 6. Черновики
+
+*Ещё не согласовано: эти фичи могут измениться.*
+
+### app
+
+#### Отправка ошибок приложения в GlitchTip (`app.error.report`)
+
+*черновик* · Компонент: Desktop app (Electron) · Задачи: [PRODUCTCREATOR-26](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-26)
+
+Необработанные ошибки desktop-приложения (main-процесс, renderer, MCP-сервер) отправляются в self-hosted GlitchTip (протокол Sentry) ecooz с версией приложения и без содержимого проектов.
+
+**Участники:** Разработчик
 
 **Требования**
 
-- **R1** Unresolved validation issues are part of the bundle next to the affected feature [EN]
-- **R2** Fields marked x-audience: human are left out [EN]
+- **R1** Отправляются необработанные ошибки и отклонённые промисы main-процесса, renderer и MCP-сервера
+- **R2** У события есть release product-creator@<версия> и environment production, или prerelease для версии с pre-release тегом
+- **R3** Отправка включена только в сборках с DSN; DSN задаёт релизный workflow, поэтому локальные и dev-сборки ничего не отправляют
+- **R4** Содержимое каталога и YAML, содержимое файлов и пути пользователя не покидают машину; MCP-токены (pcmcp_), ключи релея (rld_, rly_) и значения Bearer удаляются из событий и breadcrumbs
+- **R5** Стеки релиза читаемы (source maps этого релиза)
 
-**Открытые вопросы**
+**Критерии приёмки**
 
-- **Q1** Scope of a bundle: whole product, component, or a selected set of features? [EN] — atai
-- **Q2** Size budget per chunk? [EN] — atai
+- **A1** (покрывает R4): Очистка удаляет токены, ключи, значения Bearer, пути пользователя и тела запросов из события и его breadcrumbs
+- **A2** (покрывает R2, R3): Настройки: без DSN отправка выключена; release и environment следуют версии
+- **A3** (покрывает R1, R5): Тестовая ошибка собранной релизной сборки видна в GlitchTip с её release, environment и символизированным стеком
 
-#### ТЗ для людей (`spec.document.render`)
+**Ограничения**
 
-*черновик* · Компонент: Desktop app (Electron) · Задачи: [PRODUCTCREATOR-19](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-19), [PRODUCTCREATOR-35](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-35), [PRODUCTCREATOR-37](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-37)
-
-Страница Doc показывает ТЗ для людей, построенное по модели, и экспортирует его в Markdown/HTML/PDF.
-
-**Участники:** Заказчик, Владелец продукта
-
-**Требования**
-
-- **R1** ТЗ с ошибками сообщает об этом в начале
-- **R2** Проблемы показаны рядом с функцией, к которой относятся
-- **R3** Поля с x-audience: agent не выводятся
-- **R4** ТЗ показывается на каждом языке проекта; непереведённый текст помечен основным языком
+- **C1** *security* sendDefaultPii выключен; в событиях нет IP, имени пользователя и домашнего пути
+- **C2** *performance* Без трассировки: tracesSampleRate 0; отправка не нагружает UI-поток
 
 **Решения**
 
-- **D1** Отдельное ТЗ для людей на каждом языке проекта; один пакет для агентов на основном языке — Люди читают на своём языке, агентам нужен один стабильный источник; переводы необязательны, поэтому вместо отсутствующих показывается основной текст (PRODUCTCREATOR-37) (2026-11-28)
+- **D1** Self-hosted GlitchTip error.y.ecooz.net, org ecooz, проект product-creator — Паттерн monkey-mobile; в Consolieri desktop, указанном в тикете, отправки ошибок нет (2026-11-28)
+- **D2** Всегда включено в релизных сборках, без отключения — Решение владельца продукта; в документации для пользователей описано, что отправляется (2026-11-28)
+- **D3** DSN подставляется при сборке из секрета GitHub Actions и никогда не хранится в репозитории — Как в мобильных приложениях (env на этапе сборки); сборка без DSN ничего не делает (2026-11-28)
 
-**Экраны**
+**Публикует события:** `app.error.reported`
 
-![S1 — Сгенерированное ТЗ на странице Doc](../screens/spec.document.render/S1.png)
+#### Загрузка source maps релиза (`app.sourcemaps.upload`)
 
-*S1 — Сгенерированное ТЗ на странице Doc*
+*черновик* · Компонент: Desktop app (Electron) · Задачи: [PRODUCTCREATOR-26](https://ecooz.youtrack.cloud/issue/PRODUCTCREATOR-26)
 
-## 6. Проблемы
+Релизный workflow загружает source maps бандлов main, preload и renderer в GlitchTip для релиза, затем удаляет их из собранного приложения.
 
-В модели нет проблем валидации.
+**Участники:** CI
+
+**Требования**
+
+- **R1** Source maps main, preload и renderer загружаются для релиза product-creator@<версия> до упаковки
+- **R2** В собранном приложении нет файлов .map
+- **R3** Без токена загрузки релиз всё равно собирается и сообщает, что карты не загружены *(желательно)*
+
+**Критерии приёмки**
+
+- **A1** (покрывает R2): После шага очистки в out/ нет файлов .map
+- **A2** (покрывает R1): У релиза в GlitchTip есть загруженные карты; тестовая ошибка символизирована
+
+**Публикует события:** `app.sourcemaps.uploaded`
+
+## 7. Проблемы
+
+| Уровень | Запись | Поле | Сообщение |
+| --- | --- | --- | --- |
+| подсказка | `app.error_lifecycle` | `stages[0].entry_events` | Stage "Caught and scrubbed" waits for "app.error.raised", which no feature, workflow or system emits. Add the emitter (a feature, or a system in product-creator.yml), or fix the event name. |

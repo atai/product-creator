@@ -1,0 +1,122 @@
+id: project.system.edit
+name: Describe external systems
+bounded_context: project
+entity: system
+action: edit
+owner: atai
+lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
+description: External systems the product works with (error tracker, issue tracker, release host) in the product context, with the events they emit and consume, so streams can pass through them.
+actors:
+  - product_owner
+  - ai_agent
+requirements:
+  - id: R1
+    text: 'systems in product-creator.yml: id, name, description, emits, consumes; ids unique and different from actor ids'
+  - id: R2
+    text: Events a system emits count as emitted, events it consumes as consumed, in the event checks
+  - id: R3
+    text: Names and descriptions of systems are translatable like actors
+  - id: R4
+    text: Systems are edited in the Workspace project form and through MCP get_project / update_project
+  - id: R5
+    text: The spec lists the external systems in the product section
+acceptance:
+  - id: A1
+    covers:
+      - R1
+    text: updateProject saves systems and rejects duplicate ids, ids of actors and bad event names
+    verify: pnpm --filter @pc/core test model
+  - id: A2
+    covers:
+      - R2
+    text: A stream stage waiting for an event a system emits is not reported
+    verify: pnpm --filter @pc/core test streams
+  - id: A3
+    covers:
+      - R4
+    text: An agent adds a system with update_project and reads it with get_project
+    verify: pnpm --filter @pc/mcp test server
+  - id: A4
+    covers:
+      - R3
+      - R5
+    text: The human spec lists the systems, translated in ru
+    verify: pnpm --filter @pc/core test spec
+decisions:
+  - id: D1
+    decision: External emitters are systems in the product context, apart from actors
+    reason: Actors are people and roles; a system has events. Found while planning PRODUCTCREATOR-26
+    date: '2026-11-28'
+    status: accepted
+tickets:
+  - PRODUCTCREATOR-43
+i18n:
+  ru:
+    name: Описание внешних систем
+    description: Внешние системы, с которыми работает продукт (трекер ошибок, трекер задач, хостинг релизов), в контексте продукта — с событиями, которые они публикуют и принимают, чтобы потоки могли проходить через них.
+    requirements:
+      R1:
+        text: 'systems в product-creator.yml: id, name, description, emits, consumes; id уникальны и не совпадают с id участников'
+      R2:
+        text: События, которые публикует система, считаются опубликованными, а которые она принимает — принятыми, в проверках событий
+      R3:
+        text: Названия и описания систем переводятся, как у участников
+      R4:
+        text: Системы редактируются в форме проекта в Workspace и через MCP get_project / update_project
+      R5:
+        text: ТЗ перечисляет внешние системы в разделе о продукте
+    acceptance:
+      A1:
+        text: updateProject сохраняет системы и отклоняет повторные id, id участников и неверные имена событий
+      A2:
+        text: Этап потока, который ждёт событие системы, не считается ошибкой
+      A3:
+        text: Агент добавляет систему через update_project и читает её через get_project
+      A4:
+        text: ТЗ для людей перечисляет системы, на ru — в переводе
+    decisions:
+      D1:
+        decision: Внешние источники событий — системы в контексте продукта, отдельно от участников
+        reason: Участники — люди и роли; у системы есть события. Найдено при планировании PRODUCTCREATOR-26
+    _source:
+      name: 23cbbfc0
+      description: 1d448b37
+      requirements:
+        R1:
+          text: 852ce12a
+        R2:
+          text: 7765bc50
+        R3:
+          text: fe17d019
+        R4:
+          text: b2a3af7f
+        R5:
+          text: ab8f1e82
+      acceptance:
+        A1:
+          text: cbdd6f34
+        A2:
+          text: 021dbdb5
+        A3:
+          text: b3933fdc
+        A4:
+          text: d8c7a6d3
+      decisions:
+        D1:
+          decision: 57a349a0
+          reason: c8227139
+source_file: project/model.ts
+code_refs:
+  - component: desktop
+    file: renderer/src/pages/workspace.tsx
+    role: UI
+  - component: mcp
+    file: tools.ts
+    role: MCP
+  - component: core
+    file: validation/design.ts
+    role: checks

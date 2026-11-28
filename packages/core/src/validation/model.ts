@@ -20,7 +20,7 @@ import { designIssues, type DesignCode } from './design';
  * are advisory by default — their intended severity is shifted one level down (error → warning → info).
  */
 
-export type EntityKind = 'feature' | 'workflow' | 'business_object';
+export type EntityKind = 'feature' | 'workflow' | 'business_object' | 'stream';
 
 export interface ModelEntry<T> {
   data: T;
@@ -70,7 +70,7 @@ export type IssueCode =
   | DesignCode;
 
 export type Severity = 'error' | 'warning' | 'info';
-export type IssueKind = EntityKind | 'stream' | 'component' | 'project';
+export type IssueKind = EntityKind | 'component' | 'project';
 
 export interface ValidationIssue {
   severity: Severity;
@@ -89,7 +89,7 @@ export interface ValidationIssue {
   intended?: Severity;
 }
 
-const KINDS = new Set<EntityKind>(['feature', 'workflow', 'business_object']);
+const KINDS = new Set<EntityKind>(['feature', 'workflow', 'business_object', 'stream']);
 
 /** Kind from user input; 'function' is the old name of 'feature' (PRODUCTCREATOR-28). null: not a validated kind */
 export const normalizeKind = (kind: unknown): EntityKind | null => {
@@ -99,11 +99,11 @@ export const normalizeKind = (kind: unknown): EntityKind | null => {
 
 export const idOf = (kind: EntityKind, data: unknown): string => {
   const rec = (data ?? {}) as Record<string, unknown>;
-  return String((kind === 'workflow' ? rec.workflow : rec.id) ?? '');
+  return String((kind === 'workflow' ? rec.workflow : kind === 'stream' ? rec.stream : rec.id) ?? '');
 };
 
 /** Data as it is written to YAML: no undefined values, no UI-only fields (childObjects of the business-object list) */
-function plain(kind: EntityKind | 'stream', data: unknown): unknown {
+function plain(kind: EntityKind, data: unknown): unknown {
   const copy = JSON.parse(JSON.stringify(data ?? {})) as Record<string, unknown>;
   if (kind === 'business_object') delete copy.childObjects;
   return copy;
@@ -120,15 +120,15 @@ function schemaMessage(e: ErrorObject): string {
   return e.message ?? 'is invalid';
 }
 
-function schemaIssues(kind: EntityKind | 'stream', entry: ModelEntry<unknown>): ValidationIssue[] {
+function schemaIssues(kind: EntityKind, entry: ModelEntry<unknown>): ValidationIssue[] {
   const validate = validators[kind];
   if (validate(plain(kind, entry.data))) return [];
-  const id = kind === 'stream' ? String((entry.data as { stream?: unknown })?.stream ?? '') : idOf(kind, entry.data);
+  const id = idOf(kind, entry.data);
   // errors inside anyOf branches are summarised by the anyOf error itself
   const errors = (validate.errors ?? []).filter((e) => !e.schemaPath.includes('/anyOf/'));
   return errors.map((e: ErrorObject) => {
     const field = e.instancePath.replace(/^\//, '').replace(/\//g, '.') || undefined;
-    const isIdPattern = e.keyword === 'pattern' && (field === 'id' || field === 'workflow');
+    const isIdPattern = e.keyword === 'pattern' && (field === 'id' || field === 'workflow' || field === 'stream');
     const extra = e.keyword === 'additionalProperties' ? ` (${(e.params as { additionalProperty?: string }).additionalProperty})` : '';
     return {
       severity: 'error' as const,
@@ -137,8 +137,8 @@ function schemaIssues(kind: EntityKind | 'stream', entry: ModelEntry<unknown>): 
       id,
       field,
       message: isIdPattern
-        ? kind === 'workflow'
-          ? `Workflow key "${id}" must match <context>.<name> (lowercase letters, digits, _)`
+        ? kind === 'workflow' || kind === 'stream'
+          ? `${kind === 'workflow' ? 'Workflow' : 'Stream'} key "${id}" must match <context>.<name> (lowercase letters, digits, _)`
           : `Id "${id}" must match ${kind === 'feature' ? '<bounded_context>.<entity>.<action>' : 'the id pattern'} (${String((e.params as { pattern?: string }).pattern)})`
         : `${field ?? kind}: ${schemaMessage(e)}${extra}`,
       file: entry.file,
@@ -226,6 +226,7 @@ function duplicateIds(model: CatalogModel): ValidationIssue[] {
     ['feature', model.features],
     ['workflow', model.workflows],
     ['business_object', model.objects],
+    ['stream', model.streams ?? []],
   ];
   for (const [kind, entries] of lists) {
     const byId = new Map<string, ModelEntry<unknown>[]>();
@@ -324,16 +325,32 @@ export function validateModel(model: CatalogModel): ValidationIssue[] {
   for (const e of model.streams ?? []) {
     const st = e.data;
     issues.push(...schemaIssues('stream', e));
-    (Array.isArray(st.stages) ? st.stages : []).forEach((stage, i) => {
+    const stages = Array.isArray(st.stages) ? st.stages : [];
+    stages.forEach((stage, i) => {
       (Array.isArray(stage?.workflows) ? stage.workflows : []).forEach((wf, j) => {
         if (!workflowKeys.has(wf)) issues.push({ severity: 'error', code: 'unknown_workflow', kind: 'stream', id: st.stream, field: `stages[${i}].workflows[${j}]`, message: `Stage "${stage.name}" runs unknown workflow "${wf}"`, ...at(e) });
       });
+      // PRODUCTCREATOR-43: a stage names the features that do its work
+      (Array.isArray(stage?.features) ? stage.features : []).forEach((f, j) => {
+        if (!featureIds.has(f)) issues.push({ severity: 'error', code: 'unknown_feature', kind: 'stream', id: st.stream, field: `stages[${i}].features[${j}]`, message: `Stage "${stage.name}" names unknown feature "${f}"`, ...at(e) });
+      });
     });
+    // ids of stages and KPIs are the keys of translations and references: unique in the stream
+    for (const [list, items] of [['stages', stages], ['kpis', Array.isArray(st.kpis) ? st.kpis : []]] as const) {
+      const seen = new Set<string>();
+      items.forEach((item, i) => {
+        const id = (item as { id?: unknown })?.id;
+        if (typeof id !== 'string') return;
+        if (seen.has(id)) issues.push({ severity: 'error', code: 'duplicate_id', kind: 'stream', id: st.stream, field: `${list}[${i}].id`, message: `${list === 'stages' ? 'Stage' : 'KPI'} id "${id}" is used twice in the stream`, ...at(e) });
+        seen.add(id);
+      });
+    }
   }
 
   issues.push(...duplicateIds(model));
   issues.push(...duplicateNames('feature', model.features as ModelEntry<{ name?: string; id?: string }>[]));
   issues.push(...duplicateNames('business_object', model.objects as ModelEntry<{ name?: string; id?: string }>[]));
+  issues.push(...duplicateNames('stream', (model.streams ?? []) as ModelEntry<{ name?: string; id?: string }>[]));
   if (model.context) issues.push(...designIssues(model, model.context));
   return issues;
 }

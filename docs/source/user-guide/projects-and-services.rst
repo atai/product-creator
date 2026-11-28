@@ -107,6 +107,12 @@ File format
      - id: product_owner        # a-z, 0-9, _
        name: Product owner
        description: Plans features and approves specs
+   systems:                     # external systems: emit and consume events, perform stream stages
+     - id: glitchtip            # a-z, 0-9, _; not an actor id
+       name: GlitchTip
+       description: Error tracker (Sentry protocol)
+       emits: [glitchtip.issue.created]
+       consumes: [app.error.reported]
    glossary:
      - term: Feature
        definition: A business capability of the product
@@ -118,8 +124,16 @@ File format
 the generated specification, see :doc:`spec`.
 
 The product context is the first part of a generated spec: why the product exists, what it aims at,
-who uses it and the words it uses. Goal ids, actor ids and glossary terms must be unique; the tracker
-URL must contain ``{id}``.
+who uses it and the words it uses. Goal ids, actor ids, system ids and glossary terms must be unique (a
+system and an actor cannot share an id); system events are dotted names; the tracker URL must contain
+``{id}``.
+
+**External systems** are services outside the product that take part in its processes: an error
+tracker, an issue tracker, the release host. The events a system emits count as emitted and those it
+consumes as consumed in the event checks, so a stream can wait for "GlitchTip created an issue" without
+inventing a feature for it. A stream stage names systems (or actors) in ``performed_by``. Systems are
+edited in **Workspace → Edit project → External systems** and through MCP ``update_project``; their names
+and descriptions are translatable.
 
 ``docs/product/frontend/service.pc.yml``:
 

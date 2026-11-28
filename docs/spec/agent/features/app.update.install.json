@@ -8,6 +8,12 @@
     "entity": "update",
     "action": "install",
     "lifecycle": "implemented",
+    "emits": [
+      "app.update.installed"
+    ],
+    "consumes": [
+      "github.release.published"
+    ],
     "description": "Signed releases update automatically; a check can be started from the menu.",
     "source_file": "main/updater.ts",
     "actors": [

@@ -1,39 +1,115 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Stream",
-  "description": "A stream is a multi-stage business process flow",
+  "description": "A stream is a business process across stages (PRODUCTCREATOR-43): each stage starts and ends with events and names the features, workflows and the actors or external systems that do its work.",
   "type": "object",
-  "required": ["stream", "goal", "stages"],
+  "required": [
+    "stream",
+    "name",
+    "goal",
+    "lifecycle",
+    "stages"
+  ],
+  "additionalProperties": false,
   "properties": {
     "stream": {
       "type": "string",
-      "pattern": "^[a-z0-9_]+$",
-      "description": "Stream identifier"
+      "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
+      "description": "Stream identifier in format: context.name",
+      "x-audience": "both"
     },
     "name": {
       "type": "string",
-      "description": "Human-readable name"
+      "minLength": 1,
+      "description": "Human-readable name",
+      "x-audience": "both",
+      "x-translatable": true
     },
     "goal": {
       "type": "string",
-      "description": "Goal/purpose of this stream"
+      "minLength": 1,
+      "description": "What the stream achieves for the business",
+      "x-audience": "both",
+      "x-translatable": true
+    },
+    "description": {
+      "type": "string",
+      "description": "Scope and boundaries of the stream",
+      "x-audience": "both",
+      "x-translatable": true
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "implemented",
+        "deprecated",
+        "removed"
+      ],
+      "x-audience": "both",
+      "description": "draft: being worked out; approved: spec agreed, ready to build; implemented: in the code; deprecated: still in the code, do not use in new work; removed: gone from the code, kept for history"
+    },
+    "owner": {
+      "type": "string",
+      "description": "Who answers for the stream",
+      "x-audience": "human"
     },
     "kpis": {
       "type": "array",
+      "x-audience": "both",
+      "description": "How the stream is measured",
       "items": {
-        "type": "string"
-      },
-      "description": "KPI metrics for this stream"
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^K[1-9][0-9]*$",
+            "description": "K1, K2, …"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The metric",
+            "x-translatable": true
+          },
+          "target": {
+            "type": "string",
+            "description": "Target value, e.g. 100% or < 2 days"
+          }
+        }
+      }
     },
     "stages": {
       "type": "array",
+      "minItems": 1,
+      "x-audience": "both",
+      "description": "Stages in order",
       "items": {
         "type": "object",
-        "required": ["name", "entry_events", "exit_events"],
+        "required": [
+          "id",
+          "name",
+          "entry_events",
+          "exit_events"
+        ],
+        "additionalProperties": false,
         "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^ST[1-9][0-9]*$",
+            "description": "ST1, ST2, …"
+          },
           "name": {
             "type": "string",
-            "description": "Stage name"
+            "minLength": 1,
+            "description": "Stage name",
+            "x-translatable": true
           },
           "entry_events": {
             "type": "array",
@@ -51,27 +127,48 @@
             "minItems": 1,
             "description": "Events that complete this stage"
           },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Feature ids that do the work of this stage"
+          },
           "workflows": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Workflow IDs for this stage"
+            "description": "Workflow ids that do the work of this stage"
+          },
+          "performed_by": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Actor or system ids (product-creator.yml) that do the work of this stage outside the features"
           }
         }
-      },
-      "minItems": 1,
-      "description": "Stages of the stream"
+      }
     },
-    "rules": {
+    "tickets": {
+      "type": "array",
+      "x-audience": "both",
+      "default": [],
+      "description": "Tracker issues this entry is planned or built in, e.g. PRODUCTCREATOR-34 (YouTrack/Jira key) or #12 (GitHub). Linked with tracker.issueUrl of product-creator.yml.",
+      "items": {
+        "type": "string",
+        "pattern": "^([A-Z][A-Z0-9_]*-|#)[1-9][0-9]*$",
+        "description": "Issue key: PROJECT-123 or #123"
+      }
+    },
+    "i18n": {
       "type": "object",
-      "properties": {
-        "unique_function_per_stage": {
-          "type": "boolean",
-          "description": "If true, a function cannot appear in multiple stages"
-        }
-      },
-      "description": "Validation rules"
+      "x-audience": "both",
+      "description": "Translations (PRODUCTCREATOR-37): i18n.<language> holds the translatable fields (x-translatable) in that language; list items are keyed by their id (or x-i18n-key); _source keeps fingerprints of the translated primary texts (set on save) to detect stale translations.",
+      "additionalProperties": {
+        "type": "object"
+      }
     }
   }
 }

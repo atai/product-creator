@@ -326,6 +326,37 @@ describe('tools (read-write token)', () => {
     await client.close();
   });
 
+  it('streams and external systems through plans, the schema and the spec (PRODUCTCREATOR-43)', async () => {
+    const { client } = await connect(bearer());
+    const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });
+    expect((await call('update_project', { actors: [{ id: 'developer', name: 'Developer' }], systems: [{ id: 'glitchtip', name: 'GlitchTip', emits: ['glitchtip.issue.created'], consumes: ['app.error.reported'] }] })).isError).toBeFalsy();
+    expect(json(await call('get_project', {})).systems).toEqual([expect.objectContaining({ id: 'glitchtip', emits: ['glitchtip.issue.created'] })]);
+    expect(json(await client.callTool({ name: 'get_schema', arguments: { kind: 'stream' } })).schema.properties.stages).toBeDefined();
+
+    const f = { id: 'app.error.report', name: 'Report errors', bounded_context: 'app', entity: 'error', action: 'report', owner: 'team-a', lifecycle: 'draft', emits: ['app.error.reported'] };
+    const stream = {
+      stream: 'app.error_lifecycle', name: 'From an error to the fix', goal: 'Errors are fixed', lifecycle: 'draft',
+      stages: [
+        { id: 'ST1', name: 'Caught', entry_events: ['app.error.reported'], exit_events: ['app.error.reported'], features: ['app.error.report'] },
+        { id: 'ST2', name: 'Grouped', entry_events: ['app.error.reported'], exit_events: ['glitchtip.issue.created'], performed_by: ['glitchtip'] },
+      ],
+    };
+    const alone = await call('apply_plan', { changes: [{ kind: 'stream', data: stream, component: 'svc' }] });
+    expect(alone.isError).toBe(true);
+    expect(text(alone)).toContain('"code":"unknown_feature","kind":"stream"');
+    expect((await call('apply_plan', { changes: [{ kind: 'stream', data: stream, component: 'svc' }, { kind: 'feature', data: f, component: 'svc' }] })).isError).toBeFalsy();
+    const listed = json(await call('list_catalog', { kind: 'stream' }));
+    expect(listed.items).toEqual([expect.objectContaining({ stream: 'app.error_lifecycle', lifecycle: 'draft', stages: 2 })]);
+
+    const manifest = json(await call('get_spec', {}));
+    const entry = manifest.entries.find((e: { kind: string }) => e.kind === 'stream');
+    expect(entry).toMatchObject({ id: 'app.error_lifecycle', file: 'streams/app.error_lifecycle.json' });
+    const chunk = json(await call('get_spec', { entry: entry.file }));
+    expect(chunk.stream.stages[1].performed_by[0]).toMatchObject({ kind: 'system', id: 'glitchtip' });
+    expect(json(await call('get_spec', { human: true })).markdown).toContain('From an error to the fix');
+    await client.close();
+  });
+
   it('reads and updates the product context (PRODUCTCREATOR-33)', async () => {
     const { client } = await connect(bearer());
     const call = async (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: { project: project.slug, ...args } });

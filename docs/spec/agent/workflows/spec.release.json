@@ -5,7 +5,7 @@
     "workflow": "spec.release",
     "name": "Release a spec",
     "description": "Design checks pass, then the agent bundle and the human spec are generated.",
-    "lifecycle": "draft",
+    "lifecycle": "implemented",
     "steps": [
       "validation.design.check",
       "spec.bundle.generate",

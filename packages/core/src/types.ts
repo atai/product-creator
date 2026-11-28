@@ -171,22 +171,37 @@ export interface Workflow {
   i18n?: Translations;
 }
 
+/** A stage of a stream (PRODUCTCREATOR-43): ST1, ST2, … */
 export interface StreamStage {
+  id: string;
   name: string;
   entry_events: string[];
   exit_events: string[];
+  features?: string[];
   workflows?: string[];
+  /** Actor or system ids of the project */
+  performed_by?: string[];
 }
 
+export interface StreamKpi {
+  /** K1, K2, … */
+  id: string;
+  name: string;
+  target?: string;
+}
+
+/** A business process across stages (PRODUCTCREATOR-43) */
 export interface Stream {
   stream: string;
-  name?: string;
+  name: string;
   goal: string;
-  kpis?: string[];
+  description?: string;
+  lifecycle: Lifecycle;
+  owner?: string;
+  kpis?: StreamKpi[];
   stages: StreamStage[];
-  rules?: {
-    unique_function_per_stage?: boolean;
-  };
+  tickets?: string[];
+  i18n?: Translations;
 }
 
 export interface BusinessObjectField {

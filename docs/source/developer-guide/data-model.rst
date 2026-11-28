@@ -63,8 +63,10 @@ the intended severity of each code). They run inside ``validateModel`` when the 
 (``DesignContext``: projects, OpenAPI operations, file existence), which ``storage.modelSnapshot()`` fills;
 issues carry ``check: 'design'`` and ``intended``. Severity: ``checks.overrides[code]`` →
 ``checks.mode === 'strict'`` ? intended : one level down; drafts are capped at warning. ``Severity`` has
-``info``; only ``error`` blocks (save guard, ``validate_plan``, lint exit code). Streams are part of the
-snapshot and validated (schema, ``unknown_workflow``). An upsert in a plan replaces the entry with the same
+``info``; only ``error`` blocks (save guard, ``validate_plan``, lint exit code). Streams are a full entry kind
+(``EntityKind``, PRODUCTCREATOR-43): in the snapshot, plans, the save guard, duplicates, translations and
+the design checks (stage features/workflows/performers, events with external ``systems`` of the product
+context). An upsert in a plan replaces the entry with the same
 id wherever it is, so an upsert into another component moves it.
 
 ``POST /api/apply-plan`` (``http/routes/apply-plan``) takes the ``changes`` of ``/api/validate-plan``
@@ -92,8 +94,8 @@ Model validation
   compensations, ``calls``), ``unknown_object`` (``objects``), ``unknown_type`` (BO field types: the
   ``SCALARS`` list of generic, SQL and Prisma types, with parameters, ``?``/``[]`` and ``enum<…>``, or
   a business object id/name), ``compensation_not_in_steps``, ``duplicate_item_id`` and ``unknown_requirement`` (spec lists of a
-  feature). Schema messages summarise ``anyOf`` and quote the field description for patterns. Streams
-  are skipped.
+  feature). Schema messages summarise ``anyOf`` and quote the field description for patterns. Streams:
+  ``unknown_workflow`` / ``unknown_feature`` of stages, ``duplicate_id`` of stage and KPI ids.
 * ``plan.ts`` — ``applyPlan`` (upsert/delete on a copy of the snapshot), ``planIssues`` →
   ``{ok, introduced, existing}``, ``impactOf(kind, id)``, ``findDuplicates``.
 * ``guard.ts`` — ``rejectInvalidSave`` used by the save routes: 400 with ``issues`` if the save

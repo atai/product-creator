@@ -7,11 +7,12 @@
     "bounded_context": "spec",
     "entity": "bundle",
     "action": "generate",
-    "lifecycle": "draft",
+    "lifecycle": "implemented",
     "description": "Manifest and small chunks per feature, component and interface group, with ids, contracts, objects, acceptance with verify and code anchors.",
     "calls": [
       "validation.model.validate"
     ],
+    "source_file": "spec/agent.ts",
     "actors": [
       "ai_agent"
     ],
@@ -25,16 +26,39 @@
         "text": "Fields marked x-audience: human are left out"
       }
     ],
-    "open_questions": [
+    "acceptance": [
       {
-        "id": "Q1",
-        "question": "Scope of a bundle: whole product, component, or a selected set of features?",
-        "owner": "atai"
+        "id": "A1",
+        "covers": [
+          "R1",
+          "R2"
+        ],
+        "text": "The manifest lists entries with their issues; chunks carry agent fields only, with resolved objects",
+        "verify": "pnpm --filter @pc/core test spec"
       },
       {
-        "id": "Q2",
-        "question": "Size budget per chunk?",
-        "owner": "atai"
+        "id": "A2",
+        "covers": [
+          "R1"
+        ],
+        "text": "An agent reads the manifest and one chunk through MCP get_spec",
+        "verify": "pnpm --filter @pc/mcp test server"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "One bundle per project: every live feature, object and workflow",
+        "reason": "Answers Q1. Scoped bundles (component, release by tickets) are PRODUCTCREATOR-38",
+        "date": "2026-11-28",
+        "status": "accepted"
+      },
+      {
+        "id": "D2",
+        "decision": "Chunk budget 16 KB; a larger chunk is flagged overBudget in the manifest",
+        "reason": "Answers Q2. An agent loads one chunk per task; the flag shows entries to split",
+        "date": "2026-11-28",
+        "status": "accepted"
       }
     ],
     "tickets": [
@@ -42,7 +66,9 @@
     ]
   },
   "objects": [],
-  "calledBy": [],
+  "calledBy": [
+    "spec.stream.render"
+  ],
   "workflows": [
     "spec.release"
   ],

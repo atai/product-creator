@@ -205,6 +205,21 @@ describe('product context (PRODUCTCREATOR-33)', () => {
     expect(readProject(root)!).toMatchObject({ glossary: undefined, tracker: undefined, vision: 'Specs people and agents can check' });
   });
 
+  it('external systems: saved with their events, ids unique and apart from actors (PRODUCTCREATOR-43)', () => {
+    monorepo();
+    openProject(root);
+    updateProject(root, {
+      actors: [{ id: 'developer', name: 'Developer' }],
+      systems: [{ id: 'glitchtip', name: 'GlitchTip', description: 'Error tracker', emits: ['glitchtip.issue.created'], consumes: ['app.error.reported'] }],
+    });
+    expect(readProject(root)!.systems).toEqual([{ id: 'glitchtip', name: 'GlitchTip', description: 'Error tracker', emits: ['glitchtip.issue.created'], consumes: ['app.error.reported'] }]);
+    expect(() => updateProject(root, { systems: [{ id: 'developer', name: 'x' }] })).toThrow(/actor id/);
+    expect(() => updateProject(root, { systems: [{ id: 'a', name: 'A' }, { id: 'a', name: 'B' }] })).toThrow(/used twice/);
+    expect(() => updateProject(root, { systems: [{ id: 'gt', name: 'GT', emits: ['Issue Created'] }] })).toThrow(/dotted/);
+    updateProject(root, { systems: [] });
+    expect(readProject(root)!.systems).toBeUndefined();
+  });
+
   it('rejects bad ids, duplicates and a tracker URL without {id}', () => {
     monorepo();
     openProject(root);

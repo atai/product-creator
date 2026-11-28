@@ -53,6 +53,17 @@ export interface Messages {
   workflows: string;
   steps: string;
   compensation: string;
+  systems: string;
+  system: string;
+  streams: string;
+  goal: string;
+  kpis: string;
+  target: string;
+  stage: string;
+  entryEvents: string;
+  exitEvents: string;
+  work: string;
+  performedBy: string;
   problems: string;
   severity: string;
   entry: string;
@@ -118,6 +129,17 @@ const en: Messages = {
   workflows: 'Workflows',
   steps: 'Steps',
   compensation: 'compensation',
+  systems: 'External systems',
+  system: 'System',
+  streams: 'Streams',
+  goal: 'Goal',
+  kpis: 'KPIs',
+  target: 'target',
+  stage: 'Stage',
+  entryEvents: 'Starts on',
+  exitEvents: 'Ends on',
+  work: 'Features and workflows',
+  performedBy: 'Performed by',
   problems: 'Problems',
   severity: 'Severity',
   entry: 'Entry',
@@ -151,9 +173,9 @@ const ru: Messages = {
   glossary: 'Глоссарий',
   term: 'Термин',
   definition: 'Определение',
-  features: 'Функции',
+  features: 'Фичи',
   drafts: 'Черновики',
-  draftsNote: 'Ещё не согласовано: эти функции могут измениться.',
+  draftsNote: 'Ещё не согласовано: эти фичи могут измениться.',
   component: 'Компонент',
   tickets: 'Задачи',
   requirements: 'Требования',
@@ -181,6 +203,17 @@ const ru: Messages = {
   workflows: 'Процессы',
   steps: 'Шаги',
   compensation: 'компенсация',
+  systems: 'Внешние системы',
+  system: 'Система',
+  streams: 'Потоки',
+  goal: 'Цель',
+  kpis: 'KPI',
+  target: 'цель',
+  stage: 'Этап',
+  entryEvents: 'Начинается по',
+  exitEvents: 'Завершается по',
+  work: 'Фичи и процессы',
+  performedBy: 'Исполнители',
   problems: 'Проблемы',
   severity: 'Уровень',
   entry: 'Запись',
@@ -244,6 +277,17 @@ const de: Messages = {
   workflows: 'Abläufe',
   steps: 'Schritte',
   compensation: 'Kompensation',
+  systems: 'Externe Systeme',
+  system: 'System',
+  streams: 'Streams',
+  goal: 'Ziel',
+  kpis: 'KPIs',
+  target: 'Ziel',
+  stage: 'Phase',
+  entryEvents: 'Beginnt bei',
+  exitEvents: 'Endet bei',
+  work: 'Funktionen und Abläufe',
+  performedBy: 'Ausgeführt von',
   problems: 'Probleme',
   severity: 'Stufe',
   entry: 'Eintrag',

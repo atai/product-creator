@@ -6,8 +6,10 @@ action: install
 owner: atai
 lifecycle: implemented
 tags: []
-emits: []
-consumes: []
+emits:
+  - app.update.installed
+consumes:
+  - github.release.published
 apis: []
 description: Signed releases update automatically; a check can be started from the menu.
 source_file: main/updater.ts

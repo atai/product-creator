@@ -476,6 +476,9 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
   const [goals, setGoals] = useState<Row[]>((project.goals ?? []).map((g) => ({ ...g })));
   const [actors, setActors] = useState<Row[]>((project.actors ?? []).map((a) => ({ id: a.id, name: a.name, description: a.description ?? '' })));
   const [glossary, setGlossary] = useState<Row[]>((project.glossary ?? []).map((t) => ({ ...t })));
+  // external systems (PRODUCTCREATOR-43): event lists are comma-separated in the form
+  const [systems, setSystems] = useState<Row[]>((project.systems ?? []).map((x) => ({ id: x.id, name: x.name, description: x.description ?? '', emits: (x.emits ?? []).join(', '), consumes: (x.consumes ?? []).join(', ') })));
+  const events = (text: string | undefined) => (text ?? '').split(/[\s,]+/).filter(Boolean);
   const [issueUrl, setIssueUrl] = useState(project.tracker?.issueUrl ?? '');
   const [specOutput, setSpecOutput] = useState(project.spec?.output ?? '');
   // content and spec languages (PRODUCTCREATOR-37); the old spec.language becomes the only language
@@ -498,6 +501,13 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
           goals: filled(goals, ['id', 'text']).map((g) => ({ id: g.id.trim(), text: g.text.trim() })),
           actors: filled(actors, ['id', 'name']).map((a) => ({ id: a.id.trim(), name: a.name.trim(), ...(a.description?.trim() ? { description: a.description.trim() } : {}) })),
           glossary: filled(glossary, ['term', 'definition']).map((t) => ({ term: t.term.trim(), definition: t.definition.trim() })),
+          systems: filled(systems, ['id', 'name']).map((x) => ({
+            id: x.id.trim(),
+            name: x.name.trim(),
+            ...(x.description?.trim() ? { description: x.description.trim() } : {}),
+            ...(events(x.emits).length ? { emits: events(x.emits) } : {}),
+            ...(events(x.consumes).length ? { consumes: events(x.consumes) } : {}),
+          })),
           tracker: issueUrl.trim() ? { issueUrl: issueUrl.trim() } : null,
           spec: specOutput.trim() ? { output: specOutput.trim() } : null,
           languages: languageList,
@@ -513,7 +523,7 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
         <div className="col-span-2">
           <TranslationEditor
             schema={productSchema}
-            entry={{ description: v.description, vision, goals, actors, glossary }}
+            entry={{ description: v.description, vision, goals, actors, systems, glossary }}
             i18n={i18n}
             language={language}
             primary={primary}
@@ -568,6 +578,23 @@ function ProjectForm({ project, onSave, onCancel }: { project: ProjectModel; onS
       <div className="col-span-2">
         <Field label={t('ws.actors')} hint={t('ws.actorsHint')}>
           <RowsEditor rows={actors} onChange={setActors} addLabel={t('ws.addActor')} newRow={() => ({ id: '', name: '', description: '' })} columns={[{ key: 'id', placeholder: 'ai_agent', width: 'w-40' }, { key: 'name', placeholder: t('ws.actorName'), width: 'w-48' }, { key: 'description', placeholder: t('ws.actorWho') }]} />
+        </Field>
+      </div>
+      <div className="col-span-2">
+        <Field label={t('ws.systems')} hint={t('ws.systemsHint')}>
+          <RowsEditor
+            rows={systems}
+            onChange={setSystems}
+            addLabel={t('ws.addSystem')}
+            newRow={() => ({ id: '', name: '', description: '', emits: '', consumes: '' })}
+            columns={[
+              { key: 'id', placeholder: 'glitchtip', width: 'w-32' },
+              { key: 'name', placeholder: t('ws.systemName'), width: 'w-36' },
+              { key: 'description', placeholder: t('ws.actorWho') },
+              { key: 'emits', placeholder: t('ws.systemEmits') },
+              { key: 'consumes', placeholder: t('ws.systemConsumes') },
+            ]}
+          />
         </Field>
       </div>
       <div className="col-span-2">

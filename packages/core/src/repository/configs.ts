@@ -146,11 +146,9 @@ export const streamConfig: EntityConfig<Stream> = keepAllFields({
   getFileName: (entity) => `${entity.stream}.yml`,
 
   validateRequired: (entity) => {
+    // the rest (goal, lifecycle, stages) is reported by the schema check, like workflows (PRODUCTCREATOR-43)
     if (!entity.stream) {
       return 'Missing required field: stream';
-    }
-    if (!entity.goal) {
-      return 'Missing required field: goal';
     }
     return null;
   },
@@ -159,9 +157,9 @@ export const streamConfig: EntityConfig<Stream> = keepAllFields({
     stream: entity.stream,
     name: entity.name || '',
     goal: entity.goal || '',
+    ...(entity.lifecycle ? { lifecycle: entity.lifecycle } : {}),
     kpis: JSON.stringify(entity.kpis || []),
     stages: JSON.stringify(entity.stages || []),
-    rules: JSON.stringify(entity.rules || {}),
     filePath,
   }),
 
@@ -169,9 +167,9 @@ export const streamConfig: EntityConfig<Stream> = keepAllFields({
     stream: row.stream as string,
     name: row.name as string,
     goal: row.goal as string,
+    lifecycle: row.lifecycle as Lifecycle,
     kpis: JSON.parse((row.kpis as string) || '[]'),
     stages: JSON.parse((row.stages as string) || '[]'),
-    rules: JSON.parse((row.rules as string) || '{}'),
   }),
 });
 

@@ -74,13 +74,14 @@ describe('streams (PRODUCTCREATOR-34)', () => {
   it('a stream is checked against its schema and its stage workflows must exist', () => {
     const m = model();
     m.streams = [
-      { data: { stream: 'sales', goal: 'Sell', stages: [{ name: 'checkout', entry_events: ['cart.ready'], exit_events: ['order.paid'], workflows: ['orders.checkout', 'orders.refund'] }] }, component: 'svc' },
-      { data: Object.assign({ stream: 'Bad Id', goal: 'x' }, { stages: [] }), component: 'svc' },
+      { data: { stream: 'shop.sales', name: 'Sales', goal: 'Sell', lifecycle: 'draft', stages: [{ id: 'ST1', name: 'checkout', entry_events: ['cart.ready'], exit_events: ['order.paid'], workflows: ['orders.checkout', 'orders.refund'] }] }, component: 'svc' },
+      { data: Object.assign({ stream: 'Bad Id', name: 'Bad', goal: 'x', lifecycle: 'draft' as const }, { stages: [] }), component: 'svc' },
     ];
     const codes = validateModel(m).map((i) => `${i.code}:${i.kind}:${i.id}:${i.field ?? ''}`);
-    expect(codes).toContain('unknown_workflow:stream:sales:stages[0].workflows[1]');
-    expect(codes).not.toContain('unknown_workflow:stream:sales:stages[0].workflows[0]');
-    expect(codes.filter((c) => c.startsWith('schema:stream:Bad Id'))).toHaveLength(2);
+    expect(codes).toContain('unknown_workflow:stream:shop.sales:stages[0].workflows[1]');
+    expect(codes).not.toContain('unknown_workflow:stream:shop.sales:stages[0].workflows[0]');
+    expect(codes).toContain('id_pattern:stream:Bad Id:stream');
+    expect(codes).toContain('schema:stream:Bad Id:stages');
   });
 });
 

@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ProjectModel } from '../src/project/model';
-import type { BusinessObject, Feature, Workflow } from '../src/types';
+import type { BusinessObject, Feature, Stream, Workflow } from '../src/types';
 import type { CatalogModel } from '../src/validation/model';
 import { generateSpec, specOutputDir, writeSpec } from '../src/spec/index';
 import { messagesFor } from '../src/spec/messages';
@@ -59,6 +59,44 @@ function model(): CatalogModel {
 }
 
 describe('spec generation (PRODUCTCREATOR-35)', () => {
+  it('streams and external systems: a section for people, a chunk for agents, translated (PRODUCTCREATOR-43)', () => {
+    const delivery: Stream = {
+      stream: 'shop.delivery',
+      name: 'From order to delivery',
+      goal: 'Orders arrive on time',
+      lifecycle: 'draft',
+      kpis: [{ id: 'K1', name: 'Delivered on time', target: '95%' }],
+      stages: [
+        { id: 'ST1', name: 'Ordered', entry_events: ['cart.ready'], exit_events: ['order.created'], features: ['shop.order.create'], workflows: ['shop.checkout'] },
+        { id: 'ST2', name: 'Shipped', entry_events: ['order.created'], exit_events: ['parcel.delivered'], performed_by: ['carrier'] },
+      ],
+      i18n: { ru: { name: 'От заказа до доставки', stages: { ST2: { name: 'Отправлен' } } } },
+    };
+    const removed: Stream = { ...delivery, stream: 'shop.old', name: 'Old', lifecycle: 'removed' };
+    const m = { ...model(), streams: [{ data: delivery, component: 'c1' }, { data: removed, component: 'c1' }] };
+    const p = project({ languages: ['en', 'ru'], systems: [{ id: 'carrier', name: 'Carrier', emits: ['parcel.delivered'], consumes: ['order.created'] }] });
+    const { files } = generateSpec(p, m);
+    const en = files['en/spec.md'];
+    expect(en).toContain('### External systems');
+    expect(en).toMatch(/\| Carrier \| {2}\| `parcel.delivered` \| `order.created` \|/);
+    expect(en).toContain('## 5. Streams');
+    expect(en).toContain('### From order to delivery (`shop.delivery`)');
+    expect(en).toContain('**K1** Delivered on time (target: 95%)');
+    expect(en).toMatch(/\| \*\*ST1\*\* Ordered \| `cart.ready` \| `order.created` \| order create \(`shop.order.create`\), Checkout \(`shop.checkout`\) \| {2}\|/);
+    expect(en).toContain('| **ST2** Shipped | `order.created` | `parcel.delivered` |  | Carrier |');
+    expect(en).not.toContain('shop.old');
+    const ru = files['ru/spec.md'];
+    expect(ru).toContain('## 5. Потоки');
+    expect(ru).toContain('### От заказа до доставки (`shop.delivery`)');
+    expect(ru).toContain('**ST2** Отправлен');
+    const chunk = JSON.parse(files['agent/streams/shop.delivery.json']);
+    expect(chunk.stream.stages[1].performed_by).toEqual([expect.objectContaining({ kind: 'system', id: 'carrier', emits: ['parcel.delivered'] })]);
+    expect(chunk.stream.stages[0].features[0]).toMatchObject({ id: 'shop.order.create', lifecycle: 'implemented' });
+    const manifest = JSON.parse(files['agent/manifest.json']);
+    expect(manifest.entries).toContainEqual(expect.objectContaining({ kind: 'stream', id: 'shop.delivery', file: 'streams/shop.delivery.json' }));
+    expect(manifest.counts.streams).toBe(1);
+  });
+
   it('human view: product context, features by context, drafts apart, problems next to the entry and in the list', () => {
     const { files, spec } = generateSpec(project(), model());
     const md = files['en/spec.md'];

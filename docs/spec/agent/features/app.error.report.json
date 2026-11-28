@@ -1,0 +1,228 @@
+{
+  "kind": "feature",
+  "component": "desktop",
+  "feature": {
+    "id": "app.error.report",
+    "name": "Report app errors to GlitchTip",
+    "bounded_context": "app",
+    "entity": "error",
+    "action": "report",
+    "lifecycle": "draft",
+    "emits": [
+      "app.error.reported"
+    ],
+    "description": "Unhandled errors of the desktop app (main process, renderer, MCP server) are sent to the self-hosted GlitchTip (Sentry protocol) of ecooz, with the app version, without project content.",
+    "actors": [
+      "developer"
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "Unhandled errors and promise rejections of the main process, the renderer and the MCP server are reported",
+        "priority": "must"
+      },
+      {
+        "id": "R2",
+        "text": "An event carries release product-creator@<version> and environment production, or prerelease for a version with a pre-release tag",
+        "priority": "must"
+      },
+      {
+        "id": "R3",
+        "text": "Reporting is on only in builds that have a DSN; the DSN is set by the release workflow, so local and dev builds send nothing",
+        "priority": "must"
+      },
+      {
+        "id": "R4",
+        "text": "No catalog or YAML content, file contents or user paths leave the machine; MCP tokens (pcmcp_), relay keys (rld_, rly_) and Bearer values are removed from events and breadcrumbs",
+        "priority": "must"
+      },
+      {
+        "id": "R5",
+        "text": "Stack traces of a release are readable (source maps of that release)",
+        "priority": "must"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": "A1",
+        "covers": [
+          "R4"
+        ],
+        "text": "The scrubber removes tokens, keys, Bearer values, user paths and request bodies from an event and its breadcrumbs",
+        "verify": "pnpm --filter desktop test sentry"
+      },
+      {
+        "id": "A2",
+        "covers": [
+          "R2",
+          "R3"
+        ],
+        "text": "Options: disabled without a DSN; release and environment follow the version",
+        "verify": "pnpm --filter desktop test sentry"
+      },
+      {
+        "id": "A3",
+        "covers": [
+          "R1",
+          "R5"
+        ],
+        "text": "A test error of a packaged release build is in GlitchTip with its release, environment and a symbolicated stack",
+        "verify": "pnpm sentry:check-release"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "C1",
+        "kind": "security",
+        "text": "sendDefaultPii is off; no IP, user name or home path in events"
+      },
+      {
+        "id": "C2",
+        "kind": "performance",
+        "text": "No tracing: tracesSampleRate 0; reporting adds no work to the UI thread"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "Self-hosted GlitchTip error.y.ecooz.net, org ecooz, project product-creator",
+        "reason": "The pattern of monkey-mobile; Consolieri desktop, named in the ticket, has no error reporting",
+        "date": "2026-11-28",
+        "status": "accepted"
+      },
+      {
+        "id": "D2",
+        "decision": "Always on in release builds, no opt-out",
+        "reason": "Decided by the product owner; the user docs say what is sent",
+        "date": "2026-11-28",
+        "status": "accepted"
+      },
+      {
+        "id": "D3",
+        "decision": "DSN injected at build time from a GitHub Actions secret, never in the repository",
+        "reason": "Same as the mobile apps (build-time env); a build without it is a no-op",
+        "date": "2026-11-28",
+        "status": "accepted"
+      }
+    ],
+    "tickets": [
+      "PRODUCTCREATOR-26"
+    ],
+    "i18n": {
+      "ru": {
+        "name": "Отправка ошибок приложения в GlitchTip",
+        "description": "Необработанные ошибки desktop-приложения (main-процесс, renderer, MCP-сервер) отправляются в self-hosted GlitchTip (протокол Sentry) ecooz с версией приложения и без содержимого проектов.",
+        "requirements": {
+          "R1": {
+            "text": "Отправляются необработанные ошибки и отклонённые промисы main-процесса, renderer и MCP-сервера"
+          },
+          "R2": {
+            "text": "У события есть release product-creator@<версия> и environment production, или prerelease для версии с pre-release тегом"
+          },
+          "R3": {
+            "text": "Отправка включена только в сборках с DSN; DSN задаёт релизный workflow, поэтому локальные и dev-сборки ничего не отправляют"
+          },
+          "R4": {
+            "text": "Содержимое каталога и YAML, содержимое файлов и пути пользователя не покидают машину; MCP-токены (pcmcp_), ключи релея (rld_, rly_) и значения Bearer удаляются из событий и breadcrumbs"
+          },
+          "R5": {
+            "text": "Стеки релиза читаемы (source maps этого релиза)"
+          }
+        },
+        "constraints": {
+          "C1": {
+            "text": "sendDefaultPii выключен; в событиях нет IP, имени пользователя и домашнего пути"
+          },
+          "C2": {
+            "text": "Без трассировки: tracesSampleRate 0; отправка не нагружает UI-поток"
+          }
+        },
+        "decisions": {
+          "D1": {
+            "decision": "Self-hosted GlitchTip error.y.ecooz.net, org ecooz, проект product-creator",
+            "reason": "Паттерн monkey-mobile; в Consolieri desktop, указанном в тикете, отправки ошибок нет"
+          },
+          "D2": {
+            "decision": "Всегда включено в релизных сборках, без отключения",
+            "reason": "Решение владельца продукта; в документации для пользователей описано, что отправляется"
+          },
+          "D3": {
+            "decision": "DSN подставляется при сборке из секрета GitHub Actions и никогда не хранится в репозитории",
+            "reason": "Как в мобильных приложениях (env на этапе сборки); сборка без DSN ничего не делает"
+          }
+        },
+        "acceptance": {
+          "A1": {
+            "text": "Очистка удаляет токены, ключи, значения Bearer, пути пользователя и тела запросов из события и его breadcrumbs"
+          },
+          "A2": {
+            "text": "Настройки: без DSN отправка выключена; release и environment следуют версии"
+          },
+          "A3": {
+            "text": "Тестовая ошибка собранной релизной сборки видна в GlitchTip с её release, environment и символизированным стеком"
+          }
+        },
+        "_source": {
+          "name": "41ffb8e7",
+          "description": "022c2de4",
+          "requirements": {
+            "R1": {
+              "text": "c5d58ed0"
+            },
+            "R2": {
+              "text": "3eb2b455"
+            },
+            "R3": {
+              "text": "65a719da"
+            },
+            "R4": {
+              "text": "5efdaae2"
+            },
+            "R5": {
+              "text": "a9551514"
+            }
+          },
+          "acceptance": {
+            "A1": {
+              "text": "29cd7297"
+            },
+            "A2": {
+              "text": "d1c06228"
+            },
+            "A3": {
+              "text": "7430ce2c"
+            }
+          },
+          "constraints": {
+            "C1": {
+              "text": "674fc069"
+            },
+            "C2": {
+              "text": "ba9b54b7"
+            }
+          },
+          "decisions": {
+            "D1": {
+              "decision": "26e71c81",
+              "reason": "10817e84"
+            },
+            "D2": {
+              "decision": "911ba7c1",
+              "reason": "fffc55dc"
+            },
+            "D3": {
+              "decision": "7dd559ac",
+              "reason": "3e385be8"
+            }
+          }
+        }
+      }
+    }
+  },
+  "objects": [],
+  "calledBy": [
+    "app.sourcemaps.upload"
+  ],
+  "workflows": [],
+  "issues": []
+}

@@ -4,12 +4,12 @@ bounded_context: spec
 entity: document
 action: render
 owner: atai
-lifecycle: draft
+lifecycle: implemented
 tags: []
 emits: []
 consumes: []
 apis: []
-description: The Doc page renders the human spec (ТЗ) from the model and exports Markdown/HTML/PDF.
+description: The Doc page renders the human spec (ТЗ) from the model, per project language, and writes it as Markdown. HTML/PDF export belongs to PRODUCTCREATOR-19.
 source_file: renderer/src/pages/doc.tsx
 calls:
   - validation.model.validate
@@ -43,12 +43,12 @@ decisions:
 i18n:
   ru:
     name: ТЗ для людей
-    description: Страница Doc показывает ТЗ для людей, построенное по модели, и экспортирует его в Markdown/HTML/PDF.
+    description: Страница Doc показывает ТЗ для людей, построенное по модели, на каждом языке проекта и записывает его в Markdown. Экспорт в HTML/PDF — в PRODUCTCREATOR-19.
     requirements:
       R1:
         text: ТЗ с ошибками сообщает об этом в начале
       R2:
-        text: Проблемы показаны рядом с функцией, к которой относятся
+        text: Проблемы показаны рядом с фичей, к которой относятся
       R3:
         text: 'Поля с x-audience: agent не выводятся'
       R4:
@@ -62,7 +62,7 @@ i18n:
         reason: Люди читают на своём языке, агентам нужен один стабильный источник; переводы необязательны, поэтому вместо отсутствующих показывается основной текст (PRODUCTCREATOR-37)
     _source:
       name: d50fad81
-      description: 4eaf41e9
+      description: 776d3e20
       requirements:
         R1:
           text: 71b913b9
@@ -79,3 +79,26 @@ i18n:
       screens:
         S1:
           title: d252d5bc
+      acceptance:
+        A1:
+          text: 7861e7b3
+        A2:
+          text: 1da76c74
+    acceptance:
+      A1:
+        text: ТЗ для людей сообщает «Не готово» в начале, если в модели есть ошибки, показывает проблемы рядом с записью и не выводит поля для агентов
+      A2:
+        text: ТЗ пишется на каждом языке проекта, непереведённый текст помечен
+acceptance:
+  - id: A1
+    covers:
+      - R1
+      - R2
+      - R3
+    text: The human view says Not ready on top when the model has errors, shows problems next to the entry and leaves out agent fields
+    verify: pnpm --filter @pc/core test spec
+  - id: A2
+    covers:
+      - R4
+    text: A spec is written per project language with untranslated text marked
+    verify: pnpm --filter @pc/core test spec

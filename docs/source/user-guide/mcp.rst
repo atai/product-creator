@@ -142,7 +142,7 @@ name from ``list_projects``) as an argument.
        translations of the product context (``i18n``, see :ref:`spec-languages`)
    * - ``create_catalog_entry``
      - read-write
-     - Create a feature, business object, workflow or stream. Rejected with the list of problems if
+     - Create a feature, business object, workflow or stream (streams since PRODUCTCREATOR-43 go through the same save check). Rejected with the list of problems if
        it would add a validation error
    * - ``update_catalog_entry``
      - read-write

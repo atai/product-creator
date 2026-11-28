@@ -43,7 +43,7 @@ Decisions
 #. **One validation in the core.** ``@pc/core/validation`` is used by the editor, MCP and the CLI:
    references of steps, compensations and ``calls`` to existing features; business object field
    types are scalars or existing objects; duplicate ids and names; id patterns; JSON Schemas. Streams
-   are not validated yet. Saves that would add an error are rejected. (*exists*, PRODUCTCREATOR-29)
+   are validated like workflows (PRODUCTCREATOR-43). Saves that would add an error are rejected. (*exists*, PRODUCTCREATOR-29)
 #. **Features declare the objects they use**: ``objects: [{id, access: read|write}]``, validated
    against the business objects. This is what impact analysis is built on. (*exists*)
 #. **The document generator is a later step.** Rendering YAML into human pages and an agent bundle

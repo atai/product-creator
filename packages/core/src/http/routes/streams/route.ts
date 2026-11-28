@@ -15,7 +15,9 @@ export async function GET(request: Request) {
         const filteredIds = Object.entries(streamsTable)
           .filter(([, data]: [string, unknown]) => {
             const row = data as Record<string, unknown>;
-            const root = storage.getRootForFilePath(row.filePath as string);
+            const filePath = row.filePath as string | undefined;
+            if (!filePath) return false;
+            const root = storage.getRootForFilePath(filePath);
             return root === directory;
           })
           .map(([id]) => id);

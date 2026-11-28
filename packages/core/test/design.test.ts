@@ -59,13 +59,13 @@ describe('design checks (PRODUCTCREATOR-34)', () => {
   });
 
   it('events: emitted without consumer, consumed without emitter, stream stages', () => {
-    const stream: Stream = { stream: 'sales', goal: 'g', stages: [{ name: 'lead', entry_events: ['lead.created'], exit_events: ['deal.won'] }] };
+    const stream: Stream = { stream: 'crm.sales', name: 'Sales', goal: 'g', lifecycle: 'draft', stages: [{ id: 'ST1', name: 'lead', entry_events: ['lead.created'], exit_events: ['deal.won'], performed_by: ['t'] }] };
     const m = model({
       features: [feature('crm.lead.create', 'core', { emits: ['lead.created', 'lead.logged'] }), feature('crm.deal.close', 'core', { consumes: ['deal.signed'] })],
       streams: [{ data: stream, component: 'core' }],
     });
     expect(codes(design(m))).toEqual(
-      expect.arrayContaining(['event_not_consumed:crm.lead.create:emits[1]', 'event_not_emitted:crm.deal.close:consumes[0]', 'stream_event_unknown:sales:stages[0].exit_events'])
+      expect.arrayContaining(['event_not_consumed:crm.lead.create:emits[1]', 'event_not_emitted:crm.deal.close:consumes[0]', 'stream_event_unknown:crm.sales:stages[0].exit_events'])
     );
     expect(codes(design(m))).not.toContain('event_not_consumed:crm.lead.create:emits[0]');
   });
@@ -174,5 +174,13 @@ describe('design checks (PRODUCTCREATOR-34)', () => {
   it('helpers: operation keys and cycles', () => {
     expect(operationKey('get', '/orders/:id/')).toBe(operationKey('GET', '/orders/{orderId}'));
     expect(cycles(['a', 'b', 'c', 'd'], (n) => ({ a: ['b'], b: ['a'], c: ['c'], d: [] })[n] ?? [])).toEqual([['a', 'b'], ['c']]);
+  });
+
+  it('a plan that writes a translation is checked as it will be saved (stamped): no false stale issue (PRODUCTCREATOR-37)', () => {
+    const m = model({}, project(undefined, { languages: ['en', 'ru'] }));
+    const f = feature('shop.order.create', 'core', { i18n: { ru: { name: 'Создать заказ' } } });
+    expect(planIssues(m, [{ kind: 'feature', data: f.data, component: 'core' }]).introduced.filter((i) => i.code.startsWith('translation_'))).toEqual([]);
+    // an unstamped translation already in the model is still reported
+    expect(validateModel(model({ features: [f] }, project(undefined, { languages: ['en', 'ru'] }))).map((i) => i.code)).toContain('translation_stale');
   });
 });

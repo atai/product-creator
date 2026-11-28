@@ -4,7 +4,7 @@ import { primaryLanguage } from '../project/model';
 import { localize } from '../i18n';
 import { catalogSchemas } from '../validation/schemas';
 import productSchema from '../../schema/product.schema.json';
-import type { BusinessObject, Feature, Workflow } from '../types';
+import type { BusinessObject, Feature, Stream, Workflow } from '../types';
 import { validateModel, type CatalogModel, type ValidationIssue } from '../validation/model';
 import { readScreensResult, screenFile, screensDir, SCREENS_DIR } from '../screens/index';
 import * as fs from 'fs';
@@ -62,13 +62,15 @@ export interface SpecModel {
   features: SpecFeature[];
   objects: SpecObject[];
   workflows: SpecEntry<Workflow>[];
+  /** Streams across stages (PRODUCTCREATOR-43) */
+  streams: SpecEntry<Stream>[];
   /** All issues of the project's entries */
   issues: ValidationIssue[];
   counts: { errors: number; warnings: number; infos: number };
 }
 
-const byId = <T extends { data: { id?: string; workflow?: string } }>(a: T, b: T) =>
-  String(a.data.id ?? a.data.workflow).localeCompare(String(b.data.id ?? b.data.workflow));
+const byId = <T extends { data: { id?: string; workflow?: string; stream?: string } }>(a: T, b: T) =>
+  String(a.data.id ?? a.data.workflow ?? a.data.stream).localeCompare(String(b.data.id ?? b.data.workflow ?? b.data.stream));
 
 /** `model` may hold several projects (references resolve across them); the spec holds the entries of `project` */
 export interface BuildOptions {
@@ -111,7 +113,7 @@ export function buildSpec(project: ProjectModel, model: CatalogModel, options: B
       return { screen, file: localized ? `${SCREENS_DIR}/${language}/${file}` : `${SCREENS_DIR}/${file}`, exists: exists || localized, ...(result && !result.ok ? { error: result.error ?? 'capture failed' } : {}) };
     });
   const issuesOf = (kind: ValidationIssue['kind'], id: string) => issues.filter((i) => i.kind === kind && i.id === id);
-  const mine = <T>(entries: CatalogModel['features' | 'objects' | 'workflows']) =>
+  const mine = <T>(entries: CatalogModel['features' | 'objects' | 'workflows'] | NonNullable<CatalogModel['streams']>) =>
     (entries as { data: T; component?: string }[]).filter((e) => e.component && components.has(e.component)) as { data: T; component: string }[];
 
   const features = mine<Feature>(model.features).filter((e) => e.data.lifecycle !== 'removed');
@@ -123,6 +125,7 @@ export function buildSpec(project: ProjectModel, model: CatalogModel, options: B
   }
   const objects = mine<BusinessObject>(model.objects).filter((e) => e.data.lifecycle !== 'removed');
   const workflows = mine<Workflow>(model.workflows).filter((e) => e.data.lifecycle !== 'removed');
+  const streams = mine<Stream>(model.streams ?? []).filter((e) => e.data.lifecycle !== 'removed');
 
   const context = tr(project, productSchema);
   const localFeature = new Map(features.map((e) => [e.data.id, tr(e.data, catalogSchemas.feature)]));
@@ -139,6 +142,7 @@ export function buildSpec(project: ProjectModel, model: CatalogModel, options: B
       vision: context.vision,
       goals: context.goals,
       actors: context.actors,
+      systems: context.systems,
       glossary: context.glossary,
       tracker: project.tracker,
     },
@@ -170,6 +174,7 @@ export function buildSpec(project: ProjectModel, model: CatalogModel, options: B
       }))
       .sort(byId),
     workflows: workflows.map((e) => ({ data: tr(e.data, catalogSchemas.workflow), component: components.get(e.component) as SpecComponent, issues: issuesOf('workflow', e.data.workflow) })).sort(byId),
+    streams: streams.map((e) => ({ data: tr(e.data, catalogSchemas.stream), component: components.get(e.component) as SpecComponent, issues: issuesOf('stream', e.data.stream) })).sort(byId),
     issues,
     counts: { errors: issues.filter((i) => i.severity === 'error').length, warnings: issues.filter((i) => i.severity === 'warning').length, infos: issues.filter((i) => i.severity === 'info').length },
   };

@@ -5,6 +5,10 @@ entity: translation
 action: edit
 owner: atai
 lifecycle: implemented
+tags: []
+emits: []
+consumes: []
+apis: []
 description: Texts of features, business objects, workflows and the product context in the other project languages, stored in i18n.<language> of the same file.
 source_file: i18n/index.ts
 actors:
@@ -42,7 +46,7 @@ tickets:
 i18n:
   ru:
     name: Перевод содержимого каталога
-    description: Тексты функций, бизнес-объектов, процессов и контекста продукта на других языках проекта, в i18n.<язык> того же файла.
+    description: Тексты фич, бизнес-объектов, процессов и контекста продукта на других языках проекта, в i18n.<язык> того же файла.
     requirements:
       R1:
         text: Проект перечисляет свои языки; первый — основной, он хранится в обычных полях

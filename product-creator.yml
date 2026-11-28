@@ -38,6 +38,29 @@ actors:
   - id: client
     name: Client
     description: Reads the human spec
+systems:
+  - id: glitchtip
+    name: GlitchTip
+    description: Self-hosted error tracker (Sentry protocol) of ecooz, error.y.ecooz.net
+    emits:
+      - glitchtip.issue.created
+    consumes:
+      - app.error.reported
+      - app.sourcemaps.uploaded
+  - id: youtrack
+    name: YouTrack
+    description: Issue tracker of the project (ecooz.youtrack.cloud)
+    emits:
+      - youtrack.issue.created
+    consumes:
+      - glitchtip.issue.created
+  - id: github
+    name: GitHub
+    description: Source code, CI and the releases the app updates from
+    emits:
+      - github.release.published
+    consumes:
+      - youtrack.issue.created
 glossary:
   - term: Feature
     definition: A business capability of the product (formerly function); one YAML file with its spec and links to code
@@ -70,9 +93,9 @@ languages:
   - ru
 i18n:
   ru:
-    description: Каталог функций и прослеживаемая документация продукта (ТЗ), связанная с кодом
+    description: Каталог фич и прослеживаемая документация продукта (ТЗ), связанная с кодом
     vision: >-
-      Product Creator хранит логику продукта (функции, данные, процессы) в YAML рядом с кодом, чтобы люди и ИИ-агенты
+      Product Creator хранит логику продукта (фичи, данные, процессы) в YAML рядом с кодом, чтобы люди и ИИ-агенты
       планировали её вместе, видели ошибки планирования до написания кода и получали ТЗ из той же модели.
     goals:
       G1:
@@ -82,16 +105,16 @@ i18n:
       G2:
         text: ТЗ для людей и для агентов строятся из одной модели и никогда не пишутся дважды
       G3:
-        text: Каждая функция прослеживается до кода, задач и тестов
+        text: Каждая фича прослеживается до кода, задач и тестов
       G4:
         text: Агенты безопасно планируют и меняют каталог через MCP
     actors:
       product_owner:
         name: Владелец продукта
-        description: Планирует функции, утверждает ТЗ
+        description: Планирует фичи, утверждает ТЗ
       developer:
         name: Разработчик
-        description: Делает функции, связывает код, запускает синхронизацию
+        description: Делает фичи, связывает код, запускает синхронизацию
       ai_agent:
         name: ИИ-агент
         description: Читает и меняет каталог через MCP, локально или через релей
@@ -107,11 +130,11 @@ i18n:
       Business object:
         definition: Сущность данных продукта с типизированными полями
       Workflow:
-        definition: Упорядоченная последовательность функций с компенсациями
+        definition: Упорядоченная последовательность фич с компенсациями
       Component:
         definition: Сервис или библиотека проекта; у каждого своя папка каталога
       Catalog:
-        definition: YAML-файлы функций, бизнес-объектов и процессов компонента
+        definition: YAML-файлы фич, бизнес-объектов и процессов компонента
       Lifecycle:
         definition: draft → approved → implemented → deprecated → removed; у каждого статуса свои правила
       Plan:
@@ -163,3 +186,23 @@ i18n:
           definition: 909c6443
         Spec (ТЗ):
           definition: f2e1fde1
+      systems:
+        glitchtip:
+          name: 041db528
+          description: d706efec
+        youtrack:
+          name: 9cdfe2b1
+          description: c98da206
+        github:
+          name: f911e414
+          description: 975c794e
+    systems:
+      glitchtip:
+        name: GlitchTip
+        description: Self-hosted трекер ошибок ecooz (протокол Sentry), error.y.ecooz.net
+      youtrack:
+        name: YouTrack
+        description: Трекер задач проекта (ecooz.youtrack.cloud)
+      github:
+        name: GitHub
+        description: Исходный код, CI и релизы, из которых обновляется приложение

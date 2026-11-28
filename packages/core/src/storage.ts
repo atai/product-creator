@@ -13,7 +13,7 @@ import { stampTranslations } from './i18n';
 import { catalogSchemas } from './validation/schemas';
 
 /** Store table of each validated catalog kind */
-const CATALOG_TABLES: Record<EntityKind, string> = { feature: 'features', workflow: 'workflows', business_object: 'business_objects' };
+const CATALOG_TABLES: Record<EntityKind, string> = { feature: 'features', workflow: 'workflows', business_object: 'business_objects', stream: 'streams' };
 import { BaseRepository } from './repository/BaseRepository';
 import { FileSystemAdapter } from './repository/FileSystemAdapter';
 import {
@@ -115,7 +115,8 @@ class FunctionStorage {
       this.store,
       this.fileSystem,
       streamConfig,
-      []
+      [],
+      { trackSources: true }
     );
 
     this.businessObjectRepo = new BaseRepository(
@@ -468,7 +469,7 @@ class FunctionStorage {
   }
 
   async saveStream(data: Stream, targetRoot?: string) {
-    return await this.streamRepo.save(data, targetRoot!);
+    return await this.streamRepo.save(stampTranslations(this.getStreamById(data.stream), data, catalogSchemas.stream), targetRoot!);
   }
 
   // Business Objects
@@ -502,6 +503,7 @@ class FunctionStorage {
       ['feature', this.featureRepo],
       ['workflow', this.workflowRepo],
       ['business_object', this.businessObjectRepo],
+      ['stream', this.streamRepo],
     ] as const;
     for (const [kind, repo] of repos) {
       for (const [id, files] of Object.entries(repo.getDuplicateSources())) duplicates.push({ kind, id, files });
@@ -604,7 +606,8 @@ class FunctionStorage {
   }
 
   /** Catalog entry by kind (PRODUCTCREATOR-33: apply-plan) */
-  getEntry(kind: EntityKind, id: string): Feature | Workflow | BusinessObject | null {
+  getEntry(kind: EntityKind, id: string): Feature | Workflow | BusinessObject | Stream | null {
+    if (kind === 'stream') return this.getStreamById(id);
     return kind === 'feature' ? this.getFeatureById(id) : kind === 'workflow' ? this.getWorkflowById(id) : this.getBusinessObjectById(id);
   }
 
@@ -617,6 +620,7 @@ class FunctionStorage {
   async saveEntry(kind: EntityKind, data: unknown, targetRoot: string): Promise<{ success: boolean; error?: string }> {
     if (kind === 'feature') return this.saveFeature(data as Feature, targetRoot);
     if (kind === 'workflow') return this.saveWorkflow(data as Workflow, targetRoot);
+    if (kind === 'stream') return this.saveStream(data as Stream, targetRoot);
     return this.saveBusinessObject(data as BusinessObject, targetRoot);
   }
 

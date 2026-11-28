@@ -6,6 +6,7 @@ import { Stream } from '@pc/core/types';
 import { useEntityList } from '@/hooks/useEntityList';
 import CatalogPageLayout from '@/components/CatalogPageLayout';
 import { t } from '@/i18n';
+import LifecycleBadge from '@/components/LifecycleBadge';
 
 export default function StreamsPage() {
   const searchParams = useSearchParams();
@@ -73,6 +74,9 @@ export default function StreamsPage() {
                   {t('common.name')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
+                  {t('streams.colLifecycle')}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
                   {t('streams.colGoal')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-meta uppercase tracking-wider">
@@ -100,6 +104,9 @@ export default function StreamsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-fg">
                     {stream.name || '-'}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {stream.lifecycle ? <LifecycleBadge lifecycle={stream.lifecycle} /> : <span className="text-xs text-danger">{t('workflows.missing')}</span>}
+                  </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-muted max-w-md truncate">
                       {stream.goal}
@@ -115,10 +122,11 @@ export default function StreamsPage() {
                       {stream.kpis && stream.kpis.length > 0 ? (
                         stream.kpis.map((kpi) => (
                           <span
-                            key={kpi}
+                            key={kpi.id}
+                            title={kpi.target}
                             className="inline-block px-2 py-1 text-xs font-medium bg-success-muted text-success-fg rounded"
                           >
-                            {kpi}
+                            {kpi.name}
                           </span>
                         ))
                       ) : (
@@ -129,15 +137,9 @@ export default function StreamsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <Link
                       href={`/streams/${stream.stream}${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
-                      className="text-accent hover:text-accent-fg-strong mr-4"
+                      className="text-accent hover:text-accent-fg-strong"
                     >
                       {t('common.edit')}
-                    </Link>
-                    <Link
-                      href={`/streams/${stream.stream}/swimlanes${selectedApp ? `?app=${encodeURIComponent(selectedApp)}` : ''}`}
-                      className="text-secondary hover:text-secondary-fg-strong"
-                    >
-                      {t('streams.swimlanes')}
                     </Link>
                   </td>
                 </tr>
