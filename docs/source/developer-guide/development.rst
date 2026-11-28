@@ -98,6 +98,9 @@ a script in the renderer (e.g. clicks a button; override ``window.confirm`` firs
 ``PC_SMOKE_TEXT_FILTER`` prints matching lines of the page. Smoke runs use the development folder; set
 ``PC_USER_DATA_DIR=<tmp>`` to keep a run's workspace separate.
 
+``PC_SMOKE_QUIT=1`` ends the smoke run through ``app.quit()`` (the path of Cmd+Q: ``will-quit`` →
+cleanup → ``app.exit``) instead of exiting directly; a run that does not end in time means quitting hangs.
+
 ``PC_SMOKE_SYNC_APP=<component uuid>`` runs code and schema sync up to the *matching* stage (nothing is
 written). ``PC_SMOKE_EDIT=<name>`` renames the first component of the first project through the editor
 IPC (writes YAML — use a scratch copy of the project). The JSON report is printed after

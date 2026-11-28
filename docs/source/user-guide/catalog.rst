@@ -176,7 +176,9 @@ Views
 * **Features / Objects / Workflows / Streams** — search, filter, create and edit. A feature page
   shows where it is implemented, the business objects it uses and what depends on it.
 * **Problems** — validation errors and warnings of the catalog (see below), with links to the entries.
-* **Presentation → Graph** — features connected by emitted/consumed events.
+* **Presentation → Graph** — features and the links between them: ``calls`` (solid arrow), consecutive
+  workflow steps (dashed, labelled with the workflow) and events (dotted, emits → consumes). Nodes are
+  sized to their names and laid out in layers along the arrows; features without links are listed below.
 * **Presentation → Matrix** — entity × action coverage per bounded context.
 * **Presentation → Doc** — the specification (ТЗ) generated from the catalog, see :doc:`spec`.
 

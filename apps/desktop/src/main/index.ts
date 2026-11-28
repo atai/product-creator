@@ -388,6 +388,12 @@ async function runSmokeTest() {
     }
   }
   console.log('PC_SMOKE_RESULT ' + JSON.stringify(report, null, 2));
+  // PC_SMOKE_QUIT=1: leave through the normal path (app.quit → will-quit → shutdown), like Cmd+Q
+  if (process.env.PC_SMOKE_QUIT) {
+    console.log('PC_SMOKE_QUIT app.quit()');
+    app.quit();
+    return;
+  }
   // app.exit skips before-quit / will-quit
   await shutdown();
   app.exit(0);
@@ -434,17 +440,22 @@ if (!app.requestSingleInstanceLock()) {
     });
   });
 
-  // Windows already closed; await stop so MCP server.close finishes before process exit.
-  // Second app.quit() reaches will-quit with the flag set and does not preventDefault again.
+  // Cmd+Q / menu Quit / last window on Windows and Linux: stop MCP, relay and generations, then exit.
+  // The quit is cancelled once to await the cleanup, then the process ends with app.exit: a second app.quit()
+  // from inside will-quit is not reliable on macOS (the app stayed alive). A cleanup that hangs does not keep the
+  // app open either: after SHUTDOWN_TIMEOUT_MS it exits anyway.
+  const SHUTDOWN_TIMEOUT_MS = 3000;
   let shutdownStarted = false;
   app.on('will-quit', (event) => {
     if (shutdownStarted) return;
     event.preventDefault();
     shutdownStarted = true;
-    void shutdown().finally(() => app.quit());
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, SHUTDOWN_TIMEOUT_MS).unref());
+    void Promise.race([shutdown().catch((error) => console.error('Shutdown failed', error)), timeout]).finally(() => app.exit(0));
   });
 
+  // macOS keeps an app running without windows (Dock). A dev run quits with its last window, like on Windows/Linux.
   app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit();
+    if (process.platform !== 'darwin' || !app.isPackaged) app.quit();
   });
 }

@@ -2,6 +2,10 @@ import { getStorage } from '../../../storage';
 import logger from '../../../logger';
 import { GraphNode, GraphEdge } from '../../../types';
 
+/**
+ * GET /api/graph?app=&bounded_context=&lifecycle=: features and the links between them (PRODUCTCREATOR-35):
+ * calls, consecutive workflow steps and events (emits → consumes). Only edges between the returned features.
+ */
 export async function GET(request: Request) {
   try {
     const searchParams = new URL(request.url).searchParams;
@@ -10,53 +14,30 @@ export async function GET(request: Request) {
     const lifecycle = searchParams.get('lifecycle');
 
     const storage = await getStorage();
-    let functions = storage.getAllFeatures();
+    let features = appId && storage.getAppById(appId)?.directory ? storage.getFeaturesOfApp(appId) : storage.getAllFeatures();
+    if (boundedContext) features = features.filter((f) => f.bounded_context === boundedContext);
+    if (lifecycle) features = features.filter((f) => f.lifecycle === lifecycle);
 
-    // Apply app filter first
-    if (appId) {
-      const app = storage.getAppById(appId);
-      if (app && app.directory) {
-        functions = storage.getFeaturesOfApp(appId);
-        logger.info('Filtered graph features by app', { appId, directory: app.directory, count: functions.length });
-      }
+    const nodes: GraphNode[] = features.map((f) => ({ id: f.id, label: f.name, bounded_context: f.bounded_context, lifecycle: f.lifecycle }));
+    const ids = new Set(features.map((f) => f.id));
+    const edges: GraphEdge[] = [];
+    const seen = new Set<string>();
+    const add = (edge: GraphEdge) => {
+      const key = `${edge.kind}|${edge.source}|${edge.target}|${edge.label}`;
+      if (edge.source === edge.target || !ids.has(edge.source) || !ids.has(edge.target) || seen.has(key)) return;
+      seen.add(key);
+      edges.push(edge);
+    };
+
+    for (const f of features) for (const target of f.calls ?? []) add({ source: f.id, target, kind: 'calls', label: '' });
+    for (const w of storage.getAllWorkflows()) {
+      const steps = Array.isArray(w.steps) ? w.steps : [];
+      for (let i = 1; i < steps.length; i++) add({ source: steps[i - 1], target: steps[i], kind: 'workflow', label: w.workflow });
     }
-
-    // Apply other filters
-    if (boundedContext) {
-      functions = functions.filter((f) => f.bounded_context === boundedContext);
+    for (const e of storage.getEdges()) {
+      const edge = e as Record<string, unknown>;
+      add({ source: String(edge.source), target: String(edge.target), kind: 'event', label: String(edge.event ?? '') });
     }
-    if (lifecycle) {
-      functions = functions.filter((f) => f.lifecycle === lifecycle);
-    }
-
-    // Build nodes
-    const nodes: GraphNode[] = functions.map((f) => ({
-      id: f.id,
-      label: f.name,
-      bounded_context: f.bounded_context,
-      lifecycle: f.lifecycle,
-    }));
-
-    // Get edges from storage
-    const allEdges = storage.getEdges();
-    const functionIds = new Set(functions.map((f) => f.id));
-
-    // Filter edges to only include those between filtered functions
-    const edges: GraphEdge[] = allEdges
-      .filter(
-        (edge: unknown) => {
-          const e = edge as Record<string, unknown>;
-          return functionIds.has(e.source as string) && functionIds.has(e.target as string);
-        }
-      )
-      .map((edge: unknown) => {
-        const e = edge as Record<string, unknown>;
-        return {
-          source: e.source as string,
-          target: e.target as string,
-          event: e.event as string,
-        };
-      });
 
     return Response.json({ nodes, edges });
   } catch (error) {

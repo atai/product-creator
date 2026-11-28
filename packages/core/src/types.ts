@@ -123,10 +123,13 @@ export interface GraphNode {
   lifecycle: string;
 }
 
+/** Edge of the feature graph: a feature calls another, a workflow goes from one step to the next, or an event links emitter and consumer */
 export interface GraphEdge {
   source: string;
   target: string;
-  event: string;
+  kind: 'calls' | 'workflow' | 'event';
+  /** Event name (event), workflow key (workflow), empty for calls */
+  label: string;
 }
 
 export interface Workflow {
